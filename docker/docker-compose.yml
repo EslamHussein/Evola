@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: evola
+      POSTGRES_PASSWORD: evola
+      POSTGRES_DB: evola
+    ports:
+      - "5432:5432"
+    volumes:
+      - evola-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  evola-postgres-data:

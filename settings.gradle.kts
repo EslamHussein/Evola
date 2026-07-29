@@ -1,0 +1,18 @@
+rootProject.name = "evola"
+
+include(
+    ":core:domain-kernel",
+    ":core:application-kernel",
+    ":contexts:learner-identity:domain",
+    ":contexts:learner-identity:application",
+    ":contexts:learner-identity:infrastructure",
+    ":contexts:vocabulary:domain",
+    ":contexts:vocabulary:application",
+    ":contexts:vocabulary:infrastructure",
+    ":contexts:exercise-generation:application",
+    ":contexts:exercise-generation:infrastructure",
+    ":integrations:ai-gateway",
+    ":integrations:persistence-shared",
+    ":presentation:telegram-bot",
+    ":composition-root",
+)
