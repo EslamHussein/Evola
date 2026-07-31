@@ -1,6 +1,23 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
 rootProject.name = "evola"
 
 include(
+    ":shared",
+    ":server",
     ":core:domain-kernel",
     ":core:application-kernel",
     ":contexts:learner-identity:domain",
