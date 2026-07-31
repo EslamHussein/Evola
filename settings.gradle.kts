@@ -9,8 +9,6 @@ include(
     ":contexts:vocabulary:domain",
     ":contexts:vocabulary:application",
     ":contexts:vocabulary:infrastructure",
-    ":contexts:exercise-generation:application",
-    ":contexts:exercise-generation:infrastructure",
     ":contexts:tutoring:domain",
     ":contexts:tutoring:application",
     ":contexts:tutoring:infrastructure",
@@ -19,7 +17,4 @@ include(
     ":contexts:learning-resources:infrastructure",
     ":integrations:ai-gateway",
     ":integrations:persistence-shared",
-    ":presentation:telegram-bot",
-    ":presentation:mini-app-api",
-    ":composition-root",
 )
