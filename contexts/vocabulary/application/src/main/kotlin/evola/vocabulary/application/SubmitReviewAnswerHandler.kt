@@ -42,6 +42,7 @@ class SubmitReviewAnswerHandler(
 
         val outcome = VocabularyReviewService.review(
             currentSrsState = state.srsState,
+            currentCounters = state.counters,
             expectedAnswer = item.englishTranslation,
             givenAnswer = input.rawAnswer,
         )
@@ -49,6 +50,7 @@ class SubmitReviewAnswerHandler(
         val now = Instant.now()
         val updatedState = state.copy(
             srsState = outcome.updatedSrsState,
+            counters = outcome.updatedCounters,
             lastReviewedAt = now,
             nextReviewAt = now.plus(outcome.updatedSrsState.intervalDays.toLong(), ChronoUnit.DAYS),
         )

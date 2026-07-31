@@ -5,6 +5,7 @@ import evola.core.kernel.LearnerVocabularyStateId
 import evola.core.kernel.VocabularyItemId
 import evola.vocabulary.application.LearnerVocabularyStateRepository
 import evola.vocabulary.domain.LearnerVocabularyState
+import evola.vocabulary.domain.MasteryCounters
 import evola.vocabulary.domain.SrsState
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
@@ -46,6 +47,9 @@ class ExposedLearnerVocabularyStateRepository(private val database: Database) : 
                     it[easinessFactor] = state.srsState.easinessFactor
                     it[intervalDays] = state.srsState.intervalDays
                     it[repetitions] = state.srsState.repetitions
+                    it[totalAttempts] = state.counters.totalAttempts
+                    it[totalLapses] = state.counters.totalLapses
+                    it[consecutiveCorrect] = state.counters.consecutiveCorrect
                     it[nextReviewAt] = state.nextReviewAt
                     it[lastReviewedAt] = state.lastReviewedAt
                 }
@@ -57,12 +61,21 @@ class ExposedLearnerVocabularyStateRepository(private val database: Database) : 
                     it[easinessFactor] = state.srsState.easinessFactor
                     it[intervalDays] = state.srsState.intervalDays
                     it[repetitions] = state.srsState.repetitions
+                    it[totalAttempts] = state.counters.totalAttempts
+                    it[totalLapses] = state.counters.totalLapses
+                    it[consecutiveCorrect] = state.counters.consecutiveCorrect
                     it[nextReviewAt] = state.nextReviewAt
                     it[lastReviewedAt] = state.lastReviewedAt
                 }
             }
         }
     }
+
+    override suspend fun findAllForLearner(learnerId: LearnerId): List<LearnerVocabularyState> =
+        newSuspendedTransaction(Dispatchers.IO, database) {
+            LearnerVocabularyStateTable.selectAll().where { LearnerVocabularyStateTable.learnerId eq learnerId.value }
+                .map { it.toState() }
+        }
 
     private fun ResultRow.toState() = LearnerVocabularyState(
         id = LearnerVocabularyStateId(this[LearnerVocabularyStateTable.id]),
@@ -72,6 +85,11 @@ class ExposedLearnerVocabularyStateRepository(private val database: Database) : 
             easinessFactor = this[LearnerVocabularyStateTable.easinessFactor],
             intervalDays = this[LearnerVocabularyStateTable.intervalDays],
             repetitions = this[LearnerVocabularyStateTable.repetitions],
+        ),
+        counters = MasteryCounters(
+            totalAttempts = this[LearnerVocabularyStateTable.totalAttempts],
+            totalLapses = this[LearnerVocabularyStateTable.totalLapses],
+            consecutiveCorrect = this[LearnerVocabularyStateTable.consecutiveCorrect],
         ),
         nextReviewAt = this[LearnerVocabularyStateTable.nextReviewAt],
         lastReviewedAt = this[LearnerVocabularyStateTable.lastReviewedAt],

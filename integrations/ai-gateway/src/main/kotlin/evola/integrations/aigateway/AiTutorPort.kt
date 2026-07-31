@@ -21,4 +21,16 @@ data class GeneratedExercise(
  */
 interface AiTutorPort {
     suspend fun generateExercise(request: GenerateExerciseRequest): GeneratedExercise
+
+    suspend fun generatePracticeExercise(request: GeneratePracticeExerciseRequest): GeneratedPracticeExercise
+
+    suspend fun evaluateFreeformAnswer(request: EvaluateFreeformAnswerRequest): FreeformEvaluationResult
+
+    suspend fun runSpeakingTurn(request: RunSpeakingTurnRequest): SpeakingTurnResult
+
+    suspend fun analyzeResource(request: AnalyzeResourceRequest): ResourceAnalysisResult
+
+    suspend fun generateLearningContent(request: GenerateLearningContentRequest): GeneratedLearningContent
+
+    suspend fun extractVocabulary(request: ExtractVocabularyRequest): List<ExtractedVocabularyItem>
 }

@@ -61,6 +61,27 @@ class OpenAiAiTutorPort(
         "German word: \"${request.germanWord}\" (English: \"${request.englishTranslation}\"), " +
             "CEFR level ${request.cefrLevel}."
 
+    // This adapter is kept only to demonstrate AiTutorPort's swappability (see ADR-0001-mvp) and
+    // is not wired in composition-root. The Milestone-3 tutoring methods were never implemented
+    // for it — only AnthropicAiTutorPort (the actually-deployed adapter) supports them.
+    override suspend fun generatePracticeExercise(request: GeneratePracticeExerciseRequest): GeneratedPracticeExercise =
+        throw UnsupportedOperationException("OpenAiAiTutorPort does not implement tutoring exercise generation")
+
+    override suspend fun evaluateFreeformAnswer(request: EvaluateFreeformAnswerRequest): FreeformEvaluationResult =
+        throw UnsupportedOperationException("OpenAiAiTutorPort does not implement answer evaluation")
+
+    override suspend fun runSpeakingTurn(request: RunSpeakingTurnRequest): SpeakingTurnResult =
+        throw UnsupportedOperationException("OpenAiAiTutorPort does not implement speaking practice")
+
+    override suspend fun analyzeResource(request: AnalyzeResourceRequest): ResourceAnalysisResult =
+        throw UnsupportedOperationException("OpenAiAiTutorPort does not implement resource analysis")
+
+    override suspend fun generateLearningContent(request: GenerateLearningContentRequest): GeneratedLearningContent =
+        throw UnsupportedOperationException("OpenAiAiTutorPort does not implement learning content generation")
+
+    override suspend fun extractVocabulary(request: ExtractVocabularyRequest): List<ExtractedVocabularyItem> =
+        throw UnsupportedOperationException("OpenAiAiTutorPort does not implement vocabulary extraction")
+
     companion object {
         /**
          * Cheapest current small-tier OpenAI chat model — verify the exact model id against

@@ -10,10 +10,11 @@ data class LearnerVocabularyState(
     val learnerId: LearnerId,
     val vocabularyItemId: VocabularyItemId,
     val srsState: SrsState,
+    val counters: MasteryCounters,
     val nextReviewAt: Instant,
     val lastReviewedAt: Instant?,
 ) {
-    val status: MasteryStatus get() = MasteryStatus.deriveFrom(srsState)
+    val status: MasteryStatus get() = MasteryStatus.deriveFrom(srsState, counters)
 
     val isDue: Boolean get() = !nextReviewAt.isAfter(Instant.now())
 
@@ -28,6 +29,7 @@ data class LearnerVocabularyState(
             learnerId = learnerId,
             vocabularyItemId = vocabularyItemId,
             srsState = SrsState.INITIAL,
+            counters = MasteryCounters.INITIAL,
             nextReviewAt = now,
             lastReviewedAt = null,
         )

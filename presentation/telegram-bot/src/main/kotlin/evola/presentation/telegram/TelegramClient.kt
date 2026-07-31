@@ -16,6 +16,7 @@ import io.ktor.http.contentType
  */
 class TelegramClient(private val httpClient: HttpClient, botToken: String) {
     private val baseUrl = "https://api.telegram.org/bot$botToken"
+    private val fileBaseUrl = "https://api.telegram.org/file/bot$botToken"
 
     suspend fun getUpdates(offset: Long?, timeoutSeconds: Int = 30): List<TelegramUpdate> {
         val response: TelegramGetUpdatesResponse = httpClient.get("$baseUrl/getUpdates") {
@@ -25,10 +26,20 @@ class TelegramClient(private val httpClient: HttpClient, botToken: String) {
         return response.result
     }
 
-    suspend fun sendMessage(chatId: Long, text: String) {
+    suspend fun sendMessage(chatId: Long, text: String, replyMarkup: TelegramInlineKeyboardMarkup? = null) {
         httpClient.post("$baseUrl/sendMessage") {
             contentType(ContentType.Application.Json)
-            setBody(TelegramSendMessageRequest(chatId, text))
+            setBody(TelegramSendMessageRequest(chatId, text, replyMarkup))
         }
     }
+
+    suspend fun getFile(fileId: String): TelegramFile {
+        val response: TelegramGetFileResponse = httpClient.get("$baseUrl/getFile") {
+            parameter("file_id", fileId)
+        }.body()
+        return response.result
+    }
+
+    suspend fun downloadFile(filePath: String): ByteArray =
+        httpClient.get("$fileBaseUrl/$filePath").body()
 }
