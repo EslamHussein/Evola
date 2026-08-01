@@ -23,6 +23,7 @@ fun main() {
 
     val database = DatabaseFactory.connect(databaseUrl, databaseUser, databasePassword)
     val materialService = MaterialService(database)
+    val authService = AuthService(database)
 
     println("Evola :server starting on 127.0.0.1:$port ...")
     embeddedServer(CIO, port = port, host = "127.0.0.1") {
@@ -35,6 +36,7 @@ fun main() {
         routing {
             healthRoutes()
             materialRoutes(materialService)
+            authRoutes(authService)
         }
     }.start(wait = true)
 }

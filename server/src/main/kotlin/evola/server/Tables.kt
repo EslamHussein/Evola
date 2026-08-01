@@ -35,3 +35,11 @@ internal object ExtractionJobsTable : Table("extraction_jobs") {
     val updatedAt = timestamp("updated_at")
     override val primaryKey = PrimaryKey(id)
 }
+
+internal object UsersTable : Table("users") {
+    val id = uuid("id")
+    val email = text("email").uniqueIndex()
+    val passwordHash = text("password_hash")
+    val createdAt = timestamp("created_at")
+    override val primaryKey = PrimaryKey(id)
+}

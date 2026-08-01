@@ -18,6 +18,8 @@ rootProject.name = "evola"
 include(
     ":shared",
     ":server",
+    ":composeApp",
+    ":androidApp",
     ":core:domain-kernel",
     ":core:application-kernel",
     ":contexts:learner-identity:domain",
