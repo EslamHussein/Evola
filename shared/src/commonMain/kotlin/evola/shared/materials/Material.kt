@@ -47,3 +47,9 @@ data class ExtractionJob(
     val status: JobStatus,
     val error: String? = null,
 )
+
+@Serializable
+data class MaterialDetail(
+    val material: Material,
+    val extraction: ExtractionCache?,
+)
