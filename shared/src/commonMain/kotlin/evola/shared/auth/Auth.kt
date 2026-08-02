@@ -24,4 +24,8 @@ interface AuthRepository {
     suspend fun requestPasswordReset(email: String)
     suspend fun confirmPasswordReset(token: String, newPassword: String): PasswordResetConfirmResult
     suspend fun logout(refreshToken: String)
+    /** Returns a fresh access token, or null if the refresh token is invalid/expired/revoked. */
+    suspend fun refresh(refreshToken: String): String?
+    /** Returns the authenticated user, or null if the access token is invalid/expired. */
+    suspend fun getCurrentUser(accessToken: String): AuthUser?
 }

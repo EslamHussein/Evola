@@ -1,11 +1,19 @@
 package evola.composeapp
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import evola.composeapp.auth.ForgotPasswordScreen
 import evola.composeapp.auth.ForgotPasswordViewModel
 import evola.composeapp.auth.LoginScreen
@@ -24,9 +32,11 @@ import evola.composeapp.theme.EvolaTheme
 import evola.shared.auth.AuthTokens
 import evola.shared.auth.HttpAuthRepository
 import evola.shared.materials.HttpMaterialsRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 private sealed interface AppScreen {
+    data object Loading : AppScreen
     data object Login : AppScreen
     data object Register : AppScreen
     data object ForgotPassword : AppScreen
@@ -39,18 +49,52 @@ private sealed interface AppScreen {
 @Composable
 fun App() {
     EvolaTheme {
-        var screen by remember { mutableStateOf<AppScreen>(AppScreen.Login) }
+        var screen by remember { mutableStateOf<AppScreen>(AppScreen.Loading) }
         var refreshToken by remember { mutableStateOf<String?>(null) }
+        val sessionStorage = rememberSessionStorage()
         val authRepository = remember { HttpAuthRepository(baseUrl = defaultServerBaseUrl()) }
         val materialsRepository = remember { HttpMaterialsRepository(baseUrl = defaultServerBaseUrl()) }
         val coroutineScope = rememberCoroutineScope()
 
         val onAuthSuccess: (AuthTokens) -> Unit = { tokens ->
             refreshToken = tokens.refreshToken
+            sessionStorage.saveRefreshToken(tokens.refreshToken)
             screen = AppScreen.MaterialsList(tokens.user.id)
         }
 
+        // Silently restore a previous session on launch, so the user only logs in once.
+        LaunchedEffect(Unit) {
+            val storedRefreshToken = sessionStorage.loadRefreshToken()
+            if (storedRefreshToken == null) {
+                screen = AppScreen.Login
+                return@LaunchedEffect
+            }
+            val restoredUserId = try {
+                val accessToken = authRepository.refresh(storedRefreshToken)
+                accessToken?.let { authRepository.getCurrentUser(it) }?.id
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+            if (restoredUserId != null) {
+                refreshToken = storedRefreshToken
+                screen = AppScreen.MaterialsList(restoredUserId)
+            } else {
+                sessionStorage.clear()
+                screen = AppScreen.Login
+            }
+        }
+
         when (val current = screen) {
+            AppScreen.Loading -> {
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Loading...", style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+
             AppScreen.Login -> {
                 val viewModel = remember { LoginViewModel(authRepository) }
                 LoginScreen(
@@ -95,6 +139,7 @@ fun App() {
                     onOpenMaterial = { materialId -> screen = AppScreen.MaterialDetail(current.userId, materialId) },
                     onLogout = {
                         refreshToken?.let { token -> coroutineScope.launch { authRepository.logout(token) } }
+                        sessionStorage.clear()
                         refreshToken = null
                         screen = AppScreen.Login
                     },

@@ -3,10 +3,13 @@ package evola.shared.auth
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
@@ -53,6 +56,9 @@ private data class WireErrorBody(
 
 @Serializable
 private data class WireErrorResponse(val error: WireErrorBody)
+
+@Serializable
+private data class AccessTokenWireResponse(@SerialName("access_token") val accessToken: String)
 
 class HttpAuthRepository(
     private val baseUrl: String,
@@ -118,6 +124,23 @@ class HttpAuthRepository(
             }
             else -> error("Confirm password reset failed: HTTP ${response.status.value}")
         }
+    }
+
+    override suspend fun refresh(refreshToken: String): String? {
+        val response = httpClient.post("$baseUrl/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshWireRequest(refreshToken))
+        }
+        return if (response.status == HttpStatusCode.OK) response.body<AccessTokenWireResponse>().accessToken else null
+    }
+
+    override suspend fun getCurrentUser(accessToken: String): AuthUser? {
+        val response = httpClient.get("$baseUrl/users/me") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }
+        if (response.status != HttpStatusCode.OK) return null
+        val user = response.body<UserWireResponse>()
+        return AuthUser(user.id, user.fullName, user.email, user.onboardingCompleted)
     }
 
     private suspend fun HttpResponse.errorBody(): WireErrorBody = body<WireErrorResponse>().error
