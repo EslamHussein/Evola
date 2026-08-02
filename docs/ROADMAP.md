@@ -67,26 +67,41 @@ unused until their own milestone — avoids incremental migrations mid-build (th
 
 ---
 
-## M2 — Onboarding + Goal Setup + navigation shell
+## M2 — Onboarding + Goal Setup + navigation shell ✅ done
 
 Goal: unblock everything downstream — nothing has a `goal_id` to attach to until this exists.
 
 **Backend**
-- [ ] `POST /goals`, `PATCH /goals/{id}`, `GET /goals/{id}` matching `03_API_CONTRACT.md`
-- [ ] `onboarding_completed` flips true only once Welcome is seen **and** a goal exists
+- [x] `POST /goals`, `PATCH /goals/{id}`, `GET /goals/{id}` + `GET /goals/active` (convenience
+      lookup, not in the kit verbatim — needed so the client can discover its goal without
+      already knowing the id) — all authenticated via the existing JWT principal
+- [x] `onboarding_completed` flips true only once Welcome is seen **and** a goal exists — the
+      server sets it as a side effect of the first successful goal creation, since the client's
+      own navigation guarantees Welcome was shown before Goal Setup is reachable
+- [x] 8 `GoalServiceTest` cases (auto-title, explicit title, duplicate-active-goal rejection,
+      validation bounds, update scoped to owner, `getActiveGoal`) — 21/21 tests passing project-wide
 
 **Mobile**
-- [ ] Onboarding Welcome screen (static explainer + Continue)
-- [ ] Goal Setup screen — freeform `goal_text` (3–200 chars, truncation warning), optional
-      `title` (auto-generated if blank)
-- [ ] `onboarding_completed` gating wired into `App.kt` startup routing (resumes at Welcome if
-      a user quit mid-flow)
-- [ ] Persistent 5-tab bottom bar: Home · Goals · Study · Materials · Profile (modal flows —
-      auth, upload, sessions — hide it)
-- [ ] Goal editing from Settings/Profile without repeating onboarding
+- [x] Onboarding Welcome screen (static explainer + Continue)
+- [x] Goal Setup screen — freeform `goal_text` (3–200 chars, live truncation warning), optional
+      `title` (auto-generated as "My {first ~5 words} Journey" if blank)
+- [x] `onboarding_completed` gating wired into `App.kt` startup routing (verified: killing and
+      relaunching the app mid-onboarding correctly resumes at Welcome, not Login or Materials)
+- [x] Persistent 5-tab bottom bar: Home · Goals · Study · Materials · Profile — Materials tab
+      reuses the existing `MaterialsListScreen`; its add/detail sub-screens hide the tab bar
+- [x] Goal editing from Profile (inline edit form) without repeating onboarding
 
-**Testing**
-- [ ] Empty-goal validation, long-paste truncation, resume-at-Welcome-after-quit
+**Verified live on the Android emulator** against the real local dev server (Hetzner redeploy
+blocked — no working SSH credentials in this session, see note below): register → Welcome →
+Goal Setup (auto-title) → Home/Goals/Study/Materials/Profile all render correctly → edit goal →
+sign out → log back in skips onboarding entirely and lands on Home with the persisted, edited
+goal. Auto-login (from the earlier session-persistence work) and onboarding-gating confirmed
+working together correctly on a killed-and-relaunched app too.
+
+> **Blocked, needs your input:** `ssh root@46.224.177.47` still returns `Permission denied
+> (publickey,password)` in this session — same as earlier. M2 has **not** been deployed to
+> Hetzner yet; the production server is still running the pre-M2 build. Either share working
+> SSH access or redeploy it yourself before M3 needs the live server again.
 
 ---
 

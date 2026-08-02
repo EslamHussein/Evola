@@ -36,6 +36,7 @@ fun main() {
     val extractionWorker = ExtractionWorker(database, anthropicClient)
     val materialService = MaterialService(database, onJobQueued = { extractionWorker.wake.trySend(Unit) })
     val authService = AuthService(database, jwtSecret)
+    val goalService = GoalService(database)
 
     println("Evola :server starting on 127.0.0.1:$port ...")
     embeddedServer(CIO, port = port, host = "127.0.0.1") {
@@ -59,6 +60,7 @@ fun main() {
             healthRoutes()
             materialRoutes(materialService)
             authRoutes(authService)
+            goalRoutes(goalService)
         }
     }.start(wait = true)
 }

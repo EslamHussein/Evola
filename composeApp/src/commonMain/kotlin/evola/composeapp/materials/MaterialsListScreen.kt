@@ -34,7 +34,7 @@ fun MaterialsListScreen(
     viewModel: MaterialsListViewModel,
     onAddMaterial: () -> Unit,
     onOpenMaterial: (String) -> Unit,
-    onLogout: () -> Unit,
+    onLogout: (() -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -42,7 +42,7 @@ fun MaterialsListScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Your materials") },
-                actions = { TextButton(onClick = onLogout) { Text("Log out") } },
+                actions = { onLogout?.let { TextButton(onClick = it) { Text("Log out") } } },
             )
         },
     ) { padding ->

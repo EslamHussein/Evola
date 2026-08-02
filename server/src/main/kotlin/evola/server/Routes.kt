@@ -8,6 +8,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
+import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 
 fun Route.healthRoutes() {
@@ -122,6 +123,62 @@ fun Route.authRoutes(authService: AuthService) {
             val user = authService.getUser(userId)
                 ?: return@get call.respond(HttpStatusCode.NotFound)
             call.respond(HttpStatusCode.OK, user)
+        }
+    }
+}
+
+fun Route.goalRoutes(goalService: GoalService) {
+    authenticate("auth-jwt") {
+        post("/goals") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@post call.respond(HttpStatusCode.Unauthorized)
+            val request = call.receive<CreateGoalRequest>()
+            when (val outcome = goalService.createGoal(userId, request)) {
+                is CreateGoalOutcome.Created -> call.respond(HttpStatusCode.Created, outcome.goal)
+                CreateGoalOutcome.ActiveGoalExists -> call.respond(
+                    HttpStatusCode.Conflict,
+                    ErrorResponse(ErrorBody("ACTIVE_GOAL_EXISTS", "You already have an active goal.")),
+                )
+                is CreateGoalOutcome.Invalid -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("VALIDATION_ERROR", outcome.message)),
+                )
+            }
+        }
+
+        patch("/goals/{id}") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@patch call.respond(HttpStatusCode.Unauthorized)
+            val goalId = call.parameters["id"]
+                ?: return@patch call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing goal id"))
+            val request = call.receive<UpdateGoalRequest>()
+            when (val outcome = goalService.updateGoal(userId, goalId, request)) {
+                is UpdateGoalOutcome.Updated -> call.respond(HttpStatusCode.OK, outcome.goal)
+                UpdateGoalOutcome.NotFound -> call.respond(HttpStatusCode.NotFound)
+                is UpdateGoalOutcome.Invalid -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("VALIDATION_ERROR", outcome.message)),
+                )
+            }
+        }
+
+        get("/goals/{id}") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@get call.respond(HttpStatusCode.Unauthorized)
+            val goalId = call.parameters["id"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing goal id"))
+            val goal = goalService.getGoal(userId, goalId) ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respond(HttpStatusCode.OK, goal)
+        }
+
+        // Convenience lookup so the client can discover its active goal (and id) after login
+        // without already knowing the goal's id - not in 03_API_CONTRACT.md verbatim, but
+        // required for session-restore to know whether onboarding is truly complete.
+        get("/goals/active") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@get call.respond(HttpStatusCode.Unauthorized)
+            val goal = goalService.getActiveGoal(userId) ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respond(HttpStatusCode.OK, goal)
         }
     }
 }

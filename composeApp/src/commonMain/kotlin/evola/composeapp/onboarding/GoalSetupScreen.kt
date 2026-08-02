@@ -1,0 +1,98 @@
+package evola.composeapp.onboarding
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import evola.shared.goals.Goal
+
+private const val GOAL_TEXT_SOFT_CAP = 200
+
+/** Goal Setup per 01_PRODUCT_SPEC.md §1.4 - freeform text only, no template picker. */
+@Composable
+fun GoalSetupScreen(viewModel: GoalSetupViewModel, onGoalCreated: (Goal) -> Unit) {
+    val isSubmitting by viewModel.isSubmitting.collectAsStateWithLifecycle()
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    var goalText by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf("") }
+    var wasTruncated by remember { mutableStateOf(false) }
+
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text("What are you working toward?", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Describe your goal in your own words - we'll build lessons around it.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Spacer(Modifier.height(24.dp))
+            OutlinedTextField(
+                value = goalText,
+                onValueChange = {
+                    if (it.length > GOAL_TEXT_SOFT_CAP) {
+                        goalText = it.take(GOAL_TEXT_SOFT_CAP)
+                        wasTruncated = true
+                    } else {
+                        goalText = it
+                        wasTruncated = false
+                    }
+                },
+                label = { Text("Your goal") },
+                placeholder = { Text("e.g. Pass the German B1 exam") },
+                enabled = !isSubmitting,
+                minLines = 3,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (wasTruncated) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Goal text is capped at $GOAL_TEXT_SOFT_CAP characters - trimmed to fit.",
+                    color = MaterialTheme.colorScheme.tertiary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = title,
+                onValueChange = { if (it.length <= 60) title = it },
+                label = { Text("Name your journey (optional)") },
+                placeholder = { Text("Leave blank to auto-generate") },
+                enabled = !isSubmitting,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            errorMessage?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+            }
+            Spacer(Modifier.height(24.dp))
+            Button(
+                onClick = { viewModel.createGoal(goalText, title, onGoalCreated) },
+                enabled = !isSubmitting && goalText.trim().length >= 3,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (isSubmitting) "Saving..." else "Start learning")
+            }
+        }
+    }
+}
