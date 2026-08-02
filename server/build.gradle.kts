@@ -19,6 +19,8 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.jbcrypt)
     implementation(libs.anthropic.java)
+    implementation(libs.pdfbox)
+    implementation(libs.poi.ooxml)
     runtimeOnly(libs.slf4j.simple)
 
     testImplementation(libs.ktor.server.test.host)

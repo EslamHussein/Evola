@@ -23,6 +23,7 @@ private const val POLL_INTERVAL_MS = 3000L
 
 /** Polls while the material's status isn't terminal yet, so the UI shows real extraction progress. */
 class MaterialDetailViewModel(
+    private val accessToken: String,
     private val materialId: String,
     private val repository: MaterialsRepository,
 ) : ViewModel() {
@@ -31,10 +32,27 @@ class MaterialDetailViewModel(
     val state: StateFlow<MaterialDetailState> = _state.asStateFlow()
 
     init {
+        pollUntilTerminal()
+    }
+
+    fun retry() {
+        viewModelScope.launch {
+            try {
+                repository.reprocess(accessToken, materialId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Surfaced on the next poll tick if the material is still FAILED.
+            }
+            pollUntilTerminal()
+        }
+    }
+
+    private fun pollUntilTerminal() {
         viewModelScope.launch {
             while (true) {
                 val detail = try {
-                    repository.get(materialId)
+                    repository.get(accessToken, materialId)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -48,7 +49,7 @@ fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit)
             when (val current = state) {
                 is MaterialDetailState.Loading -> CenteredMessage("Loading...")
                 is MaterialDetailState.Error -> CenteredMessage(current.message)
-                is MaterialDetailState.Loaded -> LoadedBody(current.detail)
+                is MaterialDetailState.Loaded -> LoadedBody(current.detail, onRetry = viewModel::retry)
             }
         }
     }
@@ -62,12 +63,21 @@ private fun CenteredMessage(message: String) {
 }
 
 @Composable
-private fun LoadedBody(detail: MaterialDetail) {
+private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit) {
     when (detail.material.status) {
         MaterialStatus.UPLOADED, MaterialStatus.ANALYZING ->
             CenteredMessage("Analyzing \"${detail.material.filename}\"...")
         MaterialStatus.FAILED ->
-            CenteredMessage("Couldn't extract anything from \"${detail.material.filename}\".")
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "We couldn't process \"${detail.material.filename}\".",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = onRetry) { Text("Retry") }
+                }
+            }
         MaterialStatus.NEEDS_REVIEW ->
             CenteredMessage("\"${detail.material.filename}\" needs review.")
         MaterialStatus.ANALYZED -> {

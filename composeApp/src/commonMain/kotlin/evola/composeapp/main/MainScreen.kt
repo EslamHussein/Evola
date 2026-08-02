@@ -109,7 +109,7 @@ fun MainScreen(
 
                 MainTab.MATERIALS -> when (val sub = materialsSubScreen) {
                     MaterialsSubScreen.List -> {
-                        val viewModel = remember { MaterialsListViewModel(user.id, materialsRepository) }
+                        val viewModel = remember { MaterialsListViewModel(accessToken, materialsRepository) }
                         MaterialsListScreen(
                             viewModel = viewModel,
                             onAddMaterial = { materialsSubScreen = MaterialsSubScreen.Add },
@@ -118,7 +118,7 @@ fun MainScreen(
                     }
 
                     MaterialsSubScreen.Add -> {
-                        val viewModel = remember { AddMaterialViewModel(user.id, materialsRepository) }
+                        val viewModel = remember { AddMaterialViewModel(accessToken, goal.id, materialsRepository) }
                         AddMaterialScreen(
                             viewModel = viewModel,
                             onUploaded = { materialId -> materialsSubScreen = MaterialsSubScreen.Detail(materialId) },
@@ -127,7 +127,9 @@ fun MainScreen(
                     }
 
                     is MaterialsSubScreen.Detail -> {
-                        val viewModel = remember(sub.materialId) { MaterialDetailViewModel(sub.materialId, materialsRepository) }
+                        val viewModel = remember(sub.materialId) {
+                            MaterialDetailViewModel(accessToken, sub.materialId, materialsRepository)
+                        }
                         MaterialDetailScreen(viewModel = viewModel, onBack = { materialsSubScreen = MaterialsSubScreen.List })
                     }
                 }

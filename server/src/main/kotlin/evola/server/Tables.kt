@@ -19,10 +19,15 @@ internal object ExtractionCacheTable : Table("extraction_cache") {
 internal object MaterialsTable : Table("materials") {
     val id = uuid("id")
     val userId = uuid("user_id")
+    val goalId = uuid("goal_id")
     val filename = text("filename")
     val contentHash = text("content_hash")
     val extractionCacheId = uuid("extraction_cache_id").nullable()
     val status = text("status")
+    val fileRef = text("file_ref")
+    val mimeType = varchar("mime_type", 100)
+    val sizeBytes = long("size_bytes")
+    val pageCount = integer("page_count").nullable()
     val createdAt = timestamp("created_at")
     override val primaryKey = PrimaryKey(id)
 }

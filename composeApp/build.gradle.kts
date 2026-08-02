@@ -34,6 +34,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.androidx.security.crypto)
+            implementation(libs.androidx.activity.compose)
         }
     }
 }

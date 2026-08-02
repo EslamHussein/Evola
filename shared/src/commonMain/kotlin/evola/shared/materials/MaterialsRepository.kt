@@ -3,24 +3,49 @@ package evola.shared.materials
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
-import io.ktor.client.request.parameter
+import io.ktor.client.request.header
 import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-@Serializable
-data class MaterialUploadResult(val materialId: String, val status: MaterialStatus, val cacheHit: Boolean)
+sealed interface UploadResult {
+    data class Success(val materialId: String, val status: MaterialStatus) : UploadResult
+    data object GoalNotFound : UploadResult
+    data object UnsupportedFileType : UploadResult
+    data object FileTooLarge : UploadResult
+    data object PasswordProtected : UploadResult
+    data object CorruptedFile : UploadResult
+    data object NoExtractableText : UploadResult
+    data class DuplicateFile(val existingMaterialId: String) : UploadResult
+}
 
 interface MaterialsRepository {
-    suspend fun upload(userId: String, filename: String, contentText: String): MaterialUploadResult
-    suspend fun list(userId: String): List<Material>
-    suspend fun get(materialId: String): MaterialDetail
+    suspend fun upload(accessToken: String, goalId: String, fileName: String, mimeType: String, bytes: ByteArray): UploadResult
+    suspend fun list(accessToken: String): List<Material>
+    suspend fun get(accessToken: String, materialId: String): MaterialDetail
+    suspend fun reprocess(accessToken: String, materialId: String): Boolean
 }
+
+@Serializable
+private data class MaterialUploadWireResponse(@SerialName("material_id") val materialId: String, val status: String)
+
+@Serializable
+private data class DuplicateFileWireResponse(@SerialName("existing_material_id") val existingMaterialId: String)
+
+@Serializable
+private data class WireErrorBody(val code: String, val message: String)
+
+@Serializable
+private data class WireErrorResponse(val error: WireErrorBody)
 
 class HttpMaterialsRepository(
     private val baseUrl: String,
@@ -29,20 +54,65 @@ class HttpMaterialsRepository(
     },
 ) : MaterialsRepository {
 
-    @Serializable
-    private data class UploadWireRequest(val userId: String, val filename: String, val contentText: String)
+    override suspend fun upload(
+        accessToken: String,
+        goalId: String,
+        fileName: String,
+        mimeType: String,
+        bytes: ByteArray,
+    ): UploadResult {
+        val response = httpClient.submitFormWithBinaryData(
+            url = "$baseUrl/materials/upload",
+            formData = formData {
+                append("goal_id", goalId)
+                append(
+                    "file",
+                    bytes,
+                    Headers.build {
+                        append(HttpHeaders.ContentType, mimeType)
+                        append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                    },
+                )
+            },
+        ) {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }
 
-    override suspend fun upload(userId: String, filename: String, contentText: String): MaterialUploadResult =
-        httpClient.post("$baseUrl/api/materials") {
-            contentType(ContentType.Application.Json)
-            setBody(UploadWireRequest(userId, filename, contentText))
+        return when (response.status) {
+            HttpStatusCode.Accepted -> {
+                val body = response.body<MaterialUploadWireResponse>()
+                UploadResult.Success(body.materialId, MaterialStatus.valueOf(body.status))
+            }
+            HttpStatusCode.NotFound -> UploadResult.GoalNotFound
+            HttpStatusCode.Conflict -> UploadResult.DuplicateFile(response.body<DuplicateFileWireResponse>().existingMaterialId)
+            HttpStatusCode.BadRequest -> when (response.errorBody().code) {
+                "UNSUPPORTED_FILE_TYPE" -> UploadResult.UnsupportedFileType
+                "FILE_TOO_LARGE" -> UploadResult.FileTooLarge
+                "PASSWORD_PROTECTED" -> UploadResult.PasswordProtected
+                "CORRUPTED_FILE" -> UploadResult.CorruptedFile
+                "NO_EXTRACTABLE_TEXT" -> UploadResult.NoExtractableText
+                else -> error("Upload failed: HTTP ${response.status.value}")
+            }
+            else -> error("Upload failed: HTTP ${response.status.value}")
+        }
+    }
+
+    override suspend fun list(accessToken: String): List<Material> =
+        httpClient.get("$baseUrl/materials") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
         }.body()
 
-    override suspend fun list(userId: String): List<Material> =
-        httpClient.get("$baseUrl/api/materials") {
-            parameter("userId", userId)
+    override suspend fun get(accessToken: String, materialId: String): MaterialDetail =
+        httpClient.get("$baseUrl/materials/$materialId") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
         }.body()
 
-    override suspend fun get(materialId: String): MaterialDetail =
-        httpClient.get("$baseUrl/api/materials/$materialId").body()
+    override suspend fun reprocess(accessToken: String, materialId: String): Boolean {
+        val response = httpClient.post("$baseUrl/materials/$materialId/reprocess") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }
+        return response.status == HttpStatusCode.Accepted
+    }
+
+    private suspend fun HttpResponse.errorBody(): WireErrorBody = body<WireErrorResponse>().error
 }

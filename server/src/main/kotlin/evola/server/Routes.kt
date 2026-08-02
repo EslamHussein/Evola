@@ -1,15 +1,19 @@
 package evola.server
 
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
+import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
+import io.ktor.utils.io.toByteArray
 
 fun Route.healthRoutes() {
     get("/health") {
@@ -18,24 +22,108 @@ fun Route.healthRoutes() {
 }
 
 fun Route.materialRoutes(materialService: MaterialService) {
-    post("/api/materials") {
-        val request = call.receive<UploadMaterialRequest>()
-        val response = materialService.uploadMaterial(request)
-        call.respond(HttpStatusCode.OK, response)
-    }
+    authenticate("auth-jwt") {
+        post("/materials/upload") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@post call.respond(HttpStatusCode.Unauthorized)
 
-    get("/api/materials") {
-        val userId = call.request.queryParameters["userId"]
-            ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing userId query parameter"))
-        call.respond(HttpStatusCode.OK, materialService.listMaterials(userId))
-    }
+            var goalId: String? = null
+            var fileName: String? = null
+            var fileBytes: ByteArray? = null
 
-    get("/api/materials/{id}") {
-        val materialId = call.parameters["id"]
-            ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing material id"))
-        val detail = materialService.getMaterial(materialId)
-            ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Material not found"))
-        call.respond(HttpStatusCode.OK, detail)
+            call.receiveMultipart().forEachPart { part ->
+                when (part) {
+                    is PartData.FormItem -> if (part.name == "goal_id") goalId = part.value
+                    is PartData.FileItem -> {
+                        fileName = part.originalFileName ?: "upload"
+                        fileBytes = part.provider().toByteArray()
+                    }
+                    else -> {}
+                }
+                part.dispose()
+            }
+
+            val goal = goalId
+            val bytes = fileBytes
+            if (goal == null || bytes == null) {
+                return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing goal_id or file"))
+            }
+
+            when (val outcome = materialService.uploadMaterial(userId, goal, fileName ?: "upload", bytes)) {
+                is UploadOutcome.Created -> call.respond(
+                    HttpStatusCode.Accepted,
+                    MaterialUploadResponse(outcome.materialId, outcome.status),
+                )
+                UploadOutcome.GoalNotFound -> call.respond(HttpStatusCode.NotFound, mapOf("error" to "Goal not found"))
+                UploadOutcome.UnsupportedFileType -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("UNSUPPORTED_FILE_TYPE", "Only PDF and DOCX are supported.")),
+                )
+                UploadOutcome.FileTooLarge -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("FILE_TOO_LARGE", "Files must be under 25MB.")),
+                )
+                UploadOutcome.PasswordProtected -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("PASSWORD_PROTECTED", "This PDF is password-protected. Remove the password and try again.")),
+                )
+                UploadOutcome.CorruptedFile -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("CORRUPTED_FILE", "This file couldn't be read. It may be corrupted.")),
+                )
+                UploadOutcome.NoExtractableText -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("NO_EXTRACTABLE_TEXT", "This looks like a scanned file. Upload a text-based PDF or DOCX.")),
+                )
+                is UploadOutcome.DuplicateFile -> call.respond(
+                    HttpStatusCode.Conflict,
+                    DuplicateFileResponse(existingMaterialId = outcome.existingMaterialId),
+                )
+            }
+        }
+
+        get("/materials") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@get call.respond(HttpStatusCode.Unauthorized)
+            call.respond(HttpStatusCode.OK, materialService.listMaterials(userId))
+        }
+
+        get("/materials/{id}") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@get call.respond(HttpStatusCode.Unauthorized)
+            val materialId = call.parameters["id"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing material id"))
+            val detail = materialService.getMaterial(materialId)
+            if (detail == null || detail.material.userId != userId) {
+                return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Material not found"))
+            }
+            call.respond(HttpStatusCode.OK, detail)
+        }
+
+        get("/materials/{id}/status") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@get call.respond(HttpStatusCode.Unauthorized)
+            val materialId = call.parameters["id"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing material id"))
+            val detail = materialService.getMaterial(materialId)
+            if (detail == null || detail.material.userId != userId) {
+                return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Material not found"))
+            }
+            call.respond(HttpStatusCode.OK, MaterialStatusResponse(detail.material.status.name, detail.material.pageCount))
+        }
+
+        post("/materials/{id}/reprocess") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@post call.respond(HttpStatusCode.Unauthorized)
+            val materialId = call.parameters["id"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing material id"))
+            val requeued = materialService.reprocess(userId, materialId)
+            if (requeued) {
+                call.respond(HttpStatusCode.Accepted, mapOf("status" to "queued"))
+            } else {
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Material not found or not currently failed"))
+            }
+        }
     }
 }
 

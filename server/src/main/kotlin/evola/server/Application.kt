@@ -31,10 +31,12 @@ fun main() {
     val anthropicApiKey = requiredEnv("ANTHROPIC_API_KEY")
     val jwtSecret = requiredEnv("JWT_SECRET")
 
+    val uploadsDir = System.getenv("UPLOADS_DIR") ?: "uploads"
+
     val database = DatabaseFactory.connect(databaseUrl, databaseUser, databasePassword)
     val anthropicClient = AnthropicOkHttpClient.builder().apiKey(anthropicApiKey).build()
     val extractionWorker = ExtractionWorker(database, anthropicClient)
-    val materialService = MaterialService(database, onJobQueued = { extractionWorker.wake.trySend(Unit) })
+    val materialService = MaterialService(database, uploadsDir, onJobQueued = { extractionWorker.wake.trySend(Unit) })
     val authService = AuthService(database, jwtSecret)
     val goalService = GoalService(database)
 

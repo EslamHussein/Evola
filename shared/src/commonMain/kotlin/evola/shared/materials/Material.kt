@@ -8,10 +8,14 @@ enum class MaterialStatus { UPLOADED, ANALYZING, ANALYZED, NEEDS_REVIEW, FAILED 
 data class Material(
     val id: String,
     val userId: String,
+    val goalId: String,
     val filename: String,
     val contentHash: String,
     val extractionCacheId: String? = null,
     val status: MaterialStatus,
+    val mimeType: String,
+    val sizeBytes: Long,
+    val pageCount: Int? = null,
 )
 
 @Serializable

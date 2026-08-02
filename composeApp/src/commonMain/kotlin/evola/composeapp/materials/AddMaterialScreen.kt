@@ -8,13 +8,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,38 +35,61 @@ fun AddMaterialScreen(
 ) {
     val isSubmitting by viewModel.isSubmitting.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
-    var filename by remember { mutableStateOf("") }
-    var text by remember { mutableStateOf("") }
+    val duplicateMaterialId by viewModel.duplicateMaterialId.collectAsStateWithLifecycle()
+    var pickedFile by remember { mutableStateOf<PickedFile?>(null) }
+    val launchPicker = rememberFilePicker { pickedFile = it }
+
+    duplicateMaterialId?.let { existingId ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissDuplicatePrompt,
+            title = { Text("Already uploaded") },
+            text = { Text("You've already uploaded this file. Would you like to view it instead?") },
+            confirmButton = {
+                TextButton(onClick = { onUploaded(existingId) }) { Text("View existing material") }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissDuplicatePrompt) { Text("Cancel") }
+            },
+        )
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Add material") }) },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-                OutlinedTextField(
-                    value = filename,
-                    onValueChange = { filename = it },
-                    label = { Text("Filename") },
-                    enabled = !isSubmitting,
-                    modifier = Modifier.fillMaxWidth(),
+                Text(
+                    "Upload a PDF or Word document (up to 25MB). We'll pull the text out and turn it into lessons.",
+                    style = MaterialTheme.typography.bodyMedium,
                 )
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    label = { Text("Paste your material text") },
-                    enabled = !isSubmitting,
-                    minLines = 8,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                Spacer(Modifier.height(16.dp))
+
+                val current = pickedFile
+                if (current == null) {
+                    OutlinedButton(onClick = launchPicker, enabled = !isSubmitting, modifier = Modifier.fillMaxWidth()) {
+                        Text("Choose a PDF or DOCX file")
+                    }
+                } else {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(current.fileName, style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(8.dp))
+                            TextButton(onClick = launchPicker, enabled = !isSubmitting) {
+                                Text("Choose a different file")
+                            }
+                        }
+                    }
+                }
+
                 error?.let {
                     Spacer(Modifier.height(8.dp))
                     Text(it, color = MaterialTheme.colorScheme.error)
                 }
+
                 Spacer(Modifier.height(16.dp))
                 Button(
-                    onClick = { viewModel.submit(filename, text, onUploaded) },
-                    enabled = !isSubmitting && filename.isNotBlank() && text.isNotBlank(),
+                    onClick = { current?.let { viewModel.submit(it, onUploaded) } },
+                    enabled = !isSubmitting && current != null,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(if (isSubmitting) "Uploading..." else "Upload")

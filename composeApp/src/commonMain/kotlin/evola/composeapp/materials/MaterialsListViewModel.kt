@@ -17,7 +17,7 @@ sealed interface MaterialsListState {
 }
 
 class MaterialsListViewModel(
-    private val userId: String,
+    private val accessToken: String,
     private val repository: MaterialsRepository,
 ) : ViewModel() {
 
@@ -32,7 +32,7 @@ class MaterialsListViewModel(
         viewModelScope.launch {
             _state.value = MaterialsListState.Loading
             _state.value = try {
-                MaterialsListState.Loaded(repository.list(userId))
+                MaterialsListState.Loaded(repository.list(accessToken))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

@@ -109,22 +109,56 @@ confirmed login correctly skips onboarding and lands on Home with the persisted 
 
 ---
 
-## M3 — Material Upload rebuild
+## M3 — Material Upload rebuild ✅ done
 
 Goal: replace the current paste-text stopgap with the spec's real upload flow.
 
 **Backend**
-- [ ] Real multipart `POST /materials/upload` (`file`, `goal_id`) — local disk storage
-- [ ] Server-side MIME validation (not extension-based): PDF/DOCX only
-- [ ] 25MB size cap
-- [ ] Content-hash duplicate detection surfaced to the user (reprocess-or-skip prompt)
-- [ ] Corrupted/password-protected/scanned-no-text rejection before queueing
-- [ ] `GET /materials/{id}/status`, `POST /materials/{id}/reprocess`
+- [x] Real multipart `POST /materials/upload` (`file`, `goal_id`) — local disk storage
+      (`uploads/<material-id>.{pdf,docx}`, path configurable via `UPLOADS_DIR`)
+- [x] Server-side MIME validation from file content (magic bytes), never the client's declared
+      type or extension — PDF via `%PDF-` header, DOCX via zip-with-`word/document.xml` check
+- [x] 25MB size cap
+- [x] Content-hash duplicate detection, scoped per-user (not global) — returns 409 with
+      `existing_material_id`, client shows a "view existing material?" prompt
+- [x] Corrupted/password-protected/no-extractable-text all rejected before queueing, each with
+      its own error code (`PASSWORD_PROTECTED`, `CORRUPTED_FILE`, `NO_EXTRACTABLE_TEXT` — the
+      latter two aren't in the kit's literal contract but the spec's own edge cases require
+      distinguishable messaging for them)
+- [x] `GET /materials/{id}/status` (status + page count — true live page-by-page progress
+      tracking for very large files is *not* implemented, scoped out same as the spec's own
+      "not designed yet" admission for that edge case), `POST /materials/{id}/reprocess`
+- [x] All materials routes now authenticated (JWT) + ownership-checked — closes a pre-existing
+      gap where `/api/materials` had no auth at all
+- [x] `materials.goal_id`/`file_ref`/`mime_type`/`size_bytes`/`page_count` added via
+      `V6__materials_goal_linkage_and_file_metadata.sql` (deferred from M1 by design)
+- [x] 10 new `MaterialServiceTest` cases using real generated PDF/DOCX bytes (PDFBox/POI) —
+      valid upload, unsupported type, oversized, no-extractable-text, goal ownership, per-user
+      duplicate detection, cross-user non-conflict, listing scoping, reprocess gating — 38/38
+      tests passing project-wide
 
 **Mobile**
-- [ ] Real file picker → multipart upload (not text paste)
-- [ ] Upload progress screen, resumable on nav-away for large files
-- [ ] Processing-failed screen (retry / re-upload, scanned-PDF-specific messaging)
+- [x] Real file picker (`expect`/`actual`, Android via `ActivityResultContracts.OpenDocument`
+      restricted to PDF/DOCX MIME types; iOS deferred with a placeholder, same precedent as
+      `SessionStorage.ios.kt`) → real multipart upload, not text paste
+- [x] Add Material screen rewritten: pick file → shows filename → upload, with distinct error
+      messages per rejection reason and a duplicate-file dialog (view existing / cancel)
+- [x] Material Detail screen adds a Retry button on the failed state, wired to
+      `POST /materials/{id}/reprocess`
+- [ ] *(Not implemented: resumable upload progress for very large files — same scoped-out
+      "300+ page book" edge case as the status-progress field above)*
+
+**Verified live end-to-end on the Android emulator** against the real local dev server (files
+pushed onto the emulator via adb + media-scanner broadcast so the system picker could see them):
+register → onboarding → goal → Materials tab → real system file picker (correctly filtered to
+PDF/DOCX only) → pick a real DOCX → upload → live "Analyzing..." status → polls to completion →
+real extracted vocabulary and grammar rendered from the real Anthropic API call. Server-side also
+verified directly via curl with real PDF and DOCX files (generated via macOS `cupsfilter`/
+`textutil`): upload, status, detail, list, duplicate-rejection (409 + existing id), unsupported-
+type rejection, and unauthenticated-request rejection (401) all behaved exactly as designed.
+
+Deployed to production: `:server:installDist` synced to `/opt/evola-server`, service restarted,
+V6 migration applied automatically on boot.
 
 ---
 
