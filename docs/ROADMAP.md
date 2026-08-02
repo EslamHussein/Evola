@@ -98,10 +98,14 @@ sign out → log back in skips onboarding entirely and lands on Home with the pe
 goal. Auto-login (from the earlier session-persistence work) and onboarding-gating confirmed
 working together correctly on a killed-and-relaunched app too.
 
-> **Blocked, needs your input:** `ssh root@46.224.177.47` still returns `Permission denied
-> (publickey,password)` in this session — same as earlier. M2 has **not** been deployed to
-> Hetzner yet; the production server is still running the pre-M2 build. Either share working
-> SSH access or redeploy it yourself before M3 needs the live server again.
+**Deployed to production (2026-08-02).** SSH access was restored (the key on file didn't match
+any key on this machine — fixed via Hetzner rescue mode: injected a fresh key, mounted the real
+disk, added it to `authorized_keys`, rebooted back to normal). `:server:installDist` output was
+synced to `/opt/evola-server/{bin,lib}` and the `evola-server` systemd service restarted; Flyway
+applied migration v5 automatically on boot. Verified live: curl smoke test of the full
+register → create-goal → get-active-goal → users/me flow against
+`https://46-224-177-47.sslip.io`, then a fresh Android install (pointed at production, not local)
+confirmed login correctly skips onboarding and lands on Home with the persisted goal.
 
 ---
 
