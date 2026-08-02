@@ -52,14 +52,18 @@ unused until their own milestone — avoids incremental migrations mid-build (th
 > recreate `goals` with the kit's real shape (`goal_text`, `title`, `is_active`), and drop
 > `mastery_scores`/`study_plans` outright — nothing downstream uses them.
 
-- [ ] `DROP TABLE` the old `goals`, `mastery_scores`, `study_plans` (exam-readiness model, superseded)
-- [ ] `goals` table, kit shape (+ unique partial index enforcing one active goal per user)
-- [ ] `lessons` table
-- [ ] `vocabulary_items`, `vocabulary_progress`, `vocabulary_sessions` tables
-- [ ] `grammar_topics`, `grammar_exercises`, `grammar_progress`, `grammar_sessions` tables
-- [ ] `daily_activity` table
-- [ ] Extend `Tables.kt` with matching Exposed table objects for all of the above
-- [ ] Verify migration applies cleanly against the local dev Postgres
+- [x] `DROP TABLE` the old `goals`, `mastery_scores`, `study_plans` (exam-readiness model, superseded)
+- [x] `goals` table, kit shape (+ unique partial index enforcing one active goal per user)
+- [x] `lessons` table
+- [x] `vocabulary_items`, `vocabulary_progress`, `vocabulary_sessions` tables
+- [x] `grammar_topics`, `grammar_exercises`, `grammar_progress`, `grammar_sessions` tables
+- [x] `daily_activity` table
+- [x] Extend `Tables.kt` with matching Exposed table objects for all of the above
+- [x] Verify migration applies cleanly — confirmed against both the `evola_test` test database
+      and the real local dev `evola` database (server boots, Flyway applies v5, `/health` OK,
+      18 tables present, no data loss on the 6 pre-existing test users/materials)
+- [ ] *(Deferred to M3 by design — not part of this migration): `materials.goal_id` linkage,*
+      *added when the real upload flow needs it, to keep this migration scoped to net-new tables*
 
 ---
 
