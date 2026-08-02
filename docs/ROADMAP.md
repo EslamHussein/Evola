@@ -27,10 +27,15 @@ model and one mastery model in the repo, not two conflicting ones.
       any live auth/materials code
 - [x] Verify full build still compiles: `:server`, `:shared` (jvm + iosSimulatorArm64),
       `:composeApp` (android) — all green
-- [ ] Commit the cleanup (**holding — not committed yet, waiting on your go-ahead**)
-- [ ] Add a minimal CI workflow (build + test on push)
-- [ ] Add first automated tests for `AuthService` (register/login/lockout/refresh/logout) and
-      `MaterialService` — currently zero automated coverage on any live module
+- [x] Commit the cleanup
+- [x] Add a minimal CI workflow (build + test on push, `.github/workflows/ci.yml`) — Postgres
+      service container on GitHub Actions, compiles `:server`/`:shared`/`:composeApp` (android),
+      runs `:server` tests. iOS not covered (needs a macOS runner — deferred with iOS generally)
+- [x] Add first automated tests for `AuthService` (10 tests: register, duplicate email, weak
+      password, login success/failure, lockout at 5 fails, window-expiry reset, password reset
+      confirm success/expired-token, refresh/logout) and `MaterialService` (3 tests: new upload
+      queues a job, duplicate normalized content dedupes to one job, per-user material listing) —
+      all 13 passing against a real Postgres running the actual Flyway migrations
 
 ---
 
@@ -39,7 +44,16 @@ model and one mastery model in the repo, not two conflicting ones.
 Goal: bring in the complete remaining schema in one migration, even though most tables stay
 unused until their own milestone — avoids incremental migrations mid-build (the kit's own advice).
 
-- [ ] `goals` table (+ unique partial index enforcing one active goal per user)
+> **Discovered while writing M0 tests:** `V1__init.sql` already created an old `goals` table
+> (`exam_type`, `target_date`, `readiness_overall`, `readiness_by_skill`) plus orphaned
+> `mastery_scores` and `study_plans` tables — the same abandoned exam-readiness model as the
+> `Goal.kt` deleted in M0, but on the **live DB schema**, not just in Kotlin. Only throwaway test
+> data exists in these tables (confirmed via local dev Postgres), so M1 needs to `DROP` and
+> recreate `goals` with the kit's real shape (`goal_text`, `title`, `is_active`), and drop
+> `mastery_scores`/`study_plans` outright — nothing downstream uses them.
+
+- [ ] `DROP TABLE` the old `goals`, `mastery_scores`, `study_plans` (exam-readiness model, superseded)
+- [ ] `goals` table, kit shape (+ unique partial index enforcing one active goal per user)
 - [ ] `lessons` table
 - [ ] `vocabulary_items`, `vocabulary_progress`, `vocabulary_sessions` tables
 - [ ] `grammar_topics`, `grammar_exercises`, `grammar_progress`, `grammar_sessions` tables
