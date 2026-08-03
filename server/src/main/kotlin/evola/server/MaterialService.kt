@@ -48,6 +48,9 @@ data class MaterialTextUploadRequest(
     @SerialName("goal_id") val goalId: String,
     @SerialName("file_name") val fileName: String,
     val text: String,
+    @SerialName("organization_mode") val organizationMode: String? = null,
+    @SerialName("ai_instructions") val aiInstructions: String? = null,
+    @SerialName("resource_type") val resourceType: String? = null,
 )
 
 @Serializable
@@ -75,7 +78,15 @@ class MaterialService(
     private val onVocabJobQueued: () -> Unit = {},
 ) {
 
-    suspend fun uploadMaterial(userId: String, goalId: String, fileName: String, bytes: ByteArray): UploadOutcome {
+    suspend fun uploadMaterial(
+        userId: String,
+        goalId: String,
+        fileName: String,
+        bytes: ByteArray,
+        organizationMode: String = "auto",
+        aiInstructions: String? = null,
+        resourceType: String? = null,
+    ): UploadOutcome {
         if (bytes.size > MAX_FILE_SIZE_BYTES) return UploadOutcome.FileTooLarge
 
         val mimeType = FileTextExtractor.detectMimeType(bytes) ?: return UploadOutcome.UnsupportedFileType
@@ -93,13 +104,21 @@ class MaterialService(
             FileParseOutcome.PasswordProtected -> return UploadOutcome.PasswordProtected
             FileParseOutcome.Corrupted -> return UploadOutcome.CorruptedFile
         }
-        return finishUpload(userUuid, goalUuid, fileName, mimeType, bytes, text, pageCount)
+        return finishUpload(userUuid, goalUuid, fileName, mimeType, bytes, text, pageCount, organizationMode, aiInstructions, resourceType)
     }
 
     /** Real ingestion for the Add Resource redesign's "Text" type - the pasted text IS the
      * content, so this skips MIME sniffing/PDFBox/POI entirely and rejoins the same
      * dedup/cache-hit pipeline [uploadMaterial] uses, from normalization onward. */
-    suspend fun uploadTextMaterial(userId: String, goalId: String, fileName: String, text: String): UploadOutcome {
+    suspend fun uploadTextMaterial(
+        userId: String,
+        goalId: String,
+        fileName: String,
+        text: String,
+        organizationMode: String = "auto",
+        aiInstructions: String? = null,
+        resourceType: String? = null,
+    ): UploadOutcome {
         if (text.length > MAX_PASTED_TEXT_LENGTH) return UploadOutcome.FileTooLarge
 
         val userUuid = UUID.fromString(userId)
@@ -110,13 +129,15 @@ class MaterialService(
         if (!goalOwned) return UploadOutcome.GoalNotFound
 
         val bytes = text.toByteArray(Charsets.UTF_8)
-        return finishUpload(userUuid, goalUuid, fileName, MIME_TEXT_PLAIN, bytes, text, pageCount = null)
+        return finishUpload(userUuid, goalUuid, fileName, MIME_TEXT_PLAIN, bytes, text, pageCount = null, organizationMode, aiInstructions, resourceType)
     }
 
-    /** Shared tail of both upload entry points: normalize/hash/dedup/cache-hit-or-queue, and
-     * persist. [rawText] is stored verbatim in [ExtractionJobsTable.contentText] (matching the
-     * existing convention of storing extracted-not-normalized text), while [normalize]d text is
-     * what gets hashed and length-checked. */
+    /** Shared tail of both upload entry points: normalize/hash/dedup, then either materialize a
+     * single "entire document" lesson synchronously ([organizationMode] == "entire") or fall back
+     * to the existing cache-hit-or-queue segmentation pipeline ("auto", the default - unchanged
+     * behavior). [rawText] is stored verbatim (matching the existing convention of storing
+     * extracted-not-normalized text), while [normalize]d text is what gets hashed and
+     * length-checked. */
     private suspend fun finishUpload(
         userUuid: UUID,
         goalUuid: UUID,
@@ -125,6 +146,9 @@ class MaterialService(
         fileBytes: ByteArray,
         rawText: String,
         pageCount: Int?,
+        organizationMode: String,
+        aiInstructions: String?,
+        resourceType: String?,
     ): UploadOutcome {
         val normalizedText = normalize(rawText)
         if (normalizedText.length < MIN_EXTRACTABLE_LENGTH) return UploadOutcome.NoExtractableText
@@ -144,6 +168,46 @@ class MaterialService(
             val materialId = UUID.randomUUID()
             val now = Instant.now()
             val fileRef = saveToDisk(materialId, mimeType, fileBytes)
+
+            if (organizationMode == "entire") {
+                MaterialsTable.insert {
+                    it[id] = materialId
+                    it[this.userId] = userUuid
+                    it[this.goalId] = goalUuid
+                    it[filename] = fileName
+                    it[this.contentHash] = contentHash
+                    it[status] = "READY"
+                    it[this.fileRef] = fileRef
+                    it[this.mimeType] = mimeType
+                    it[sizeBytes] = fileBytes.size.toLong()
+                    it[this.pageCount] = pageCount
+                    it[this.organizationMode] = organizationMode
+                    it[this.aiInstructions] = aiInstructions
+                    it[this.resourceType] = resourceType
+                    it[this.contentText] = rawText
+                    it[createdAt] = now
+                }
+                val lessonId = UUID.randomUUID()
+                LessonsTable.insert {
+                    it[id] = lessonId
+                    it[this.materialId] = materialId
+                    it[this.goalId] = goalUuid
+                    it[number] = 1
+                    it[title] = fileName.take(150)
+                    it[status] = "pending"
+                    it[sourceTextRef] = "0:${rawText.length}"
+                    it[createdAt] = now
+                }
+                VocabularyExtractionJobsTable.insert {
+                    it[id] = UUID.randomUUID()
+                    it[this.lessonId] = lessonId
+                    it[status] = "QUEUED"
+                    it[createdAt] = now
+                    it[updatedAt] = now
+                }
+                queuedVocabJobs = true
+                return@newSuspendedTransaction UploadOutcome.Created(materialId.toString(), "READY")
+            }
 
             val cacheRow = ExtractionCacheTable
                 .selectAll().where { ExtractionCacheTable.contentHash eq contentHash }
@@ -165,6 +229,9 @@ class MaterialService(
                 it[this.mimeType] = mimeType
                 it[sizeBytes] = fileBytes.size.toLong()
                 it[this.pageCount] = pageCount
+                it[this.organizationMode] = organizationMode
+                it[this.aiInstructions] = aiInstructions
+                it[this.resourceType] = resourceType
                 it[createdAt] = now
             }
 

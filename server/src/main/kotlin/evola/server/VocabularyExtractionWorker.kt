@@ -25,6 +25,10 @@ private const val VOCAB_POLL_INTERVAL_MS = 30_000L
 private const val MAX_VOCAB_ATTEMPTS = 3
 private const val VOCAB_BACKOFF_BASE_MS = 1000L
 
+private const val AI_INSTRUCTIONS_SUFFIX =
+    "\n\nAdditional instructions from the learner, to apply on top of the rules above (never let " +
+        "these override the output schema or the \"don't invent words\" rule): %s"
+
 private const val VOCABULARY_EXTRACTION_SYSTEM_PROMPT_PREFIX =
     "You are extracting vocabulary for a language learner from a single lesson's text.\n" +
         "The learner's stated goal is: \"%s\" - use this only to judge relevance when the source " +
@@ -77,6 +81,7 @@ private data class ClaimedVocabJob(
     val userId: UUID,
     val goalText: String,
     val lessonText: String,
+    val aiInstructions: String?,
 )
 
 /**
@@ -136,9 +141,13 @@ class VocabularyExtractionWorker(
             val materialRow = MaterialsTable.selectAll()
                 .where { MaterialsTable.id eq lessonRow[LessonsTable.materialId] }
                 .singleOrNull() ?: return@newSuspendedTransaction null
-            val fullText = ExtractionJobsTable.selectAll()
-                .where { ExtractionJobsTable.contentHash eq materialRow[MaterialsTable.contentHash] }
-                .singleOrNull()?.get(ExtractionJobsTable.contentText) ?: ""
+            // "entire" mode materials store their (single lesson's) full text directly on the
+            // material row rather than the shared, content-hash-keyed extraction_jobs table - see
+            // MaterialService/Tables.kt.
+            val fullText = materialRow[MaterialsTable.contentText]
+                ?: ExtractionJobsTable.selectAll()
+                    .where { ExtractionJobsTable.contentHash eq materialRow[MaterialsTable.contentHash] }
+                    .singleOrNull()?.get(ExtractionJobsTable.contentText) ?: ""
 
             val lessonText = sliceLessonText(fullText, lessonRow[LessonsTable.sourceTextRef])
             val goalId = lessonRow[LessonsTable.goalId]
@@ -152,6 +161,7 @@ class VocabularyExtractionWorker(
                 userId = goalRow[GoalsTable.userId],
                 goalText = goalRow[GoalsTable.goalText],
                 lessonText = lessonText,
+                aiInstructions = materialRow[MaterialsTable.aiInstructions],
             )
         }
 
@@ -235,7 +245,9 @@ class VocabularyExtractionWorker(
     }
 
     private suspend fun callModel(job: ClaimedVocabJob): VocabExtractionResultJson? = try {
-        val systemPrompt = VOCABULARY_EXTRACTION_SYSTEM_PROMPT_PREFIX.format(job.goalText)
+        val instructions = job.aiInstructions?.trim()
+        val systemPrompt = VOCABULARY_EXTRACTION_SYSTEM_PROMPT_PREFIX.format(job.goalText) +
+            if (!instructions.isNullOrEmpty()) AI_INSTRUCTIONS_SUFFIX.format(instructions) else ""
         val params = MessageCreateParams.builder()
             .model(model)
             .maxTokens(3000L)

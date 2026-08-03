@@ -30,10 +30,18 @@ fun Route.materialRoutes(materialService: MaterialService) {
             var goalId: String? = null
             var fileName: String? = null
             var fileBytes: ByteArray? = null
+            var organizationMode: String? = null
+            var aiInstructions: String? = null
+            var resourceType: String? = null
 
             call.receiveMultipart().forEachPart { part ->
                 when (part) {
-                    is PartData.FormItem -> if (part.name == "goal_id") goalId = part.value
+                    is PartData.FormItem -> when (part.name) {
+                        "goal_id" -> goalId = part.value
+                        "organization_mode" -> organizationMode = part.value
+                        "ai_instructions" -> aiInstructions = part.value
+                        "resource_type" -> resourceType = part.value
+                    }
                     is PartData.FileItem -> {
                         fileName = part.originalFileName ?: "upload"
                         fileBytes = part.provider().toByteArray()
@@ -49,7 +57,14 @@ fun Route.materialRoutes(materialService: MaterialService) {
                 return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing goal_id or file"))
             }
 
-            when (val outcome = materialService.uploadMaterial(userId, goal, fileName ?: "upload", bytes)) {
+            when (
+                val outcome = materialService.uploadMaterial(
+                    userId, goal, fileName ?: "upload", bytes,
+                    organizationMode = organizationMode ?: "auto",
+                    aiInstructions = aiInstructions,
+                    resourceType = resourceType,
+                )
+            ) {
                 is UploadOutcome.Created -> call.respond(
                     HttpStatusCode.Accepted,
                     MaterialUploadResponse(outcome.materialId, outcome.status),
@@ -87,7 +102,14 @@ fun Route.materialRoutes(materialService: MaterialService) {
                 ?: return@post call.respond(HttpStatusCode.Unauthorized)
             val request = call.receive<MaterialTextUploadRequest>()
 
-            when (val outcome = materialService.uploadTextMaterial(userId, request.goalId, request.fileName, request.text)) {
+            when (
+                val outcome = materialService.uploadTextMaterial(
+                    userId, request.goalId, request.fileName, request.text,
+                    organizationMode = request.organizationMode ?: "auto",
+                    aiInstructions = request.aiInstructions,
+                    resourceType = request.resourceType,
+                )
+            ) {
                 is UploadOutcome.Created -> call.respond(
                     HttpStatusCode.Accepted,
                     MaterialUploadResponse(outcome.materialId, outcome.status),

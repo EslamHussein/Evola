@@ -130,6 +130,56 @@ class MaterialServiceTest {
     }
 
     @Test
+    fun `organization_mode 'entire' materializes exactly one lesson synchronously with no extraction job`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val outcome = materialService.uploadMaterial(
+            userId, goalId, "book.pdf", samplePdfBytes(),
+            organizationMode = "entire",
+        )
+
+        assertIs<UploadOutcome.Created>(outcome)
+        assertEquals("READY", outcome.status)
+        assertEquals(0, queuedJobs)
+
+        val lessons = transaction(database) { LessonsTable.selectAll().toList() }
+        assertEquals(1, lessons.size)
+        assertEquals("book.pdf", lessons.single()[LessonsTable.title])
+
+        val extractionJobs = transaction(database) { ExtractionJobsTable.selectAll().count() }
+        assertEquals(0, extractionJobs)
+
+        val vocabJobs = transaction(database) { VocabularyExtractionJobsTable.selectAll().count() }
+        assertEquals(1, vocabJobs)
+    }
+
+    @Test
+    fun `organization_mode and ai_instructions are persisted on the material row`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        materialService.uploadMaterial(
+            userId, goalId, "book.pdf", samplePdfBytes(),
+            organizationMode = "auto",
+            aiInstructions = "Focus on food vocabulary",
+            resourceType = "book",
+        )
+
+        val stored = transaction(database) { MaterialsTable.selectAll().single() }
+        assertEquals("auto", stored[MaterialsTable.organizationMode])
+        assertEquals("Focus on food vocabulary", stored[MaterialsTable.aiInstructions])
+        assertEquals("book", stored[MaterialsTable.resourceType])
+    }
+
+    @Test
+    fun `uploading without organization_mode defaults to auto (regression)`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val outcome = materialService.uploadMaterial(userId, goalId, "book.pdf", samplePdfBytes())
+
+        assertIs<UploadOutcome.Created>(outcome)
+        assertEquals("UPLOADED", outcome.status)
+        val stored = transaction(database) { MaterialsTable.selectAll().single() }
+        assertEquals("auto", stored[MaterialsTable.organizationMode])
+    }
+
+    @Test
     fun `uploading pasted text succeeds and queues an extraction job`() = runTest {
         val (userId, goalId) = registerUserWithGoal()
         val outcome = materialService.uploadTextMaterial(

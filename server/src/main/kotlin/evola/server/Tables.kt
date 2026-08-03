@@ -26,6 +26,18 @@ internal object MaterialsTable : Table("materials") {
     val mimeType = varchar("mime_type", 100)
     val sizeBytes = long("size_bytes")
     val pageCount = integer("page_count").nullable()
+    /** "auto" (default, LLM/heuristic segmentation via the shared extraction_jobs/extraction_cache
+     * pipeline) or "entire" (one synthetic lesson spanning the whole document, materialized
+     * synchronously at upload time - see [MaterialService]). "manual" is visually offered by the
+     * AI Wizard but not yet backed - never actually stored here. */
+    val organizationMode = varchar("organization_mode", 20)
+    val aiInstructions = text("ai_instructions").nullable()
+    val resourceType = varchar("resource_type", 30).nullable()
+    /** Only populated for "entire" mode materials - their single lesson's full text, stored here
+     * rather than the shared (content-hash-keyed) extraction_jobs table since that table is a
+     * cross-user/cross-material cache and an "entire" upload's per-material lesson-splitting
+     * choice isn't a property of the content itself. */
+    val contentText = text("content_text").nullable()
     val createdAt = timestamp("created_at")
     override val primaryKey = PrimaryKey(id)
 }
