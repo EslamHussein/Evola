@@ -161,8 +161,8 @@ class MaterialServiceTest {
         assertIs<UploadOutcome.Created>(first)
         assertIs<UploadOutcome.Created>(second)
         assertNotEquals(first.materialId, second.materialId)
-        // No ExtractionWorker is running in this test, so there's no cache hit yet - but the
-        // second upload still shouldn't queue a redundant job for the same content hash.
+        // No LessonSegmentationWorker is running in this test, so there's no cache hit yet - but
+        // the second upload still shouldn't queue a redundant job for the same content hash.
         assertEquals(1, queuedJobs)
         assertEquals("UPLOADED", second.status)
     }

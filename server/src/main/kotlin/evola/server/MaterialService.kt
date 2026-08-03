@@ -1,12 +1,9 @@
 package evola.server
 
-import evola.shared.materials.ExtractionCache
-import evola.shared.materials.Exercise
-import evola.shared.materials.GrammarRule
+import evola.shared.materials.Lesson
 import evola.shared.materials.Material
 import evola.shared.materials.MaterialDetail
 import evola.shared.materials.MaterialStatus
-import evola.shared.materials.VocabItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -14,6 +11,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -56,8 +54,8 @@ data class DuplicateFileResponse(
  * Material Upload rebuild (01_PRODUCT_SPEC.md §1.5): real PDF/DOCX files, MIME-sniffed from
  * content (never trusted from the client's declared type or file extension), 25MB cap, per-user
  * duplicate detection by content hash, stored on local disk. Text extraction happens here so
- * [ExtractionWorker] keeps working on plain text exactly as before - only how that text gets
- * produced changed.
+ * [LessonSegmentationWorker] keeps working on plain text exactly as before - only how that text
+ * gets produced changed.
  */
 class MaterialService(
     private val database: Database,
@@ -101,10 +99,14 @@ class MaterialService(
             val now = Instant.now()
             val fileRef = saveToDisk(materialId, mimeType, bytes)
 
-            val cachedId = ExtractionCacheTable
+            val cacheRow = ExtractionCacheTable
                 .selectAll().where { ExtractionCacheTable.contentHash eq contentHash }
-                .singleOrNull()?.get(ExtractionCacheTable.id)
-            val status = if (cachedId != null) "ANALYZED" else "UPLOADED"
+                .singleOrNull()
+            val status = when {
+                cacheRow == null -> "UPLOADED"
+                cacheRow[ExtractionCacheTable.unsupportedContent] -> "UNSUPPORTED_CONTENT"
+                else -> "READY"
+            }
 
             MaterialsTable.insert {
                 it[id] = materialId
@@ -112,7 +114,6 @@ class MaterialService(
                 it[this.goalId] = goalUuid
                 it[filename] = fileName
                 it[this.contentHash] = contentHash
-                it[extractionCacheId] = cachedId
                 it[this.status] = status
                 it[this.fileRef] = fileRef
                 it[this.mimeType] = mimeType
@@ -121,7 +122,7 @@ class MaterialService(
                 it[createdAt] = now
             }
 
-            if (cachedId == null) {
+            if (cacheRow == null) {
                 val alreadyQueued = ExtractionJobsTable.selectAll().where { ExtractionJobsTable.contentHash eq contentHash }.any()
                 if (!alreadyQueued) {
                     ExtractionJobsTable.insert {
@@ -134,6 +135,8 @@ class MaterialService(
                     }
                     queuedNewJob = true
                 }
+            } else if (status == "READY") {
+                materializeLessons(materialId, goalUuid, cacheRow[ExtractionCacheTable.segments])
             }
 
             UploadOutcome.Created(materialId.toString(), status)
@@ -143,8 +146,9 @@ class MaterialService(
         return outcome
     }
 
-    /** Re-queues a failed material's extraction job. Returns false if the material isn't the
-     * caller's, doesn't exist, or isn't currently in a failed state. */
+    /** Re-queues a failed material's segmentation job - resumes from `failed_ranges` only (the
+     * chunks that didn't make it), keeping any lessons already generated from succeeded chunks.
+     * Returns false if the material isn't the caller's, doesn't exist, or isn't currently failed. */
     suspend fun reprocess(userId: String, materialId: String): Boolean {
         val requeued = newSuspendedTransaction(Dispatchers.IO, database) {
             val materialUuid = UUID.fromString(materialId)
@@ -177,20 +181,37 @@ class MaterialService(
 
     suspend fun getMaterial(materialId: String): MaterialDetail? =
         newSuspendedTransaction(Dispatchers.IO, database) {
+            val materialUuid = UUID.fromString(materialId)
             val row = MaterialsTable
-                .selectAll().where { MaterialsTable.id eq UUID.fromString(materialId) }
+                .selectAll().where { MaterialsTable.id eq materialUuid }
                 .singleOrNull() ?: return@newSuspendedTransaction null
 
-            val material = row.toMaterial()
-            val extraction = material.extractionCacheId?.let { cacheId ->
-                ExtractionCacheTable
-                    .selectAll().where { ExtractionCacheTable.id eq UUID.fromString(cacheId) }
-                    .singleOrNull()
-                    ?.toExtractionCache()
-            }
+            val lessons = LessonsTable
+                .selectAll().where { LessonsTable.materialId eq materialUuid }
+                .orderBy(LessonsTable.number, SortOrder.ASC)
+                .map { it.toLesson() }
 
-            MaterialDetail(material = material, extraction = extraction)
+            MaterialDetail(material = row.toMaterial(), lessons = lessons)
         }
+
+    /** Cache-hit upload fast path: another material with this exact content already has a
+     * segmentation result, so materialize this material's own lesson rows immediately instead of
+     * queuing a job (same content-hash dedup the old single-shot pipeline used). */
+    private fun materializeLessons(materialId: UUID, goalId: UUID, segmentsJson: String) {
+        val segments = MATERIALS_JSON.decodeFromString(ListSerializer(RawSegmentJson.serializer()), segmentsJson)
+        segments.forEachIndexed { index, segment ->
+            LessonsTable.insert {
+                it[id] = UUID.randomUUID()
+                it[this.materialId] = materialId
+                it[this.goalId] = goalId
+                it[number] = index + 1
+                it[title] = segment.title.take(150)
+                it[status] = "pending"
+                it[sourceTextRef] = "${segment.startOffset}:${segment.endOffset}"
+                it[createdAt] = Instant.now()
+            }
+        }
+    }
 
     private fun saveToDisk(materialId: UUID, mimeType: String, bytes: ByteArray): String {
         val extension = if (mimeType == MIME_PDF) "pdf" else "docx"
@@ -206,21 +227,19 @@ class MaterialService(
         goalId = this[MaterialsTable.goalId].toString(),
         filename = this[MaterialsTable.filename],
         contentHash = this[MaterialsTable.contentHash],
-        extractionCacheId = this[MaterialsTable.extractionCacheId]?.toString(),
         status = MaterialStatus.valueOf(this[MaterialsTable.status]),
         mimeType = this[MaterialsTable.mimeType],
         sizeBytes = this[MaterialsTable.sizeBytes],
         pageCount = this[MaterialsTable.pageCount],
     )
 
-    private fun ResultRow.toExtractionCache() = ExtractionCache(
-        id = this[ExtractionCacheTable.id].toString(),
-        contentHash = this[ExtractionCacheTable.contentHash],
-        vocabulary = MATERIALS_JSON.decodeFromString(ListSerializer(VocabItem.serializer()), this[ExtractionCacheTable.vocabulary]),
-        grammar = MATERIALS_JSON.decodeFromString(ListSerializer(GrammarRule.serializer()), this[ExtractionCacheTable.grammar]),
-        exercises = MATERIALS_JSON.decodeFromString(ListSerializer(Exercise.serializer()), this[ExtractionCacheTable.exercises]),
-        confidence = this[ExtractionCacheTable.confidence],
-        modelVersion = this[ExtractionCacheTable.modelVersion],
+    private fun ResultRow.toLesson() = Lesson(
+        id = this[LessonsTable.id].toString(),
+        materialId = this[LessonsTable.materialId].toString(),
+        goalId = this[LessonsTable.goalId].toString(),
+        number = this[LessonsTable.number],
+        title = this[LessonsTable.title],
+        status = this[LessonsTable.status],
     )
 
     private fun normalize(text: String): String = text.trim().replace(Regex("\\s+"), " ")

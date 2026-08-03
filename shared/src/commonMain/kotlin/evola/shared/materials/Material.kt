@@ -2,7 +2,7 @@ package evola.shared.materials
 
 import kotlinx.serialization.Serializable
 
-enum class MaterialStatus { UPLOADED, ANALYZING, ANALYZED, NEEDS_REVIEW, FAILED }
+enum class MaterialStatus { UPLOADED, PROCESSING, READY, UNSUPPORTED_CONTENT, FAILED }
 
 @Serializable
 data class Material(
@@ -11,49 +11,27 @@ data class Material(
     val goalId: String,
     val filename: String,
     val contentHash: String,
-    val extractionCacheId: String? = null,
     val status: MaterialStatus,
     val mimeType: String,
     val sizeBytes: Long,
     val pageCount: Int? = null,
 )
 
+/** Mirrors the DB's `lesson_status` enum ("pending" | "ready" | "failed"). M4 only ever creates
+ * lessons as "pending" - M6/M7 are what later flip a lesson to "ready" once it has real
+ * vocabulary/grammar content. */
 @Serializable
-data class VocabItem(val term: String, val translation: String, val exampleSentence: String? = null)
-
-@Serializable
-data class GrammarRule(val topic: String, val explanation: String)
-
-@Serializable
-data class Exercise(val kind: String, val prompt: String, val answerKey: String)
-
-/**
- * Shared across all users by contentHash — the Nth person to upload a popular textbook costs
- * nothing to extract (see ExtractionJob / the content-hash dedup cache in :server).
- */
-@Serializable
-data class ExtractionCache(
+data class Lesson(
     val id: String,
-    val contentHash: String,
-    val vocabulary: List<VocabItem>,
-    val grammar: List<GrammarRule>,
-    val exercises: List<Exercise>,
-    val confidence: Float,
-    val modelVersion: String,
-)
-
-enum class JobStatus { QUEUED, PROCESSING, DONE, NEEDS_REVIEW, FAILED }
-
-@Serializable
-data class ExtractionJob(
-    val id: String,
-    val contentHash: String,
-    val status: JobStatus,
-    val error: String? = null,
+    val materialId: String,
+    val goalId: String,
+    val number: Int,
+    val title: String,
+    val status: String,
 )
 
 @Serializable
 data class MaterialDetail(
     val material: Material,
-    val extraction: ExtractionCache?,
+    val lessons: List<Lesson>,
 )

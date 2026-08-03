@@ -35,8 +35,8 @@ fun main() {
 
     val database = DatabaseFactory.connect(databaseUrl, databaseUser, databasePassword)
     val anthropicClient = AnthropicOkHttpClient.builder().apiKey(anthropicApiKey).build()
-    val extractionWorker = ExtractionWorker(database, anthropicClient)
-    val materialService = MaterialService(database, uploadsDir, onJobQueued = { extractionWorker.wake.trySend(Unit) })
+    val lessonSegmentationWorker = LessonSegmentationWorker(database, anthropicClient)
+    val materialService = MaterialService(database, uploadsDir, onJobQueued = { lessonSegmentationWorker.wake.trySend(Unit) })
     val authService = AuthService(database, jwtSecret)
     val goalService = GoalService(database)
 
@@ -57,7 +57,7 @@ fun main() {
                 validate { credential -> if (credential.payload.subject != null) JWTPrincipal(credential.payload) else null }
             }
         }
-        extractionWorker.start(this)
+        lessonSegmentationWorker.start(this)
         routing {
             healthRoutes()
             materialRoutes(materialService)

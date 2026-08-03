@@ -167,19 +167,33 @@ V6 migration applied automatically on boot.
 Goal: get this pipeline solid before building on top of it — everything downstream inherits
 lesson quality directly. Highest-risk milestone in the roadmap.
 
+Triggered by a real production bug: uploading a 146-page German-Arabic glossary
+(`A2 - Wortschatz.pdf`) always failed under the old M2/M3 single-shot pipeline (whole document in
+one model call, fixed `maxTokens`, truncated/unparseable JSON on both model tiers). Fixed by
+replacing that pipeline with the real spec design below — confirmed live: the same material now
+produces 60 real lessons in production.
+
 **AI pipeline** (`04_AI_PROMPTS.md` §1)
-- [ ] Heuristic heading-detection pass first (regex/structural markers) — skip the LLM call when
-      confident
-- [ ] LLM segmentation fallback on ~6–8k token chunks with overlap, merged across chunks
-- [ ] Enforce lesson granularity (~15–25 vocab-worthy words) and the 60-lesson cap in application
-      code, not the prompt alone
-- [ ] Language/unsupported-content detection → `unsupported_content` status
-- [ ] Retry ×3 with backoff; partial-success keeps completed lessons usable
-- [ ] Tiered model use: cheaper/faster model here (per your decision)
-- [ ] Extends the existing DB-polling worker pattern (per your decision — no new job-queue infra)
+- [x] Heuristic heading-detection pass first (regex/structural markers) — skip the LLM call when
+      confident. Guards against false positives (title-page/edition-line matches) by rejecting any
+      resulting segment that's implausibly large, not just requiring 2+ markers.
+- [x] LLM segmentation fallback on ~16k-char chunks (conservative for a 6-8k token target - real
+      mixed-script content tokenizes far denser than plain-prose estimates) with overlap, merged
+      across chunks
+- [x] Enforce lesson granularity (~15–25 vocab-worthy words) and the 60-lesson cap in application
+      code, not the prompt alone (`LessonSegmenter.mergeAndCap`)
+- [x] Language/unsupported-content detection → `unsupported_content` status. Only the *whole
+      material*, not a single chunk, is marked unsupported - a front-matter/copyright chunk being
+      flagged doesn't invalidate lessons found in the rest of a real document.
+- [x] Retry ×3 with backoff per chunk; partial-success keeps completed lessons usable, `reprocess()`
+      retries only the failed chunk ranges
+- [x] Tiered model use: `claude-haiku-4-5` only (per your decision)
+- [x] Extends the existing DB-polling worker pattern (per your decision — no new job-queue infra) -
+      repurposes `extraction_jobs`/`extraction_cache` (V7/V8 migrations) instead of new tables
 
 **Mobile**
-- [ ] Lessons Ready Summary screen (partial-success state)
+- [x] Lessons Ready Summary screen (partial-success state) - replaces the old vocab/grammar/exercise
+      display in `MaterialDetailScreen.kt`
 
 ---
 
