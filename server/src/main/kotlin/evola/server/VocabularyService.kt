@@ -33,6 +33,12 @@ data class VocabularyItemResponse(
     val gender: String? = null,
     @SerialName("example_sentence") val exampleSentence: String? = null,
     @SerialName("mastery_state") val masteryState: String,
+    @SerialName("meaning_ar") val meaningAr: String? = null,
+    @SerialName("ipa_pronunciation") val ipaPronunciation: String? = null,
+    @SerialName("related_words") val relatedWords: List<String> = emptyList(),
+    @SerialName("difficulty_rating") val difficultyRating: String? = null,
+    @SerialName("frequency_rating") val frequencyRating: String? = null,
+    @SerialName("memory_tip") val memoryTip: String? = null,
 )
 
 @Serializable
@@ -149,6 +155,14 @@ class VocabularyService(private val database: Database) {
                         gender = it[VocabularyItemsTable.gender],
                         exampleSentence = it[VocabularyItemsTable.exampleSentence],
                         masteryState = it[VocabularyProgressTable.masteryState],
+                        meaningAr = it[VocabularyItemsTable.meaningAr],
+                        ipaPronunciation = it[VocabularyItemsTable.ipaPronunciation],
+                        relatedWords = it[VocabularyItemsTable.relatedWords]
+                            ?.let { json -> runCatching { MATERIALS_JSON.decodeFromString(ListSerializer(String.serializer()), json) }.getOrDefault(emptyList()) }
+                            ?: emptyList(),
+                        difficultyRating = it[VocabularyItemsTable.difficultyRating],
+                        frequencyRating = it[VocabularyItemsTable.frequencyRating],
+                        memoryTip = it[VocabularyItemsTable.memoryTip],
                     )
                 }
         }

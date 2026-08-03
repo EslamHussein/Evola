@@ -91,6 +91,12 @@ class VocabularyServiceTest {
         exampleSentence: String? = null,
         partOfSpeech: String? = null,
         exampleSentenceTranslation: String? = null,
+        meaningAr: String? = null,
+        ipaPronunciation: String? = null,
+        relatedWordsJson: String? = null,
+        difficultyRating: String? = null,
+        frequencyRating: String? = null,
+        memoryTip: String? = null,
     ): UUID {
         val itemId = UUID.randomUUID()
         transaction(database) {
@@ -102,6 +108,12 @@ class VocabularyServiceTest {
                 it[this.exampleSentence] = exampleSentence
                 it[this.partOfSpeech] = partOfSpeech
                 it[this.exampleSentenceTranslation] = exampleSentenceTranslation
+                it[this.meaningAr] = meaningAr
+                it[this.ipaPronunciation] = ipaPronunciation
+                it[this.relatedWords] = relatedWordsJson
+                it[this.difficultyRating] = difficultyRating
+                it[this.frequencyRating] = frequencyRating
+                it[this.memoryTip] = memoryTip
                 it[createdAt] = Instant.now()
             }
             VocabularyProgressTable.insert {
@@ -116,6 +128,37 @@ class VocabularyServiceTest {
             }
         }
         return itemId
+    }
+
+    @Test
+    fun `listVocabulary returns the Arabic-metadata fields when present, null when not`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val materialId = insertMaterial(userId, goalId)
+        val lessonId = insertLesson(materialId, goalId)
+        insertVocabItem(
+            lessonId, userId, "Hund", "dog",
+            meaningAr = "كلب",
+            ipaPronunciation = "hʊnt",
+            relatedWordsJson = """["Katze","Tier"]""",
+            difficultyRating = "easy",
+            frequencyRating = "common",
+            memoryTip = "Sounds like 'hunt' - dogs hunt.",
+        )
+        insertVocabItem(lessonId, userId, "Katze", "cat")
+
+        val items = vocabularyService.listVocabulary(userId, lessonId.toString())!!.sortedBy { it.term }
+
+        val hund = items.single { it.term == "Hund" }
+        assertEquals("كلب", hund.meaningAr)
+        assertEquals("hʊnt", hund.ipaPronunciation)
+        assertEquals(listOf("Katze", "Tier"), hund.relatedWords)
+        assertEquals("easy", hund.difficultyRating)
+        assertEquals("common", hund.frequencyRating)
+        assertEquals("Sounds like 'hunt' - dogs hunt.", hund.memoryTip)
+
+        val katze = items.single { it.term == "Katze" }
+        assertNull(katze.meaningAr)
+        assertEquals(emptyList(), katze.relatedWords)
     }
 
     @Test

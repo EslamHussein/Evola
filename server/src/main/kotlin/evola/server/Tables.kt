@@ -140,6 +140,15 @@ internal object VocabularyItemsTable : Table("vocabulary_items") {
     val partOfSpeech = varchar("part_of_speech", 30).nullable()
     val grammaticalCase = varchar("grammatical_case", 20).nullable()
     val exampleSentenceTranslation = text("example_sentence_translation").nullable()
+    /** Populated from V12 on - the design handoff's Arabic-native-language vocabulary session;
+     * existing rows extracted before it stay null (falls back to the English [meaning] in the UI). */
+    val meaningAr = text("meaning_ar").nullable()
+    val ipaPronunciation = varchar("ipa_pronunciation", 100).nullable()
+    /** JSON array of strings (2-4 related German words). */
+    val relatedWords = text("related_words").nullable()
+    val difficultyRating = varchar("difficulty_rating", 20).nullable()
+    val frequencyRating = varchar("frequency_rating", 20).nullable()
+    val memoryTip = text("memory_tip").nullable()
     val createdAt = timestamp("created_at")
     override val primaryKey = PrimaryKey(id)
 }

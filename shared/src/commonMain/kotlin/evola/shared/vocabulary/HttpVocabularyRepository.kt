@@ -24,6 +24,12 @@ private data class VocabularyItemWireResponse(
     val gender: String? = null,
     @SerialName("example_sentence") val exampleSentence: String? = null,
     @SerialName("mastery_state") val masteryState: String,
+    @SerialName("meaning_ar") val meaningAr: String? = null,
+    @SerialName("ipa_pronunciation") val ipaPronunciation: String? = null,
+    @SerialName("related_words") val relatedWords: List<String> = emptyList(),
+    @SerialName("difficulty_rating") val difficultyRating: String? = null,
+    @SerialName("frequency_rating") val frequencyRating: String? = null,
+    @SerialName("memory_tip") val memoryTip: String? = null,
 )
 
 @Serializable
@@ -104,7 +110,20 @@ class HttpVocabularyRepository(
         }
         if (response.status != HttpStatusCode.OK) return emptyList()
         return response.body<List<VocabularyItemWireResponse>>().map {
-            VocabularyItem(it.itemId, it.term, it.meaning, it.gender, it.exampleSentence, it.masteryState)
+            VocabularyItem(
+                itemId = it.itemId,
+                term = it.term,
+                meaning = it.meaning,
+                gender = it.gender,
+                exampleSentence = it.exampleSentence,
+                masteryState = it.masteryState,
+                meaningAr = it.meaningAr,
+                ipaPronunciation = it.ipaPronunciation,
+                relatedWords = it.relatedWords,
+                difficultyRating = it.difficultyRating,
+                frequencyRating = it.frequencyRating,
+                memoryTip = it.memoryTip,
+            )
         }
     }
 

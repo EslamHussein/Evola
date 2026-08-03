@@ -1,6 +1,8 @@
 package evola.shared.vocabulary
 
-/** A lesson's own vocabulary item plus this user's current mastery state (01_PRODUCT_SPEC.md §1.8). */
+/** A lesson's own vocabulary item plus this user's current mastery state (01_PRODUCT_SPEC.md §1.8).
+ * The meaning_ar/ipa/related-words/difficulty/frequency/memory-tip fields are only populated for
+ * items extracted from V12 on - null/empty for pre-existing rows. */
 data class VocabularyItem(
     val itemId: String,
     val term: String,
@@ -8,6 +10,12 @@ data class VocabularyItem(
     val gender: String? = null,
     val exampleSentence: String? = null,
     val masteryState: String,
+    val meaningAr: String? = null,
+    val ipaPronunciation: String? = null,
+    val relatedWords: List<String> = emptyList(),
+    val difficultyRating: String? = null,
+    val frequencyRating: String? = null,
+    val memoryTip: String? = null,
 )
 
 /** One question occurrence within a session. `drillType` is one of "typed_recall",

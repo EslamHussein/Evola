@@ -31,6 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import evola.composeapp.rtl.RtlText
+import evola.composeapp.theme.EvolaColors
+import evola.composeapp.theme.EvolaSpacing
 import evola.shared.vocabulary.VocabularyItem
 
 @Composable
@@ -81,20 +84,58 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
 @Composable
 private fun VocabularyRow(item: VocabularyItem) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(item.term, style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(2.dp))
-                Text(item.meaning, style = MaterialTheme.typography.bodyMedium)
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(item.term, style = MaterialTheme.typography.titleMedium)
+                        item.ipaPronunciation?.let {
+                            Text("/$it/", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
+                        }
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    Text(item.meaning, style = MaterialTheme.typography.bodyMedium)
+                }
+                Text(
+                    item.masteryState.replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
             }
-            Text(
-                item.masteryState.replaceFirstChar { it.uppercase() },
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.tertiary,
-            )
+
+            // Arabic is the design handoff's real target native-language translation - falls back
+            // to nothing (the English meaning above already covers pre-V12 items) rather than a
+            // duplicate/confusing second English line.
+            item.meaningAr?.let {
+                Spacer(Modifier.height(EvolaSpacing.xs))
+                RtlText(it, style = MaterialTheme.typography.bodyMedium)
+            }
+
+            if (item.difficultyRating != null || item.frequencyRating != null || item.relatedWords.isNotEmpty()) {
+                Spacer(Modifier.height(EvolaSpacing.sm))
+                Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
+                    item.difficultyRating?.let { Tag(it) }
+                    item.frequencyRating?.let { Tag(it) }
+                    item.relatedWords.forEach { Tag(it) }
+                }
+            }
+
+            item.memoryTip?.let {
+                Spacer(Modifier.height(EvolaSpacing.sm))
+                Text(it, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
+            }
         }
+    }
+}
+
+@Composable
+private fun Tag(label: String) {
+    Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.SurfaceAlt) {
+        Text(
+            label,
+            modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = EvolaColors.Text2,
+        )
     }
 }

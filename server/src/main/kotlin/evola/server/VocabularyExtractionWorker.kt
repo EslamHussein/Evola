@@ -12,6 +12,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
@@ -49,7 +51,17 @@ private const val VOCABULARY_EXTRACTION_SYSTEM_PROMPT_PREFIX =
         "- grammatical_case: the grammatical case of the term AS USED in example_sentence, one of " +
         "\"nominative\", \"accusative\", \"dative\", \"genitive\" - only for languages/parts of " +
         "speech that mark case (e.g. German nouns/pronouns/adjectives), otherwise null\n" +
-        "- example_sentence_translation: a concise English translation of example_sentence\n\n" +
+        "- example_sentence_translation: a concise English translation of example_sentence\n" +
+        "- meaning_ar: a concise translation of the term into Modern Standard Arabic - the " +
+        "learner's native language\n" +
+        "- ipa_pronunciation: the term's pronunciation in IPA notation\n" +
+        "- related_words: 2-4 other German words related in meaning or word-family to this term " +
+        "(as an array of strings) - empty array if none are relevant\n" +
+        "- difficulty_rating: one of \"easy\", \"medium\", \"hard\" for a learner at this lesson's " +
+        "level\n" +
+        "- frequency_rating: how commonly this word is used in everyday German, one of \"common\", " +
+        "\"uncommon\", \"rare\"\n" +
+        "- memory_tip: a short mnemonic or memory aid to help the learner remember this word\n\n" +
         "Extract 15-30 items depending on lesson length. Do not invent words that don't appear in " +
         "the source text. Do not include function words (articles, basic pronouns) unless the " +
         "lesson is explicitly teaching them as a grammar point (in which case they belong in " +
@@ -58,7 +70,9 @@ private const val VOCABULARY_EXTRACTION_SYSTEM_PROMPT_PREFIX =
         "Output schema:\n" +
         "{\"items\": [{\"term\": string, \"meaning\": string, \"gender\": string|null, " +
         "\"example_sentence\": string, \"part_of_speech\": string, \"grammatical_case\": " +
-        "string|null, \"example_sentence_translation\": string}]}"
+        "string|null, \"example_sentence_translation\": string, \"meaning_ar\": string, " +
+        "\"ipa_pronunciation\": string, \"related_words\": [string], \"difficulty_rating\": " +
+        "string, \"frequency_rating\": string, \"memory_tip\": string}]}"
 
 @Serializable
 private data class VocabExtractedItemJson(
@@ -69,6 +83,12 @@ private data class VocabExtractedItemJson(
     @SerialName("part_of_speech") val partOfSpeech: String? = null,
     @SerialName("grammatical_case") val grammaticalCase: String? = null,
     @SerialName("example_sentence_translation") val exampleSentenceTranslation: String? = null,
+    @SerialName("meaning_ar") val meaningAr: String? = null,
+    @SerialName("ipa_pronunciation") val ipaPronunciation: String? = null,
+    @SerialName("related_words") val relatedWords: List<String> = emptyList(),
+    @SerialName("difficulty_rating") val difficultyRating: String? = null,
+    @SerialName("frequency_rating") val frequencyRating: String? = null,
+    @SerialName("memory_tip") val memoryTip: String? = null,
 )
 
 @Serializable
@@ -218,6 +238,13 @@ class VocabularyExtractionWorker(
                     it[partOfSpeech] = extracted.partOfSpeech?.trim()?.take(30)
                     it[grammaticalCase] = extracted.grammaticalCase?.trim()?.take(20)
                     it[exampleSentenceTranslation] = extracted.exampleSentenceTranslation?.trim()
+                    it[meaningAr] = extracted.meaningAr?.trim()
+                    it[ipaPronunciation] = extracted.ipaPronunciation?.trim()?.take(100)
+                    it[relatedWords] = extracted.relatedWords.takeIf { words -> words.isNotEmpty() }
+                        ?.let { words -> MATERIALS_JSON.encodeToString(ListSerializer(String.serializer()), words) }
+                    it[difficultyRating] = extracted.difficultyRating?.trim()?.take(20)
+                    it[frequencyRating] = extracted.frequencyRating?.trim()?.take(20)
+                    it[memoryTip] = extracted.memoryTip?.trim()
                     it[createdAt] = now
                 }
                 VocabularyProgressTable.insert {
