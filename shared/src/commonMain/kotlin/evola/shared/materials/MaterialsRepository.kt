@@ -32,8 +32,25 @@ sealed interface UploadResult {
 }
 
 interface MaterialsRepository {
-    suspend fun upload(accessToken: String, goalId: String, fileName: String, mimeType: String, bytes: ByteArray): UploadResult
-    suspend fun uploadText(accessToken: String, goalId: String, fileName: String, text: String): UploadResult
+    suspend fun upload(
+        accessToken: String,
+        goalId: String,
+        fileName: String,
+        mimeType: String,
+        bytes: ByteArray,
+        organizationMode: String = "auto",
+        aiInstructions: String? = null,
+        resourceType: String? = null,
+    ): UploadResult
+    suspend fun uploadText(
+        accessToken: String,
+        goalId: String,
+        fileName: String,
+        text: String,
+        organizationMode: String = "auto",
+        aiInstructions: String? = null,
+        resourceType: String? = null,
+    ): UploadResult
     suspend fun list(accessToken: String): List<Material>
     suspend fun get(accessToken: String, materialId: String): MaterialDetail
     suspend fun reprocess(accessToken: String, materialId: String): Boolean
@@ -47,6 +64,9 @@ private data class MaterialTextUploadWireRequest(
     @SerialName("goal_id") val goalId: String,
     @SerialName("file_name") val fileName: String,
     val text: String,
+    @SerialName("organization_mode") val organizationMode: String,
+    @SerialName("ai_instructions") val aiInstructions: String?,
+    @SerialName("resource_type") val resourceType: String?,
 )
 
 @Serializable
@@ -71,11 +91,17 @@ class HttpMaterialsRepository(
         fileName: String,
         mimeType: String,
         bytes: ByteArray,
+        organizationMode: String,
+        aiInstructions: String?,
+        resourceType: String?,
     ): UploadResult {
         val response = httpClient.submitFormWithBinaryData(
             url = "$baseUrl/materials/upload",
             formData = formData {
                 append("goal_id", goalId)
+                append("organization_mode", organizationMode)
+                aiInstructions?.let { append("ai_instructions", it) }
+                resourceType?.let { append("resource_type", it) }
                 append(
                     "file",
                     bytes,
@@ -92,11 +118,28 @@ class HttpMaterialsRepository(
         return response.toUploadResult()
     }
 
-    override suspend fun uploadText(accessToken: String, goalId: String, fileName: String, text: String): UploadResult {
+    override suspend fun uploadText(
+        accessToken: String,
+        goalId: String,
+        fileName: String,
+        text: String,
+        organizationMode: String,
+        aiInstructions: String?,
+        resourceType: String?,
+    ): UploadResult {
         val response = httpClient.post("$baseUrl/materials/upload-text") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
             contentType(ContentType.Application.Json)
-            setBody(MaterialTextUploadWireRequest(goalId = goalId, fileName = fileName, text = text))
+            setBody(
+                MaterialTextUploadWireRequest(
+                    goalId = goalId,
+                    fileName = fileName,
+                    text = text,
+                    organizationMode = organizationMode,
+                    aiInstructions = aiInstructions,
+                    resourceType = resourceType,
+                ),
+            )
         }
         return response.toUploadResult()
     }

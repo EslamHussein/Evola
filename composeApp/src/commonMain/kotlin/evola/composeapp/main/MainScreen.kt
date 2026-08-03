@@ -31,6 +31,11 @@ import evola.composeapp.materials.MaterialDetailScreen
 import evola.composeapp.materials.MaterialDetailViewModel
 import evola.composeapp.materials.MaterialsListScreen
 import evola.composeapp.materials.MaterialsListViewModel
+import evola.composeapp.materials.StagedResource
+import evola.composeapp.wizard.AiWizardScreen
+import evola.composeapp.wizard.AiWizardViewModel
+import evola.composeapp.wizard.ProcessingScreen
+import evola.composeapp.wizard.ProcessingViewModel
 import evola.shared.auth.AuthUser
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalsRepository
@@ -43,6 +48,8 @@ private enum class MainTab { HOME, GOALS, STUDY, MATERIALS, PROFILE }
 private sealed interface MaterialsSubScreen {
     data object List : MaterialsSubScreen
     data object Add : MaterialsSubScreen
+    data class Wizard(val staged: StagedResource) : MaterialsSubScreen
+    data class Processing(val materialId: String) : MaterialsSubScreen
     data class Detail(val materialId: String) : MaterialsSubScreen
 }
 
@@ -172,11 +179,33 @@ fun MainScreen(
 
                     MaterialsSubScreen.Add -> {
                         BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.List })
-                        val viewModel = remember { AddMaterialViewModel(accessToken, goal.id, materialsRepository) }
+                        val viewModel = remember { AddMaterialViewModel() }
                         AddMaterialScreen(
                             viewModel = viewModel,
-                            onUploaded = { materialId -> materialsSubScreen = MaterialsSubScreen.Detail(materialId) },
+                            onContinue = { staged -> materialsSubScreen = MaterialsSubScreen.Wizard(staged) },
                             onCancel = { materialsSubScreen = MaterialsSubScreen.List },
+                        )
+                    }
+
+                    is MaterialsSubScreen.Wizard -> {
+                        BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.Add })
+                        val viewModel = remember(sub.staged) {
+                            AiWizardViewModel(accessToken, goal.id, sub.staged, materialsRepository)
+                        }
+                        AiWizardScreen(
+                            viewModel = viewModel,
+                            onCancel = { materialsSubScreen = MaterialsSubScreen.Add },
+                            onAnalysisStarted = { materialId -> materialsSubScreen = MaterialsSubScreen.Processing(materialId) },
+                        )
+                    }
+
+                    is MaterialsSubScreen.Processing -> {
+                        val viewModel = remember(sub.materialId) {
+                            ProcessingViewModel(accessToken, sub.materialId, materialsRepository)
+                        }
+                        ProcessingScreen(
+                            viewModel = viewModel,
+                            onDone = { materialId -> materialsSubScreen = MaterialsSubScreen.Detail(materialId) },
                         )
                     }
 

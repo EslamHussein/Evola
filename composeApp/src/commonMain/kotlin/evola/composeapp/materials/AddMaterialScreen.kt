@@ -11,18 +11,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -48,30 +43,13 @@ private const val MIN_PASTED_TEXT_LENGTH = 20
 @Composable
 fun AddMaterialScreen(
     viewModel: AddMaterialViewModel,
-    onUploaded: (materialId: String) -> Unit,
+    onContinue: (StagedResource) -> Unit,
     onCancel: () -> Unit,
 ) {
     val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
-    val isSubmitting by viewModel.isSubmitting.collectAsStateWithLifecycle()
-    val error by viewModel.error.collectAsStateWithLifecycle()
-    val duplicateMaterialId by viewModel.duplicateMaterialId.collectAsStateWithLifecycle()
     var pickedFile by remember { mutableStateOf<PickedFile?>(null) }
     var pastedText by remember { mutableStateOf("") }
     val launchPicker = rememberFilePicker { pickedFile = it }
-
-    duplicateMaterialId?.let { existingId ->
-        AlertDialog(
-            onDismissRequest = viewModel::dismissDuplicatePrompt,
-            title = { Text("Already uploaded") },
-            text = { Text("You've already uploaded this file. Would you like to view it instead?") },
-            confirmButton = {
-                TextButton(onClick = { onUploaded(existingId) }) { Text("View existing material") }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::dismissDuplicatePrompt) { Text("Cancel") }
-            },
-        )
-    }
 
     val canContinue = when (selectedType) {
         ResourceType.PDF -> pickedFile != null
@@ -83,35 +61,23 @@ fun AddMaterialScreen(
         bottomBar = {
             Surface(shadowElevation = 4.dp) {
                 Column(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg)) {
-                    error?.let {
-                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                        Spacer(Modifier.height(EvolaSpacing.sm))
-                    }
                     Button(
                         onClick = {
-                            when (selectedType) {
-                                ResourceType.PDF -> pickedFile?.let { viewModel.submit(it, onUploaded) }
-                                ResourceType.TEXT -> viewModel.submitText(pastedText.trim(), "Pasted text", onUploaded)
+                            val staged = when (selectedType) {
+                                ResourceType.PDF -> pickedFile?.let {
+                                    StagedResource.File(it.fileName, it.mimeType, it.bytes)
+                                }
+                                ResourceType.TEXT -> StagedResource.Text(pastedText.trim())
                             }
+                            staged?.let(onContinue)
                         },
-                        enabled = !isSubmitting && canContinue,
+                        enabled = canContinue,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        if (isSubmitting) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = LocalContentColor.current,
-                                )
-                                Text("Uploading...")
-                            }
-                        } else {
-                            Text("Continue")
-                        }
+                        Text("Continue")
                     }
                     Spacer(Modifier.height(EvolaSpacing.sm))
-                    TextButton(onClick = onCancel, enabled = !isSubmitting, modifier = Modifier.fillMaxWidth()) {
+                    TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
                         Text("Cancel")
                     }
                 }
@@ -170,7 +136,7 @@ fun AddMaterialScreen(
                                 Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
                                     Text(current.fileName, style = MaterialTheme.typography.titleMedium)
                                     Spacer(Modifier.height(EvolaSpacing.sm))
-                                    TextButton(onClick = launchPicker, enabled = !isSubmitting) {
+                                    TextButton(onClick = launchPicker) {
                                         Text("Choose a different file")
                                     }
                                 }
