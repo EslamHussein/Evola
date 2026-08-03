@@ -248,6 +248,39 @@ answer was still accepted).
 
 ---
 
+## M6.5 — Design handoff: Add Resource → AI Wizard → Resource/Lesson Details → Pack-based Vocabulary Session
+
+Goal: a design handoff (`design_handoff_evola_mobile/`) specifies a redesigned "add material → study
+a lesson" path — Add Resource, a new 4-step AI Analysis Wizard, restyled Resource Details, a new
+Lesson Details hub, and a fundamentally different pack/7-stage Vocabulary Learning Session. Recreated
+using the app's existing light EvolaTheme (not the handoff's dark "Nocturne" system). Arabic is the
+real target native-language going forward, with RTL support and new extraction fields (IPA,
+related words, difficulty/frequency, memory tip). Where the design assumes backend capability that
+doesn't exist yet (Grammar, Reading/Writing/Speaking/Listening, manual lesson ranges), those
+affordances render per the design but locked/"coming soon" rather than faked — Grammar's locked row
+is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full plan:
+`/Users/eslam.megali/.claude/plans/project-evola-fuzzy-cocoa.md`.
+
+- [ ] Phase 0 — design-system foundations (spacing tokens, chip/tile/tag/ring components, RTL text,
+      Arabic font check)
+- [ ] Phase 1 — Add Resource redesign (type grid) + real Text-paste ingestion (keeps existing DOCX)
+- [ ] Phase 2 — AI Wizard backend: real entire-doc/auto-detect org modes, real AI-instructions
+      prompt interpolation, cache-key fix for instructions-vs-content-hash collision
+- [ ] Phase 3 — AI Wizard UI (4 steps) + the processing/loading screen the handoff's own README
+      flags as a gap
+- [ ] Phase 4 — vocabulary extraction schema expansion: Arabic `meaning_ar`, IPA, related words,
+      difficulty/frequency ratings, memory tip
+- [ ] Phase 5 — Resource Details redesign (progress ring, status tags, meta stats) + lesson-card tap
+      navigation (didn't exist before)
+- [ ] Phase 6 — new Lesson Details hub (8 section rows), retires `LessonHomeScreen`, unifies the two
+      different navigation paths into a lesson
+- [ ] Phase 7 — vocabulary session backend redesign: pack-of-~5-words × 7-fixed-stages model,
+      one-mastery-update-per-word rule, Free Production AI grading
+- [ ] Phase 8 — vocabulary session UI redesign for the pack/stage model + pack summary screen
+- [ ] Phase 9 — cross-cutting regression pass, full verification, production deploy
+
+---
+
 ## M7 — Grammar Learning + mandatory answer-key validation
 
 Goal: the mandatory validation pass is a correctness guarantee, not a nice-to-have — this is the

@@ -17,6 +17,7 @@ import evola.composeapp.generated.resources.fraunces_variable
 import evola.composeapp.generated.resources.ibm_plex_mono_medium
 import evola.composeapp.generated.resources.ibm_plex_mono_semibold
 import evola.composeapp.generated.resources.inter_variable
+import evola.composeapp.generated.resources.noto_naskh_arabic_variable
 import org.jetbrains.compose.resources.Font
 
 /** Exact hex values from 05_DESIGN_SYSTEM.md. Gold is reserved for progress/readiness only. */
@@ -58,6 +59,15 @@ private fun interFamily(): FontFamily = FontFamily(
 private fun plexMonoFamily(): FontFamily = FontFamily(
     Font(Res.font.ibm_plex_mono_medium, weight = FontWeight.Medium),
     Font(Res.font.ibm_plex_mono_semibold, weight = FontWeight.SemiBold),
+)
+
+/** Neither Inter nor Fraunces (the app's Latin fonts) contain any Arabic glyphs (confirmed via
+ * font cmap inspection) - Noto Naskh Arabic is the dedicated family for the Arabic vocabulary
+ * translations/RTL text introduced in the design-handoff redesign. */
+@Composable
+internal fun arabicFamily(): FontFamily = FontFamily(
+    Font(Res.font.noto_naskh_arabic_variable, weight = FontWeight.Normal),
+    Font(Res.font.noto_naskh_arabic_variable, weight = FontWeight.Bold),
 )
 
 /** IBM Plex Mono readout style for numeric data (percentages, scores, timestamps) - Material3's
