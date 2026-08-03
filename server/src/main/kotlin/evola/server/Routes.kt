@@ -268,5 +268,15 @@ fun Route.goalRoutes(goalService: GoalService) {
             val goal = goalService.getActiveGoal(userId) ?: return@get call.respond(HttpStatusCode.NotFound)
             call.respond(HttpStatusCode.OK, goal)
         }
+
+        get("/goals/{id}/lessons") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@get call.respond(HttpStatusCode.Unauthorized)
+            val goalId = call.parameters["id"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing goal id"))
+            val lessons = goalService.listLessonsForGoal(userId, goalId)
+                ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Goal not found"))
+            call.respond(HttpStatusCode.OK, lessons)
+        }
     }
 }

@@ -105,7 +105,14 @@ fun MainScreen(
 
                 MainTab.GOALS -> GoalsScreen(goal = goal)
 
-                MainTab.STUDY -> StudyScreen()
+                MainTab.STUDY -> {
+                    val viewModel = remember(goal.id) {
+                        LessonSelectionViewModel(accessToken, goal.id, goalsRepository)
+                    }
+                    // No lesson is ever "ready" until M6/M7 populate real vocab/grammar content,
+                    // so there's nowhere to route to yet - see StudyScreen's own doc comment.
+                    StudyScreen(viewModel = viewModel, onOpenLesson = {})
+                }
 
                 MainTab.MATERIALS -> when (val sub = materialsSubScreen) {
                     MaterialsSubScreen.List -> {

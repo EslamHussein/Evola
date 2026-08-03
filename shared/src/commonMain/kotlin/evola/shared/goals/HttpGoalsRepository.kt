@@ -34,6 +34,16 @@ private data class GoalWireResponse(
 )
 
 @Serializable
+private data class LessonWireResponse(
+    @SerialName("lesson_id") val lessonId: String,
+    val number: Int,
+    val title: String,
+    val status: String,
+    @SerialName("vocab_progress") val vocabProgress: Float = 0f,
+    @SerialName("grammar_progress") val grammarProgress: Float = 0f,
+)
+
+@Serializable
 private data class WireErrorBody(val code: String, val message: String)
 
 @Serializable
@@ -82,7 +92,17 @@ class HttpGoalsRepository(
         return response.body<GoalWireResponse>().toDomain()
     }
 
+    override suspend fun listLessons(accessToken: String, goalId: String): List<Lesson> {
+        val response = httpClient.get("$baseUrl/goals/$goalId/lessons") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }
+        if (response.status != HttpStatusCode.OK) return emptyList()
+        return response.body<List<LessonWireResponse>>().map { it.toDomain() }
+    }
+
     private suspend fun HttpResponse.errorBody(): WireErrorBody = body<WireErrorResponse>().error
 
     private fun GoalWireResponse.toDomain() = Goal(id, goalText, title, isActive, createdAt)
+
+    private fun LessonWireResponse.toDomain() = Lesson(lessonId, number, title, status, vocabProgress, grammarProgress)
 }

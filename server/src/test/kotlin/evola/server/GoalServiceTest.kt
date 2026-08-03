@@ -2,9 +2,12 @@ package evola.server
 
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.exposed.sql.deleteAll
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Instant
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -20,9 +23,46 @@ class GoalServiceTest {
     @BeforeEach
     fun clearTables() {
         transaction(database) {
+            LessonsTable.deleteAll()
+            MaterialsTable.deleteAll()
             GoalsTable.deleteAll()
             RefreshTokensTable.deleteAll()
             UsersTable.deleteAll()
+        }
+    }
+
+    /** Lessons have an FK to materials, so a lesson-list test needs a real (throwaway) material row. */
+    private fun insertMaterial(userId: String, goalId: String): UUID {
+        val materialId = UUID.randomUUID()
+        transaction(database) {
+            MaterialsTable.insert {
+                it[id] = materialId
+                it[this.userId] = UUID.fromString(userId)
+                it[this.goalId] = UUID.fromString(goalId)
+                it[filename] = "book.pdf"
+                it[contentHash] = "hash-$materialId"
+                it[status] = "READY"
+                it[fileRef] = "/tmp/$materialId.pdf"
+                it[mimeType] = MIME_PDF
+                it[sizeBytes] = 1024L
+                it[pageCount] = 10
+                it[createdAt] = Instant.now()
+            }
+        }
+        return materialId
+    }
+
+    private fun insertLesson(materialId: UUID, goalId: String, number: Int, title: String, status: String, createdAt: Instant) {
+        transaction(database) {
+            LessonsTable.insert {
+                it[id] = UUID.randomUUID()
+                it[this.materialId] = materialId
+                it[this.goalId] = UUID.fromString(goalId)
+                it[this.number] = number
+                it[this.title] = title
+                it[this.status] = status
+                it[this.createdAt] = createdAt
+            }
         }
     }
 
@@ -105,5 +145,48 @@ class GoalServiceTest {
         val active = goalService.getActiveGoal(userId)
         assertNotNull(active)
         assertEquals("Pass the German B1 Exam", active.goalText)
+    }
+
+    @Test
+    fun `listLessonsForGoal returns lessons in sequential order, oldest material first`() = runTest {
+        val userId = registerUser()
+        val created = goalService.createGoal(userId, CreateGoalRequest("Pass the German B1 Exam"))
+        assertIs<CreateGoalOutcome.Created>(created)
+        val goalId = created.goal.id
+        val now = Instant.now()
+
+        val firstMaterial = insertMaterial(userId, goalId)
+        insertLesson(firstMaterial, goalId, number = 2, title = "Second", status = "pending", createdAt = now.plusSeconds(1))
+        insertLesson(firstMaterial, goalId, number = 1, title = "First", status = "ready", createdAt = now)
+
+        val secondMaterial = insertMaterial(userId, goalId)
+        insertLesson(secondMaterial, goalId, number = 1, title = "Later material's lesson", status = "pending", createdAt = now.plusSeconds(10))
+
+        val lessons = goalService.listLessonsForGoal(userId, goalId)
+        assertNotNull(lessons)
+        assertEquals(listOf("First", "Second", "Later material's lesson"), lessons.map { it.title })
+        assertEquals("ready", lessons[0].status)
+        assertEquals("pending", lessons[1].status)
+    }
+
+    @Test
+    fun `listLessonsForGoal returns null for a goal that does not belong to the user`() = runTest {
+        val userId = registerUser()
+        val created = goalService.createGoal(userId, CreateGoalRequest("Pass the German B1 Exam"))
+        assertIs<CreateGoalOutcome.Created>(created)
+
+        val otherUserId = UUID.randomUUID().toString()
+        assertNull(goalService.listLessonsForGoal(otherUserId, created.goal.id))
+    }
+
+    @Test
+    fun `listLessonsForGoal returns an empty list when no materials have been uploaded yet`() = runTest {
+        val userId = registerUser()
+        val created = goalService.createGoal(userId, CreateGoalRequest("Pass the German B1 Exam"))
+        assertIs<CreateGoalOutcome.Created>(created)
+
+        val lessons = goalService.listLessonsForGoal(userId, created.goal.id)
+        assertNotNull(lessons)
+        assertTrue(lessons.isEmpty())
     }
 }

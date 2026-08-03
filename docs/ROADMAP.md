@@ -199,10 +199,17 @@ produces 60 real lessons in production.
 
 ## M5 — Lesson Selection
 
-- [ ] `GET /goals/{id}/lessons`
-- [ ] Sequential lesson list, ungated, with per-lesson completion %
-- [ ] "Still preparing" disabled row, all-complete state
-- [ ] Current-lesson derivation (first lesson not at 100%)
+- [x] `GET /goals/{id}/lessons` - ordered by (created_at, number), giving "grouped by source,
+      appended at the end" for later-uploaded materials with no join needed
+- [x] Sequential lesson list, ungated, with per-lesson completion % - vocab/grammar progress is
+      honestly 0% until M6/M7 populate real content, not a faked number
+- [x] "Still preparing" disabled row, all-complete state - every lesson today is `pending` (M6/M7
+      haven't shipped), so this is the actual live behavior, not just a code path
+- [x] Current-lesson derivation (first lesson not at 100%) - surfaced as a "Continue" badge on
+      that row within the list itself (dashboard placement deferred to M8)
+
+Confirmed live: the Study tab now shows all 60 real lessons from `A2 - Wortschatz.pdf` in
+production, in order, each disabled with "Still preparing...".
 
 ---
 

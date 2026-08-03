@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -28,6 +29,16 @@ data class GoalResponse(
     val title: String?,
     @SerialName("is_active") val isActive: Boolean,
     @SerialName("created_at") val createdAt: String,
+)
+
+@Serializable
+data class LessonSummaryResponse(
+    @SerialName("lesson_id") val lessonId: String,
+    val number: Int,
+    val title: String,
+    val status: String,
+    @SerialName("vocab_progress") val vocabProgress: Float = 0f,
+    @SerialName("grammar_progress") val grammarProgress: Float = 0f,
 )
 
 sealed interface CreateGoalOutcome {
@@ -152,6 +163,34 @@ class GoalService(private val database: Database) {
             GoalsTable.selectAll()
                 .where { (GoalsTable.userId eq UUID.fromString(userId)) and (GoalsTable.isActive eq true) }
                 .singleOrNull()?.toGoalResponse()
+        }
+
+    /** M5 Lesson Selection (01_PRODUCT_SPEC.md §1.7, 03_API_CONTRACT.md "GET /goals/{id}/lessons"):
+     * all lessons across all of this goal's materials, in sequential order - ordering by
+     * created_at (then number as a tie-break) naturally gives "grouped by source, appended at the
+     * end" for a later-uploaded material without needing to join materials. vocab_progress/
+     * grammar_progress are always 0 until M6/M7 populate real vocabulary_items/grammar_topics -
+     * an honest placeholder, not a fake number. Returns null when the goal isn't the caller's. */
+    suspend fun listLessonsForGoal(userId: String, goalId: String): List<LessonSummaryResponse>? =
+        newSuspendedTransaction(Dispatchers.IO, database) {
+            val userUuid = UUID.fromString(userId)
+            val goalUuid = UUID.fromString(goalId)
+            val ownsGoal = GoalsTable.selectAll()
+                .where { (GoalsTable.id eq goalUuid) and (GoalsTable.userId eq userUuid) }
+                .any()
+            if (!ownsGoal) return@newSuspendedTransaction null
+
+            LessonsTable.selectAll()
+                .where { LessonsTable.goalId eq goalUuid }
+                .orderBy(LessonsTable.createdAt to SortOrder.ASC, LessonsTable.number to SortOrder.ASC)
+                .map {
+                    LessonSummaryResponse(
+                        lessonId = it[LessonsTable.id].toString(),
+                        number = it[LessonsTable.number],
+                        title = it[LessonsTable.title],
+                        status = it[LessonsTable.status],
+                    )
+                }
         }
 
     private fun ResultRow.toGoalResponse() = GoalResponse(
