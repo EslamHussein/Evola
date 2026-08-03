@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -47,7 +48,7 @@ fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit)
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
-                is MaterialDetailState.Loading -> CenteredMessage("Loading...")
+                is MaterialDetailState.Loading -> ProgressMessage("Loading...")
                 is MaterialDetailState.Error -> CenteredMessage(current.message)
                 is MaterialDetailState.Loaded -> LoadedBody(current.detail, onRetry = viewModel::retry)
             }
@@ -62,11 +63,24 @@ private fun CenteredMessage(message: String) {
     }
 }
 
+/** Same as [CenteredMessage] but with a visible spinner above it, for states where real work is
+ * happening in the background (upload processing, AI extraction) rather than just a static wait. */
+@Composable
+private fun ProgressMessage(message: String) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator()
+            Spacer(Modifier.height(16.dp))
+            Text(message, style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}
+
 @Composable
 private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit) {
     when (detail.material.status) {
         MaterialStatus.UPLOADED, MaterialStatus.ANALYZING ->
-            CenteredMessage("Analyzing \"${detail.material.filename}\"...")
+            ProgressMessage("Analyzing \"${detail.material.filename}\"...")
         MaterialStatus.FAILED ->
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
