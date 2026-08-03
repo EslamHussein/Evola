@@ -266,8 +266,10 @@ is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full
 - [x] Phase 1 — Add Resource redesign (type grid) + real Text-paste ingestion (keeps existing DOCX)
       — `POST /materials/upload-text` rejoins the existing dedup/segmentation/vocab pipeline;
       verified end-to-end (paste → lesson ready) via curl against production
-- [ ] Phase 2 — AI Wizard backend: real entire-doc/auto-detect org modes, real AI-instructions
-      prompt interpolation, cache-key fix for instructions-vs-content-hash collision
+- [x] Phase 2 — AI Wizard backend: real entire-doc/auto-detect org modes, real AI-instructions
+      prompt interpolation — V11 migration; ai_instructions interpolates into vocabulary
+      extraction only (not the shared, content-hash-cached segmentation prompt - see commit for
+      why the original segmentation_key idea was dropped); verified live in production
 - [ ] Phase 3 — AI Wizard UI (4 steps) + the processing/loading screen the handoff's own README
       flags as a gap
 - [ ] Phase 4 — vocabulary extraction schema expansion: Arabic `meaning_ar`, IPA, related words,
