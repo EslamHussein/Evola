@@ -261,9 +261,11 @@ affordances render per the design but locked/"coming soon" rather than faked —
 is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full plan:
 `/Users/eslam.megali/.claude/plans/project-evola-fuzzy-cocoa.md`.
 
-- [ ] Phase 0 — design-system foundations (spacing tokens, chip/tile/tag/ring components, RTL text,
-      Arabic font check)
-- [ ] Phase 1 — Add Resource redesign (type grid) + real Text-paste ingestion (keeps existing DOCX)
+- [x] Phase 0 — design-system foundations (spacing tokens, chip/tile/tag/ring components, RTL text,
+      Arabic font check) — verified on-emulator against EvolaTheme + Noto Naskh Arabic
+- [x] Phase 1 — Add Resource redesign (type grid) + real Text-paste ingestion (keeps existing DOCX)
+      — `POST /materials/upload-text` rejoins the existing dedup/segmentation/vocab pipeline;
+      verified end-to-end (paste → lesson ready) via curl against production
 - [ ] Phase 2 — AI Wizard backend: real entire-doc/auto-detect org modes, real AI-instructions
       prompt interpolation, cache-key fix for instructions-vs-content-hash collision
 - [ ] Phase 3 — AI Wizard UI (4 steps) + the processing/loading screen the handoff's own README
