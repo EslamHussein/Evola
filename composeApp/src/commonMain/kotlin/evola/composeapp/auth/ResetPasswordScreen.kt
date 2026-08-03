@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -59,6 +60,7 @@ fun ResetPasswordScreen(
                     onValueChange = { token = it },
                     label = { Text("Reset token") },
                     enabled = !isSubmitting,
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(12.dp))
@@ -67,6 +69,8 @@ fun ResetPasswordScreen(
                     onValueChange = { newPassword = it },
                     label = { Text("New password") },
                     enabled = !isSubmitting,
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 errorMessage?.let {
