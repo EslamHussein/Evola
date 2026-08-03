@@ -19,6 +19,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import evola.composeapp.lessons.LessonHomeScreen
+import evola.composeapp.lessons.VocabularyListScreen
+import evola.composeapp.lessons.VocabularyListViewModel
+import evola.composeapp.lessons.VocabularySessionScreen
+import evola.composeapp.lessons.VocabularySessionViewModel
 import evola.composeapp.materials.AddMaterialScreen
 import evola.composeapp.materials.AddMaterialViewModel
 import evola.composeapp.materials.MaterialDetailScreen
@@ -28,7 +33,9 @@ import evola.composeapp.materials.MaterialsListViewModel
 import evola.shared.auth.AuthUser
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalsRepository
+import evola.shared.goals.Lesson
 import evola.shared.materials.MaterialsRepository
+import evola.shared.vocabulary.VocabularyRepository
 
 private enum class MainTab { HOME, GOALS, STUDY, MATERIALS, PROFILE }
 
@@ -36,6 +43,13 @@ private sealed interface MaterialsSubScreen {
     data object List : MaterialsSubScreen
     data object Add : MaterialsSubScreen
     data class Detail(val materialId: String) : MaterialsSubScreen
+}
+
+private sealed interface StudySubScreen {
+    data object List : StudySubScreen
+    data class Home(val lesson: Lesson) : StudySubScreen
+    data class Session(val lesson: Lesson) : StudySubScreen
+    data class VocabularyList(val lesson: Lesson) : StudySubScreen
 }
 
 /**
@@ -49,14 +63,17 @@ fun MainScreen(
     initialGoal: Goal,
     goalsRepository: GoalsRepository,
     materialsRepository: MaterialsRepository,
+    vocabularyRepository: VocabularyRepository,
     accessToken: String,
     onLogout: () -> Unit,
 ) {
     var goal by remember { mutableStateOf(initialGoal) }
     var selectedTab by remember { mutableStateOf(MainTab.HOME) }
     var materialsSubScreen by remember { mutableStateOf<MaterialsSubScreen>(MaterialsSubScreen.List) }
+    var studySubScreen by remember { mutableStateOf<StudySubScreen>(StudySubScreen.List) }
 
-    val showTabBar = selectedTab != MainTab.MATERIALS || materialsSubScreen is MaterialsSubScreen.List
+    val showTabBar = (selectedTab != MainTab.MATERIALS || materialsSubScreen is MaterialsSubScreen.List) &&
+        (selectedTab != MainTab.STUDY || studySubScreen is StudySubScreen.List)
 
     Scaffold(
         bottomBar = {
@@ -76,7 +93,10 @@ fun MainScreen(
                     )
                     NavigationBarItem(
                         selected = selectedTab == MainTab.STUDY,
-                        onClick = { selectedTab = MainTab.STUDY },
+                        onClick = {
+                            selectedTab = MainTab.STUDY
+                            studySubScreen = StudySubScreen.List
+                        },
                         icon = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = "Study") },
                         label = { Text("Study") },
                     )
@@ -105,13 +125,34 @@ fun MainScreen(
 
                 MainTab.GOALS -> GoalsScreen(goal = goal)
 
-                MainTab.STUDY -> {
-                    val viewModel = remember(goal.id) {
-                        LessonSelectionViewModel(accessToken, goal.id, goalsRepository)
+                MainTab.STUDY -> when (val sub = studySubScreen) {
+                    StudySubScreen.List -> {
+                        val viewModel = remember(goal.id) {
+                            LessonSelectionViewModel(accessToken, goal.id, goalsRepository)
+                        }
+                        StudyScreen(viewModel = viewModel, onOpenLesson = { lesson -> studySubScreen = StudySubScreen.Home(lesson) })
                     }
-                    // No lesson is ever "ready" until M6/M7 populate real vocab/grammar content,
-                    // so there's nowhere to route to yet - see StudyScreen's own doc comment.
-                    StudyScreen(viewModel = viewModel, onOpenLesson = {})
+
+                    is StudySubScreen.Home -> LessonHomeScreen(
+                        lessonTitle = sub.lesson.title,
+                        onStartVocabularySession = { studySubScreen = StudySubScreen.Session(sub.lesson) },
+                        onViewVocabularyList = { studySubScreen = StudySubScreen.VocabularyList(sub.lesson) },
+                        onBack = { studySubScreen = StudySubScreen.List },
+                    )
+
+                    is StudySubScreen.Session -> {
+                        val viewModel = remember(sub.lesson.id) {
+                            VocabularySessionViewModel(accessToken, sub.lesson.id, vocabularyRepository)
+                        }
+                        VocabularySessionScreen(viewModel = viewModel, onDone = { studySubScreen = StudySubScreen.Home(sub.lesson) })
+                    }
+
+                    is StudySubScreen.VocabularyList -> {
+                        val viewModel = remember(sub.lesson.id) {
+                            VocabularyListViewModel(accessToken, sub.lesson.id, vocabularyRepository)
+                        }
+                        VocabularyListScreen(viewModel = viewModel, onBack = { studySubScreen = StudySubScreen.Home(sub.lesson) })
+                    }
                 }
 
                 MainTab.MATERIALS -> when (val sub = materialsSubScreen) {

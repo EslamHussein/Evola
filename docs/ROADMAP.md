@@ -213,25 +213,38 @@ production, in order, each disabled with "Still preparing...".
 
 ---
 
-## M6 — Vocabulary Learning + shared mastery/SRS module
+## M6 — Vocabulary Learning + shared mastery/SRS module ✅ done
 
 Goal: build the mastery/SRS module carefully here — Grammar (M7) reuses it unchanged.
 
 **AI pipeline** (`04_AI_PROMPTS.md` §2)
-- [ ] Extraction prompt + schema validation
-- [ ] Case-insensitive dedup against existing `vocabulary_items`
+- [x] Extraction prompt + schema validation - per-lesson `claude-haiku-4-5` call, auto-queued the
+      moment a lesson is materialized (both the LLM-segmentation path and the cache-hit fast path)
+- [x] Case-insensitive dedup against existing `vocabulary_items`, scoped to the lesson's goal
 
 **Backend — shared module**
-- [ ] Mastery state machine: `new → learning → reviewing → mastered`
-- [ ] Fixed interval ladder `[1, 3, 7, 16, 35]` days (not SM-2 — parameterized by item type)
-- [ ] `POST /lessons/{id}/vocabulary/session` — mixed new+due assembly
-- [ ] `POST /vocabulary-sessions/{id}/answer`, `.../complete`
+- [x] Mastery state machine: `new → learning → reviewing → mastered` (`MasterySrs.kt`, pure
+      functions, no DB access - the literal shared module Grammar/M7 will reuse unchanged)
+- [x] Fixed interval ladder `[1, 3, 7, 16, 35]` days
+- [x] `POST /lessons/{id}/vocabulary/session` — resumes an incomplete session or assembles new
+      (this lesson, cap 12) + due-review (other lessons, cap 15) + mastered-fallback
+- [x] `POST /vocabulary-sessions/{id}/answer`, `.../complete`
 
 **Mobile**
-- [ ] Vocabulary Session Start, Drill (multiple-choice + typed-recall, tolerant matching),
-      Summary, List screens
-- [ ] Incorrect-answer resurfacing (not immediately), zero-usable-vocabulary fallback
-- [ ] *(Audio/TTS playback deferred per your decision — not in this pass)*
+- [x] Vocabulary Session (consolidated Start/Drill/Summary state machine), typed-recall (tolerant
+      client-side matching) + both multiple-choice directions, List screen with mastery badges
+- [x] Incorrect-answer resurfacing (new session-item occurrence a few positions later, not
+      immediately), zero-usable-vocabulary and nothing-due-today fallback messaging
+- [x] *(Audio/TTS playback deferred per your decision — not in this pass)*
+
+Confirmed live: a real lesson from `A2 - Wortschatz.pdf` (already segmented in production since M4)
+flipped from `pending` to `ready` with real extracted German vocabulary via the deployed extraction
+worker. Full session/answer/complete flow verified via curl against production on a controlled
+test lesson: 13 items answered (12 pool + 1 resurfaced after a deliberate wrong answer), 92.3%
+accuracy computed correctly, all answered items' `mastery_state` advanced to `learning`. Verified
+on the Android emulator against local: Study tab → Lesson Home → vocabulary session → both drill
+types → list screen with badges, including a live tolerant-match check (a single-character-typo
+answer was still accepted).
 
 ---
 

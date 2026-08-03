@@ -150,6 +150,30 @@ internal object VocabularySessionsTable : Table("vocabulary_sessions") {
     override val primaryKey = PrimaryKey(id)
 }
 
+internal object VocabularyExtractionJobsTable : Table("vocabulary_extraction_jobs") {
+    val id = uuid("id")
+    val lessonId = uuid("lesson_id").uniqueIndex()
+    val status = text("status")
+    val error = text("error").nullable()
+    val createdAt = timestamp("created_at")
+    val updatedAt = timestamp("updated_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
+/** position is mutable - a resurfaced occurrence of the same vocabularyItemId gets a new row with
+ * a later position instead of replacing the original (see VocabularyService). */
+internal object VocabularySessionItemsTable : Table("vocabulary_session_items") {
+    val id = uuid("id")
+    val sessionId = uuid("session_id")
+    val vocabularyItemId = uuid("vocabulary_item_id")
+    val position = integer("position")
+    val drillType = text("drill_type")
+    val choices = text("choices").nullable()
+    val answeredCorrectly = bool("answered_correctly").nullable()
+    val answeredAt = timestamp("answered_at").nullable()
+    override val primaryKey = PrimaryKey(id)
+}
+
 internal object GrammarTopicsTable : Table("grammar_topics") {
     val id = uuid("id")
     val lessonId = uuid("lesson_id")

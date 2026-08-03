@@ -87,6 +87,11 @@ class LessonSegmentationWorker(
     private val database: Database,
     private val client: AnthropicClient,
     private val model: String = "claude-haiku-4-5",
+    /** Called after new lessons are materialized, so the caller can wake a
+     * [VocabularyExtractionWorker] - "successful split auto-queues each lesson for parallel
+     * vocabulary extraction" (01_PRODUCT_SPEC.md §1.6). Mirrors [MaterialService]'s own
+     * `onJobQueued` callback pattern. */
+    private val onLessonsQueued: () -> Unit = {},
 ) {
     val wake = Channel<Unit>(Channel.CONFLATED)
 
@@ -227,7 +232,7 @@ class LessonSegmentationWorker(
             .build()
         val response = withContext(Dispatchers.IO) { client.messages().create(params) }
         logModelCall(response, jobId)
-        val raw = extractText(response)
+        val raw = extractModelText(response)
         raw?.let { runCatching { MATERIALS_JSON.decodeFromString(SegmentationResultJson.serializer(), it) }.getOrNull() }
     } catch (e: Exception) {
         null
@@ -257,8 +262,8 @@ class LessonSegmentationWorker(
     }
 
     private suspend fun finalizeSuccess(contentHash: String, segments: List<RawSegment>, detectedLanguage: String?) {
-        newSuspendedTransaction(Dispatchers.IO, database) {
-            writeCacheAndLessons(contentHash, segments, detectedLanguage, unsupportedContent = false)
+        val newLessonIds = newSuspendedTransaction(Dispatchers.IO, database) {
+            val lessonIds = writeCacheAndLessons(contentHash, segments, detectedLanguage, unsupportedContent = false)
             ExtractionJobsTable.update({ ExtractionJobsTable.contentHash eq contentHash }) {
                 it[status] = "DONE"
                 it[error] = null
@@ -266,7 +271,9 @@ class LessonSegmentationWorker(
                 it[updatedAt] = Instant.now()
             }
             MaterialsTable.update({ MaterialsTable.contentHash eq contentHash }) { it[status] = "READY" }
+            lessonIds
         }
+        if (newLessonIds.isNotEmpty()) onLessonsQueued()
     }
 
     private suspend fun markPartiallyFailed(
@@ -276,9 +283,11 @@ class LessonSegmentationWorker(
         mergedSegments: List<RawSegment>,
         detectedLanguage: String?,
     ) {
-        newSuspendedTransaction(Dispatchers.IO, database) {
-            if (mergedSegments.isNotEmpty()) {
+        val newLessonIds = newSuspendedTransaction(Dispatchers.IO, database) {
+            val lessonIds = if (mergedSegments.isNotEmpty()) {
                 writeCacheAndLessons(contentHash, mergedSegments, detectedLanguage, unsupportedContent = false)
+            } else {
+                emptyList()
             }
             ExtractionJobsTable.update({ ExtractionJobsTable.id eq jobId }) {
                 it[status] = "FAILED"
@@ -287,7 +296,9 @@ class LessonSegmentationWorker(
                 it[updatedAt] = Instant.now()
             }
             MaterialsTable.update({ MaterialsTable.contentHash eq contentHash }) { it[status] = "FAILED" }
+            lessonIds
         }
+        if (newLessonIds.isNotEmpty()) onLessonsQueued()
     }
 
     private suspend fun markUnsupported(contentHash: String) {
@@ -321,13 +332,15 @@ class LessonSegmentationWorker(
     }
 
     /** Idempotent: always deletes and re-inserts every affected material's lessons from the full
-     * merged segment list, so a resumed job (partial retry) never duplicates already-created rows. */
+     * merged segment list, so a resumed job (partial retry) never duplicates already-created rows.
+     * Returns the newly-created lesson ids so the caller can decide whether to wake the
+     * vocabulary-extraction worker. */
     private fun writeCacheAndLessons(
         contentHash: String,
         segments: List<RawSegment>,
         detectedLanguage: String?,
         unsupportedContent: Boolean,
-    ) {
+    ): List<UUID> {
         val segmentsJson = MATERIALS_JSON.encodeToString(ListSerializer(RawSegmentJson.serializer()), segments.map { it.toJson() })
         val existingId = ExtractionCacheTable.selectAll().where { ExtractionCacheTable.contentHash eq contentHash }
             .singleOrNull()?.get(ExtractionCacheTable.id)
@@ -350,16 +363,18 @@ class LessonSegmentationWorker(
             }
         }
 
-        if (segments.isEmpty()) return
+        if (segments.isEmpty()) return emptyList()
 
         val affectedMaterials = MaterialsTable.selectAll().where { MaterialsTable.contentHash eq contentHash }
             .map { it[MaterialsTable.id] to it[MaterialsTable.goalId] }
 
+        val newLessonIds = mutableListOf<UUID>()
         for ((materialId, goalId) in affectedMaterials) {
             LessonsTable.deleteWhere { builder -> builder.run { LessonsTable.materialId eq materialId } }
             segments.forEachIndexed { index, segment ->
+                val lessonId = UUID.randomUUID()
                 LessonsTable.insert {
-                    it[id] = UUID.randomUUID()
+                    it[id] = lessonId
                     it[this.materialId] = materialId
                     it[this.goalId] = goalId
                     it[number] = index + 1
@@ -368,8 +383,17 @@ class LessonSegmentationWorker(
                     it[sourceTextRef] = "${segment.startOffset}:${segment.endOffset}"
                     it[createdAt] = Instant.now()
                 }
+                VocabularyExtractionJobsTable.insert {
+                    it[id] = UUID.randomUUID()
+                    it[this.lessonId] = lessonId
+                    it[status] = "QUEUED"
+                    it[createdAt] = Instant.now()
+                    it[updatedAt] = Instant.now()
+                }
+                newLessonIds.add(lessonId)
             }
         }
+        return newLessonIds
     }
 
     private fun encodeRanges(ranges: List<IntRange>): String =
@@ -377,16 +401,4 @@ class LessonSegmentationWorker(
 
     private fun decodeRanges(json: String): List<IntRange> =
         MATERIALS_JSON.decodeFromString(ListSerializer(RangeJson.serializer()), json).map { it.start..it.end }
-
-    private fun extractText(response: Message): String? =
-        response.content()
-            .asSequence()
-            .mapNotNull { block -> block.text().orElse(null)?.text() }
-            .firstOrNull()
-            .let { normalizeJsonText(it) }
-
-    /** The model occasionally wraps otherwise-valid JSON in markdown fences despite instructions not
-     * to - strip them rather than failing the whole chunk over a formatting slip. */
-    private fun normalizeJsonText(text: String?): String? =
-        text?.trim()?.removePrefix("```json")?.removePrefix("```")?.removeSuffix("```")?.trim()
 }

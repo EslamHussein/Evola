@@ -280,3 +280,48 @@ fun Route.goalRoutes(goalService: GoalService) {
         }
     }
 }
+
+fun Route.vocabularyRoutes(vocabularyService: VocabularyService) {
+    authenticate("auth-jwt") {
+        post("/lessons/{id}/vocabulary/session") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@post call.respond(HttpStatusCode.Unauthorized)
+            val lessonId = call.parameters["id"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing lesson id"))
+            val session = vocabularyService.startOrResumeSession(userId, lessonId)
+                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Lesson not found"))
+            call.respond(HttpStatusCode.Created, session)
+        }
+
+        get("/lessons/{id}/vocabulary") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@get call.respond(HttpStatusCode.Unauthorized)
+            val lessonId = call.parameters["id"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing lesson id"))
+            val items = vocabularyService.listVocabulary(userId, lessonId)
+                ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Lesson not found"))
+            call.respond(HttpStatusCode.OK, items)
+        }
+
+        post("/vocabulary-sessions/{id}/answer") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@post call.respond(HttpStatusCode.Unauthorized)
+            val sessionId = call.parameters["id"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session id"))
+            val request = call.receive<VocabularyAnswerRequest>()
+            val result = vocabularyService.answer(userId, sessionId, request)
+                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Session or item not found"))
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+        post("/vocabulary-sessions/{id}/complete") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@post call.respond(HttpStatusCode.Unauthorized)
+            val sessionId = call.parameters["id"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session id"))
+            val result = vocabularyService.complete(userId, sessionId)
+                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Session not found"))
+            call.respond(HttpStatusCode.OK, result)
+        }
+    }
+}

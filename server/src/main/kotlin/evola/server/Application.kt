@@ -35,10 +35,21 @@ fun main() {
 
     val database = DatabaseFactory.connect(databaseUrl, databaseUser, databasePassword)
     val anthropicClient = AnthropicOkHttpClient.builder().apiKey(anthropicApiKey).build()
-    val lessonSegmentationWorker = LessonSegmentationWorker(database, anthropicClient)
-    val materialService = MaterialService(database, uploadsDir, onJobQueued = { lessonSegmentationWorker.wake.trySend(Unit) })
+    val vocabularyExtractionWorker = VocabularyExtractionWorker(database, anthropicClient)
+    val lessonSegmentationWorker = LessonSegmentationWorker(
+        database,
+        anthropicClient,
+        onLessonsQueued = { vocabularyExtractionWorker.wake.trySend(Unit) },
+    )
+    val materialService = MaterialService(
+        database,
+        uploadsDir,
+        onJobQueued = { lessonSegmentationWorker.wake.trySend(Unit) },
+        onVocabJobQueued = { vocabularyExtractionWorker.wake.trySend(Unit) },
+    )
     val authService = AuthService(database, jwtSecret)
     val goalService = GoalService(database)
+    val vocabularyService = VocabularyService(database)
 
     println("Evola :server starting on 127.0.0.1:$port ...")
     embeddedServer(CIO, port = port, host = "127.0.0.1") {
@@ -58,11 +69,13 @@ fun main() {
             }
         }
         lessonSegmentationWorker.start(this)
+        vocabularyExtractionWorker.start(this)
         routing {
             healthRoutes()
             materialRoutes(materialService)
             authRoutes(authService)
             goalRoutes(goalService)
+            vocabularyRoutes(vocabularyService)
         }
     }.start(wait = true)
 }

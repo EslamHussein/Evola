@@ -61,6 +61,9 @@ class MaterialService(
     private val database: Database,
     private val uploadsDir: String = "uploads",
     private val onJobQueued: () -> Unit = {},
+    /** Woken after the cache-hit fast path materializes lessons, mirroring how
+     * [LessonSegmentationWorker] wakes the same vocabulary-extraction worker on its own path. */
+    private val onVocabJobQueued: () -> Unit = {},
 ) {
 
     suspend fun uploadMaterial(userId: String, goalId: String, fileName: String, bytes: ByteArray): UploadOutcome {
@@ -86,6 +89,7 @@ class MaterialService(
 
         val contentHash = sha256(normalizedText)
         var queuedNewJob = false
+        var queuedVocabJobs = false
 
         val outcome = newSuspendedTransaction(Dispatchers.IO, database) {
             val existingForUser = MaterialsTable
@@ -136,13 +140,15 @@ class MaterialService(
                     queuedNewJob = true
                 }
             } else if (status == "READY") {
-                materializeLessons(materialId, goalUuid, cacheRow[ExtractionCacheTable.segments])
+                val lessonIds = materializeLessons(materialId, goalUuid, cacheRow[ExtractionCacheTable.segments])
+                queuedVocabJobs = lessonIds.isNotEmpty()
             }
 
             UploadOutcome.Created(materialId.toString(), status)
         }
 
         if (queuedNewJob) onJobQueued()
+        if (queuedVocabJobs) onVocabJobQueued()
         return outcome
     }
 
@@ -196,12 +202,16 @@ class MaterialService(
 
     /** Cache-hit upload fast path: another material with this exact content already has a
      * segmentation result, so materialize this material's own lesson rows immediately instead of
-     * queuing a job (same content-hash dedup the old single-shot pipeline used). */
-    private fun materializeLessons(materialId: UUID, goalId: UUID, segmentsJson: String) {
+     * queuing a segmentation job (same content-hash dedup the old single-shot pipeline used) -
+     * each new lesson still gets its own vocabulary-extraction job queued, same as the normal
+     * segmentation-worker path. Returns the newly-created lesson ids. */
+    private fun materializeLessons(materialId: UUID, goalId: UUID, segmentsJson: String): List<UUID> {
         val segments = MATERIALS_JSON.decodeFromString(ListSerializer(RawSegmentJson.serializer()), segmentsJson)
+        val lessonIds = mutableListOf<UUID>()
         segments.forEachIndexed { index, segment ->
+            val lessonId = UUID.randomUUID()
             LessonsTable.insert {
-                it[id] = UUID.randomUUID()
+                it[id] = lessonId
                 it[this.materialId] = materialId
                 it[this.goalId] = goalId
                 it[number] = index + 1
@@ -210,7 +220,16 @@ class MaterialService(
                 it[sourceTextRef] = "${segment.startOffset}:${segment.endOffset}"
                 it[createdAt] = Instant.now()
             }
+            VocabularyExtractionJobsTable.insert {
+                it[id] = UUID.randomUUID()
+                it[this.lessonId] = lessonId
+                it[status] = "QUEUED"
+                it[createdAt] = Instant.now()
+                it[updatedAt] = Instant.now()
+            }
+            lessonIds.add(lessonId)
         }
+        return lessonIds
     }
 
     private fun saveToDisk(materialId: UUID, mimeType: String, bytes: ByteArray): String {

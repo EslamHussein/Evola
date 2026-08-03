@@ -36,7 +36,7 @@ import evola.shared.goals.Lesson
  * [onOpenLesson] is already wired for that, but nothing routes there yet since the Lesson Home
  * hub (screen #12) is out of scope until then. */
 @Composable
-fun StudyScreen(viewModel: LessonSelectionViewModel, onOpenLesson: (String) -> Unit) {
+fun StudyScreen(viewModel: LessonSelectionViewModel, onOpenLesson: (Lesson) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(topBar = { TopAppBar(title = { Text("Study") }) }) { padding ->
@@ -75,7 +75,7 @@ private fun ErrorBody(message: String, onRetry: () -> Unit) {
 }
 
 @Composable
-private fun LoadedBody(lessons: List<Lesson>, onOpenLesson: (String) -> Unit) {
+private fun LoadedBody(lessons: List<Lesson>, onOpenLesson: (Lesson) -> Unit) {
     if (lessons.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             Text(
@@ -109,7 +109,7 @@ private fun LoadedBody(lessons: List<Lesson>, onOpenLesson: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         itemsIndexed(lessons) { index, lesson ->
-            LessonRow(lesson = lesson, isCurrent = index == currentIndex, onClick = { onOpenLesson(lesson.id) })
+            LessonRow(lesson = lesson, isCurrent = index == currentIndex, onClick = { onOpenLesson(lesson) })
         }
     }
 }
