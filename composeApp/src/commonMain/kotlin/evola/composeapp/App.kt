@@ -143,6 +143,7 @@ fun App() {
             }
 
             AppScreen.Register -> {
+                BackHandler(onBack = { screen = AppScreen.Login })
                 val viewModel = remember { RegisterViewModel(authRepository) }
                 RegisterScreen(
                     viewModel = viewModel,
@@ -152,6 +153,7 @@ fun App() {
             }
 
             AppScreen.ForgotPassword -> {
+                BackHandler(onBack = { screen = AppScreen.Login })
                 val viewModel = remember { ForgotPasswordViewModel(authRepository) }
                 ForgotPasswordScreen(
                     viewModel = viewModel,
@@ -161,6 +163,7 @@ fun App() {
             }
 
             AppScreen.ResetPassword -> {
+                BackHandler(onBack = { screen = AppScreen.Login })
                 val viewModel = remember { ResetPasswordViewModel(authRepository) }
                 ResetPasswordScreen(
                     viewModel = viewModel,

@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import evola.composeapp.BackHandler
 import evola.composeapp.lessons.LessonHomeScreen
 import evola.composeapp.lessons.VocabularyListScreen
 import evola.composeapp.lessons.VocabularyListViewModel
@@ -133,12 +134,15 @@ fun MainScreen(
                         StudyScreen(viewModel = viewModel, onOpenLesson = { lesson -> studySubScreen = StudySubScreen.Home(lesson) })
                     }
 
-                    is StudySubScreen.Home -> LessonHomeScreen(
-                        lessonTitle = sub.lesson.title,
-                        onStartVocabularySession = { studySubScreen = StudySubScreen.Session(sub.lesson) },
-                        onViewVocabularyList = { studySubScreen = StudySubScreen.VocabularyList(sub.lesson) },
-                        onBack = { studySubScreen = StudySubScreen.List },
-                    )
+                    is StudySubScreen.Home -> {
+                        BackHandler(onBack = { studySubScreen = StudySubScreen.List })
+                        LessonHomeScreen(
+                            lessonTitle = sub.lesson.title,
+                            onStartVocabularySession = { studySubScreen = StudySubScreen.Session(sub.lesson) },
+                            onViewVocabularyList = { studySubScreen = StudySubScreen.VocabularyList(sub.lesson) },
+                            onBack = { studySubScreen = StudySubScreen.List },
+                        )
+                    }
 
                     is StudySubScreen.Session -> {
                         val viewModel = remember(sub.lesson.id) {
@@ -148,6 +152,7 @@ fun MainScreen(
                     }
 
                     is StudySubScreen.VocabularyList -> {
+                        BackHandler(onBack = { studySubScreen = StudySubScreen.Home(sub.lesson) })
                         val viewModel = remember(sub.lesson.id) {
                             VocabularyListViewModel(accessToken, sub.lesson.id, vocabularyRepository)
                         }
@@ -166,6 +171,7 @@ fun MainScreen(
                     }
 
                     MaterialsSubScreen.Add -> {
+                        BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.List })
                         val viewModel = remember { AddMaterialViewModel(accessToken, goal.id, materialsRepository) }
                         AddMaterialScreen(
                             viewModel = viewModel,
@@ -175,6 +181,7 @@ fun MainScreen(
                     }
 
                     is MaterialsSubScreen.Detail -> {
+                        BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.List })
                         val viewModel = remember(sub.materialId) {
                             MaterialDetailViewModel(accessToken, sub.materialId, materialsRepository)
                         }

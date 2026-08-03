@@ -10,8 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -34,15 +38,32 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import evola.composeapp.BackHandler
 import evola.shared.vocabulary.VocabularySessionItem
 import evola.shared.vocabulary.isTolerantMatch
 
-/** Consolidated Session Start / Drill / Summary per 06_SCREENS_REFERENCE.md screens #13-15. */
+/** Consolidated Session Start / Drill / Summary per 06_SCREENS_REFERENCE.md screens #13-15.
+ * Exiting mid-drill is always safe - the session resumes exactly where it left off next time
+ * (`VocabularySessionViewModel`/`startOrResumeSession` already guarantee this) - so both the
+ * back arrow and the system back gesture are wired to [onDone] in every state, not just the
+ * empty/summary ones. */
 @Composable
 fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    BackHandler(onBack = onDone)
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Vocabulary session") }) }) { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Vocabulary session") },
+                navigationIcon = {
+                    IconButton(onClick = onDone) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+            )
+        },
+    ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
                 is VocabularySessionState.Loading -> CenteredMessage { CircularProgressIndicator() }
