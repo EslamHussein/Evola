@@ -270,8 +270,9 @@ is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full
       prompt interpolation — V11 migration; ai_instructions interpolates into vocabulary
       extraction only (not the shared, content-hash-cached segmentation prompt - see commit for
       why the original segmentation_key idea was dropped); verified live in production
-- [ ] Phase 3 — AI Wizard UI (4 steps) + the processing/loading screen the handoff's own README
-      flags as a gap
+- [x] Phase 3 — AI Wizard UI (4 steps) + the processing/loading screen the handoff's own README
+      flags as a gap — Start Analysis is the real upload point now; verified full walkthrough
+      on-emulator + confirmed persisted fields in Postgres
 - [ ] Phase 4 — vocabulary extraction schema expansion: Arabic `meaning_ar`, IPA, related words,
       difficulty/frequency ratings, memory tip
 - [ ] Phase 5 — Resource Details redesign (progress ring, status tags, meta stats) + lesson-card tap
