@@ -42,6 +42,10 @@ data class VocabularySessionItemResponse(
     val meaning: String,
     @SerialName("drill_type") val drillType: String,
     val choices: List<String> = emptyList(),
+    @SerialName("sentence_with_blank") val sentenceWithBlank: String? = null,
+    @SerialName("part_of_speech") val partOfSpeech: String? = null,
+    @SerialName("grammatical_case") val grammaticalCase: String? = null,
+    @SerialName("sentence_translation") val sentenceTranslation: String? = null,
 )
 
 @Serializable
@@ -72,6 +76,15 @@ data class VocabularySessionCompleteResponse(
 )
 
 private data class AssembledItem(val vocabularyItemId: UUID, val drillType: String, val choices: List<String>?)
+
+private data class VocabInfo(
+    val id: UUID,
+    val term: String,
+    val meaning: String,
+    val exampleSentence: String?,
+    val partOfSpeech: String?,
+    val exampleSentenceTranslation: String?,
+)
 
 /**
  * Vocabulary Learning (01_PRODUCT_SPEC.md §1.8): session assembly/resume, answer grading via
@@ -253,14 +266,31 @@ class VocabularyService(private val database: Database) {
             .map {
                 val choicesJson = it[VocabularySessionItemsTable.choices]
                 val choices = choicesJson?.let { c -> MATERIALS_JSON.decodeFromString(ListSerializer(String.serializer()), c) } ?: emptyList()
+                val drillType = it[VocabularySessionItemsTable.drillType]
+                val term = it[VocabularyItemsTable.term]
+                val isFillBlank = drillType == "fill_blank"
+                val exampleSentence = it[VocabularyItemsTable.exampleSentence]
                 VocabularySessionItemResponse(
                     itemId = it[VocabularySessionItemsTable.id].toString(),
-                    term = it[VocabularyItemsTable.term],
+                    term = term,
                     meaning = it[VocabularyItemsTable.meaning],
-                    drillType = it[VocabularySessionItemsTable.drillType],
+                    drillType = drillType,
                     choices = choices,
+                    sentenceWithBlank = if (isFillBlank && exampleSentence != null) blankOutTerm(exampleSentence, term) else null,
+                    partOfSpeech = if (isFillBlank) it[VocabularyItemsTable.partOfSpeech] else null,
+                    grammaticalCase = if (isFillBlank) it[VocabularyItemsTable.grammaticalCase] else null,
+                    sentenceTranslation = if (isFillBlank) it[VocabularyItemsTable.exampleSentenceTranslation] else null,
                 )
             }
+
+    /** Replaces the term's first case-insensitive occurrence in the sentence with a blank -
+     * [isFillBlankEligible] already guarantees the term appears in the sentence, but this stays
+     * defensive (returns the sentence unchanged) if that invariant is ever violated. */
+    private fun blankOutTerm(sentence: String, term: String): String {
+        val idx = sentence.indexOf(term, ignoreCase = true)
+        if (idx < 0) return sentence
+        return sentence.substring(0, idx) + "___" + sentence.substring(idx + term.length)
+    }
 
     /** New words from this lesson (cap [NEW_ITEMS_CAP]) mixed with due review words from other
      * lessons (cap [DUE_REVIEW_CAP], only items already studied at least once - `next_review_at`
@@ -305,42 +335,64 @@ class VocabularyService(private val database: Database) {
         val poolIds = newItemIds + dueItemIds + fallbackItemIds
         if (poolIds.isEmpty()) return emptyList()
 
-        // (id, term, meaning) for every item this user has, for distractor selection - session
+        // Every item this user has, for distractor selection and fill-blank eligibility - session
         // pools are small (a few dozen items at MVP scale), so one query up front is cheap.
         val allUserVocab = VocabularyItemsTable
             .join(VocabularyProgressTable, JoinType.INNER, VocabularyItemsTable.id, VocabularyProgressTable.vocabularyItemId)
             .selectAll()
             .where { VocabularyProgressTable.userId eq userId }
-            .map { Triple(it[VocabularyItemsTable.id], it[VocabularyItemsTable.term], it[VocabularyItemsTable.meaning]) }
-        val byId = allUserVocab.associateBy { it.first }
+            .map {
+                VocabInfo(
+                    id = it[VocabularyItemsTable.id],
+                    term = it[VocabularyItemsTable.term],
+                    meaning = it[VocabularyItemsTable.meaning],
+                    exampleSentence = it[VocabularyItemsTable.exampleSentence],
+                    partOfSpeech = it[VocabularyItemsTable.partOfSpeech],
+                    exampleSentenceTranslation = it[VocabularyItemsTable.exampleSentenceTranslation],
+                )
+            }
+        val byId = allUserVocab.associateBy { it.id }
 
-        return poolIds.map { itemId ->
-            val (_, term, meaning) = byId.getValue(itemId)
-            buildAssembledItem(itemId, term, meaning, allUserVocab)
+        return poolIds.map { itemId -> buildAssembledItem(byId.getValue(itemId), allUserVocab) }
+    }
+
+    /** A word is eligible for the "fill in the blank" drill only once extraction has populated
+     * enough context to render it (part of speech tag, an English translation of the example
+     * sentence, and the example sentence itself literally containing the term to blank out) -
+     * items extracted before V10 simply fall back to typed-recall/multiple-choice instead. */
+    private fun isFillBlankEligible(info: VocabInfo): Boolean =
+        info.exampleSentence != null &&
+            info.partOfSpeech != null &&
+            info.exampleSentenceTranslation != null &&
+            info.exampleSentence.contains(info.term, ignoreCase = true)
+
+    private fun buildAssembledItem(info: VocabInfo, allUserVocab: List<VocabInfo>): AssembledItem {
+        val kinds = buildList {
+            add("typed_recall")
+            add("multiple_choice")
+            if (isFillBlankEligible(info)) add("fill_blank")
+        }
+        return when (kinds.random()) {
+            "fill_blank" -> AssembledItem(info.id, "fill_blank", null)
+            "typed_recall" -> AssembledItem(info.id, "typed_recall", null)
+            else -> buildMultipleChoice(info, allUserVocab)
         }
     }
 
-    private fun buildAssembledItem(
-        itemId: UUID,
-        term: String,
-        meaning: String,
-        allUserVocab: List<Triple<UUID, String, String>>,
-    ): AssembledItem {
-        if (Random.nextBoolean()) return AssembledItem(itemId, "typed_recall", null)
-
+    private fun buildMultipleChoice(info: VocabInfo, allUserVocab: List<VocabInfo>): AssembledItem {
         val termToMeaning = Random.nextBoolean()
-        val distractors = allUserVocab.filter { it.first != itemId }
+        val distractors = allUserVocab.filter { it.id != info.id }
             .shuffled()
             .take(3)
-            .map { if (termToMeaning) it.third else it.second }
-        val correctAnswer = if (termToMeaning) meaning else term
+            .map { if (termToMeaning) it.meaning else it.term }
+        val correctAnswer = if (termToMeaning) info.meaning else info.term
         val choices = (distractors + correctAnswer).shuffled()
 
         // Not enough distinct vocabulary anywhere yet to build a real multiple-choice question -
         // fall back to typed recall for this item rather than shipping a 1-or-2-choice question.
-        if (choices.size < 3) return AssembledItem(itemId, "typed_recall", null)
+        if (choices.size < 3) return AssembledItem(info.id, "typed_recall", null)
 
         val drillType = if (termToMeaning) "multiple_choice_term_to_meaning" else "multiple_choice_meaning_to_term"
-        return AssembledItem(itemId, drillType, choices)
+        return AssembledItem(info.id, drillType, choices)
     }
 }

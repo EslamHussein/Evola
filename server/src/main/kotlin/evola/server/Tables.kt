@@ -123,6 +123,11 @@ internal object VocabularyItemsTable : Table("vocabulary_items") {
     val meaning = varchar("meaning", 200)
     val gender = varchar("gender", 20).nullable()
     val exampleSentence = text("example_sentence").nullable()
+    /** Populated from V10 on - existing rows extracted before it stay null, which simply excludes
+     * them from the "fill in the blank" drill (falls back to typed-recall/multiple-choice). */
+    val partOfSpeech = varchar("part_of_speech", 30).nullable()
+    val grammaticalCase = varchar("grammatical_case", 20).nullable()
+    val exampleSentenceTranslation = text("example_sentence_translation").nullable()
     val createdAt = timestamp("created_at")
     override val primaryKey = PrimaryKey(id)
 }

@@ -88,6 +88,9 @@ class VocabularyServiceTest {
         masteryState: String = "new",
         lastReviewedAt: Instant? = null,
         nextReviewAt: Instant = Instant.now(),
+        exampleSentence: String? = null,
+        partOfSpeech: String? = null,
+        exampleSentenceTranslation: String? = null,
     ): UUID {
         val itemId = UUID.randomUUID()
         transaction(database) {
@@ -96,6 +99,9 @@ class VocabularyServiceTest {
                 it[this.lessonId] = lessonId
                 it[this.term] = term
                 it[this.meaning] = meaning
+                it[this.exampleSentence] = exampleSentence
+                it[this.partOfSpeech] = partOfSpeech
+                it[this.exampleSentenceTranslation] = exampleSentenceTranslation
                 it[createdAt] = Instant.now()
             }
             VocabularyProgressTable.insert {
@@ -265,5 +271,42 @@ class VocabularyServiceTest {
         val session = vocabularyService.startOrResumeSession(userId, currentLesson.toString())
         assertNotNull(session)
         assertEquals(2, session.items.size)
+    }
+
+    @Test
+    fun `fill-blank-eligible items can be assigned the fill_blank drill with a correctly blanked sentence`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val materialId = insertMaterial(userId, goalId)
+        val lessonId = insertLesson(materialId, goalId)
+        // 12 eligible items (drill type is a 1-in-3 random draw per item) makes the odds of zero
+        // fill_blank draws astronomically small (~(2/3)^12) without needing a seeded Random.
+        repeat(12) { i ->
+            insertVocabItem(
+                lessonId, userId, "Hund$i", "dog",
+                exampleSentence = "Ich habe einen Hund$i.",
+                partOfSpeech = "noun",
+                exampleSentenceTranslation = "I have a dog.",
+            )
+        }
+
+        val session = vocabularyService.startOrResumeSession(userId, lessonId.toString())
+        assertNotNull(session)
+        val fillBlankItem = session.items.firstOrNull { it.drillType == "fill_blank" }
+        assertNotNull(fillBlankItem, "expected at least one fill_blank item across 12 eligible draws")
+        assertEquals("Ich habe einen ___.", fillBlankItem.sentenceWithBlank)
+        assertEquals("noun", fillBlankItem.partOfSpeech)
+        assertEquals("I have a dog.", fillBlankItem.sentenceTranslation)
+    }
+
+    @Test
+    fun `items missing example sentence or translation are never assigned the fill_blank drill`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val materialId = insertMaterial(userId, goalId)
+        val lessonId = insertLesson(materialId, goalId)
+        repeat(12) { i -> insertVocabItem(lessonId, userId, "Hund$i", "dog") }
+
+        val session = vocabularyService.startOrResumeSession(userId, lessonId.toString())
+        assertNotNull(session)
+        assertTrue(session.items.none { it.drillType == "fill_blank" })
     }
 }

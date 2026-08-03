@@ -26,7 +26,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import evola.shared.vocabulary.VocabularySessionItem
@@ -96,42 +101,110 @@ private fun DrillBody(item: VocabularySessionItem, answeredCount: Int, onSubmit:
         Text("Answered: $answeredCount", style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(24.dp))
 
-        val prompt = if (item.isMultipleChoice) {
-            if (item.isTermToMeaning) item.term else item.meaning
-        } else {
-            item.term
+        when {
+            item.isFillBlank -> FillBlankDrill(item, onSubmit)
+            item.isMultipleChoice -> MultipleChoiceDrill(item, onSubmit)
+            else -> TypedRecallDrill(item, onSubmit)
         }
-        Text(prompt, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(32.dp))
+    }
+}
 
-        if (item.isMultipleChoice) {
-            val expected = if (item.isTermToMeaning) item.meaning else item.term
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                item.choices.forEach { choice ->
-                    OutlinedButton(
-                        onClick = { onSubmit(choice, choice == expected) },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(choice)
-                    }
-                }
-            }
-        } else {
-            var typedAnswer by remember(item.itemId) { mutableStateOf("") }
-            OutlinedTextField(
-                value = typedAnswer,
-                onValueChange = { typedAnswer = it },
-                label = { Text("Type the meaning") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(16.dp))
-            Button(
-                onClick = { onSubmit(typedAnswer, isTolerantMatch(item.meaning, typedAnswer)) },
+@Composable
+private fun MultipleChoiceDrill(item: VocabularySessionItem, onSubmit: (String, Boolean) -> Unit) {
+    val prompt = if (item.isTermToMeaning) item.term else item.meaning
+    Text(prompt, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+    Spacer(Modifier.height(32.dp))
+
+    val expected = if (item.isTermToMeaning) item.meaning else item.term
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        item.choices.forEach { choice ->
+            OutlinedButton(
+                onClick = { onSubmit(choice, choice == expected) },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Submit")
+                Text(choice)
             }
         }
     }
+}
+
+@Composable
+private fun TypedRecallDrill(item: VocabularySessionItem, onSubmit: (String, Boolean) -> Unit) {
+    Text(item.term, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+    Spacer(Modifier.height(32.dp))
+
+    var typedAnswer by remember(item.itemId) { mutableStateOf("") }
+    OutlinedTextField(
+        value = typedAnswer,
+        onValueChange = { typedAnswer = it },
+        label = { Text("Type the meaning") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(16.dp))
+    Button(
+        onClick = { onSubmit(typedAnswer, isTolerantMatch(item.meaning, typedAnswer)) },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text("Submit")
+    }
+}
+
+/** Fill-in-the-blank drill: the term's own example sentence with the term itself replaced by a
+ * blank, plus the grammar tag (part of speech / case) and an English translation as a hint - this
+ * tests recalling the term in context, complementing typed-recall's meaning-from-term. */
+@Composable
+private fun FillBlankDrill(item: VocabularySessionItem, onSubmit: (String, Boolean) -> Unit) {
+    Text(
+        blankedSentence(item.sentenceWithBlank ?: item.term),
+        style = MaterialTheme.typography.headlineSmall,
+    )
+    Spacer(Modifier.height(12.dp))
+
+    val tag = listOfNotNull(item.partOfSpeech, item.grammaticalCase).joinToString(", ")
+    if (tag.isNotEmpty()) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = MaterialTheme.shapes.small,
+        ) {
+            Text(
+                tag,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+    }
+
+    item.sentenceTranslation?.let {
+        Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(20.dp))
+    }
+
+    var typedAnswer by remember(item.itemId) { mutableStateOf("") }
+    OutlinedTextField(
+        value = typedAnswer,
+        onValueChange = { typedAnswer = it },
+        label = { Text("Type the missing word") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(16.dp))
+    Button(
+        onClick = { onSubmit(typedAnswer, isTolerantMatch(item.term, typedAnswer)) },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text("Submit")
+    }
+}
+
+private fun blankedSentence(sentence: String): AnnotatedString = buildAnnotatedString {
+    val idx = sentence.indexOf("___")
+    if (idx < 0) {
+        append(sentence)
+        return@buildAnnotatedString
+    }
+        append(sentence.substring(0, idx))
+    withStyle(SpanStyle(textDecoration = TextDecoration.Underline)) { append("_____") }
+    append(sentence.substring(idx + 3))
 }

@@ -33,6 +33,10 @@ private data class VocabularySessionItemWireResponse(
     val meaning: String,
     @SerialName("drill_type") val drillType: String,
     val choices: List<String> = emptyList(),
+    @SerialName("sentence_with_blank") val sentenceWithBlank: String? = null,
+    @SerialName("part_of_speech") val partOfSpeech: String? = null,
+    @SerialName("grammatical_case") val grammaticalCase: String? = null,
+    @SerialName("sentence_translation") val sentenceTranslation: String? = null,
 )
 
 @Serializable
@@ -77,7 +81,19 @@ class HttpVocabularyRepository(
         val body = response.body<VocabularySessionWireResponse>()
         return VocabularySession(
             sessionId = body.sessionId,
-            items = body.items.map { VocabularySessionItem(it.itemId, it.term, it.meaning, it.drillType, it.choices) },
+            items = body.items.map {
+                VocabularySessionItem(
+                    itemId = it.itemId,
+                    term = it.term,
+                    meaning = it.meaning,
+                    drillType = it.drillType,
+                    choices = it.choices,
+                    sentenceWithBlank = it.sentenceWithBlank,
+                    partOfSpeech = it.partOfSpeech,
+                    grammaticalCase = it.grammaticalCase,
+                    sentenceTranslation = it.sentenceTranslation,
+                )
+            },
             hasLessonVocabulary = body.hasLessonVocabulary,
         )
     }

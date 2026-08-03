@@ -37,7 +37,15 @@ private const val VOCABULARY_EXTRACTION_SYSTEM_PROMPT_PREFIX =
         "- gender: grammatical gender/article if the language marks it (e.g. \"der\"/\"die\"/\"das\" " +
         "for German nouns), otherwise null\n" +
         "- example_sentence: a sentence using the word - prefer a sentence from the source lesson " +
-        "text itself; only write a new one if no suitable sentence exists in the source\n\n" +
+        "text itself; only write a new one if no suitable sentence exists in the source. The " +
+        "sentence MUST contain the term itself (inflected as needed) so it can be blanked out for " +
+        "a fill-in-the-blank drill.\n" +
+        "- part_of_speech: one of \"noun\", \"verb\", \"adjective\", \"adverb\", \"pronoun\", " +
+        "\"preposition\", \"conjunction\", \"numeral\", \"interjection\", \"other\"\n" +
+        "- grammatical_case: the grammatical case of the term AS USED in example_sentence, one of " +
+        "\"nominative\", \"accusative\", \"dative\", \"genitive\" - only for languages/parts of " +
+        "speech that mark case (e.g. German nouns/pronouns/adjectives), otherwise null\n" +
+        "- example_sentence_translation: a concise English translation of example_sentence\n\n" +
         "Extract 15-30 items depending on lesson length. Do not invent words that don't appear in " +
         "the source text. Do not include function words (articles, basic pronouns) unless the " +
         "lesson is explicitly teaching them as a grammar point (in which case they belong in " +
@@ -45,7 +53,8 @@ private const val VOCABULARY_EXTRACTION_SYSTEM_PROMPT_PREFIX =
         "Output ONLY valid JSON, no prose, no markdown fences.\n\n" +
         "Output schema:\n" +
         "{\"items\": [{\"term\": string, \"meaning\": string, \"gender\": string|null, " +
-        "\"example_sentence\": string}]}"
+        "\"example_sentence\": string, \"part_of_speech\": string, \"grammatical_case\": " +
+        "string|null, \"example_sentence_translation\": string}]}"
 
 @Serializable
 private data class VocabExtractedItemJson(
@@ -53,6 +62,9 @@ private data class VocabExtractedItemJson(
     val meaning: String,
     val gender: String? = null,
     @SerialName("example_sentence") val exampleSentence: String? = null,
+    @SerialName("part_of_speech") val partOfSpeech: String? = null,
+    @SerialName("grammatical_case") val grammaticalCase: String? = null,
+    @SerialName("example_sentence_translation") val exampleSentenceTranslation: String? = null,
 )
 
 @Serializable
@@ -193,6 +205,9 @@ class VocabularyExtractionWorker(
                     it[meaning] = extracted.meaning.trim().take(200)
                     it[gender] = extracted.gender?.trim()?.take(20)
                     it[exampleSentence] = extracted.exampleSentence?.trim()
+                    it[partOfSpeech] = extracted.partOfSpeech?.trim()?.take(30)
+                    it[grammaticalCase] = extracted.grammaticalCase?.trim()?.take(20)
+                    it[exampleSentenceTranslation] = extracted.exampleSentenceTranslation?.trim()
                     it[createdAt] = now
                 }
                 VocabularyProgressTable.insert {
