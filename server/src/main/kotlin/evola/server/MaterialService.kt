@@ -26,6 +26,8 @@ internal val MATERIALS_JSON = Json { ignoreUnknownKeys = true }
 
 private const val MAX_FILE_SIZE_BYTES = 25L * 1024 * 1024
 private const val MIN_EXTRACTABLE_LENGTH = 20
+private const val MAX_PASTED_TEXT_LENGTH = 200_000
+private const val MIME_TEXT_PLAIN = "text/plain"
 
 sealed interface UploadOutcome {
     data class Created(val materialId: String, val status: String) : UploadOutcome
@@ -40,6 +42,13 @@ sealed interface UploadOutcome {
 
 @Serializable
 data class MaterialUploadResponse(@SerialName("material_id") val materialId: String, val status: String)
+
+@Serializable
+data class MaterialTextUploadRequest(
+    @SerialName("goal_id") val goalId: String,
+    @SerialName("file_name") val fileName: String,
+    val text: String,
+)
 
 @Serializable
 data class MaterialStatusResponse(val status: String, @SerialName("page_count") val pageCount: Int? = null)
@@ -84,7 +93,40 @@ class MaterialService(
             FileParseOutcome.PasswordProtected -> return UploadOutcome.PasswordProtected
             FileParseOutcome.Corrupted -> return UploadOutcome.CorruptedFile
         }
-        val normalizedText = normalize(text)
+        return finishUpload(userUuid, goalUuid, fileName, mimeType, bytes, text, pageCount)
+    }
+
+    /** Real ingestion for the Add Resource redesign's "Text" type - the pasted text IS the
+     * content, so this skips MIME sniffing/PDFBox/POI entirely and rejoins the same
+     * dedup/cache-hit pipeline [uploadMaterial] uses, from normalization onward. */
+    suspend fun uploadTextMaterial(userId: String, goalId: String, fileName: String, text: String): UploadOutcome {
+        if (text.length > MAX_PASTED_TEXT_LENGTH) return UploadOutcome.FileTooLarge
+
+        val userUuid = UUID.fromString(userId)
+        val goalUuid = UUID.fromString(goalId)
+        val goalOwned = newSuspendedTransaction(Dispatchers.IO, database) {
+            GoalsTable.selectAll().where { (GoalsTable.id eq goalUuid) and (GoalsTable.userId eq userUuid) }.any()
+        }
+        if (!goalOwned) return UploadOutcome.GoalNotFound
+
+        val bytes = text.toByteArray(Charsets.UTF_8)
+        return finishUpload(userUuid, goalUuid, fileName, MIME_TEXT_PLAIN, bytes, text, pageCount = null)
+    }
+
+    /** Shared tail of both upload entry points: normalize/hash/dedup/cache-hit-or-queue, and
+     * persist. [rawText] is stored verbatim in [ExtractionJobsTable.contentText] (matching the
+     * existing convention of storing extracted-not-normalized text), while [normalize]d text is
+     * what gets hashed and length-checked. */
+    private suspend fun finishUpload(
+        userUuid: UUID,
+        goalUuid: UUID,
+        fileName: String,
+        mimeType: String,
+        fileBytes: ByteArray,
+        rawText: String,
+        pageCount: Int?,
+    ): UploadOutcome {
+        val normalizedText = normalize(rawText)
         if (normalizedText.length < MIN_EXTRACTABLE_LENGTH) return UploadOutcome.NoExtractableText
 
         val contentHash = sha256(normalizedText)
@@ -101,7 +143,7 @@ class MaterialService(
 
             val materialId = UUID.randomUUID()
             val now = Instant.now()
-            val fileRef = saveToDisk(materialId, mimeType, bytes)
+            val fileRef = saveToDisk(materialId, mimeType, fileBytes)
 
             val cacheRow = ExtractionCacheTable
                 .selectAll().where { ExtractionCacheTable.contentHash eq contentHash }
@@ -121,7 +163,7 @@ class MaterialService(
                 it[this.status] = status
                 it[this.fileRef] = fileRef
                 it[this.mimeType] = mimeType
-                it[sizeBytes] = bytes.size.toLong()
+                it[sizeBytes] = fileBytes.size.toLong()
                 it[this.pageCount] = pageCount
                 it[createdAt] = now
             }
@@ -133,7 +175,7 @@ class MaterialService(
                         it[id] = UUID.randomUUID()
                         it[this.contentHash] = contentHash
                         it[this.status] = "QUEUED"
-                        it[contentText] = text
+                        it[contentText] = rawText
                         it[createdAt] = now
                         it[updatedAt] = now
                     }
@@ -233,7 +275,11 @@ class MaterialService(
     }
 
     private fun saveToDisk(materialId: UUID, mimeType: String, bytes: ByteArray): String {
-        val extension = if (mimeType == MIME_PDF) "pdf" else "docx"
+        val extension = when (mimeType) {
+            MIME_PDF -> "pdf"
+            MIME_TEXT_PLAIN -> "txt"
+            else -> "docx"
+        }
         val dir = File(uploadsDir).apply { mkdirs() }
         val file = File(dir, "$materialId.$extension")
         file.writeBytes(bytes)

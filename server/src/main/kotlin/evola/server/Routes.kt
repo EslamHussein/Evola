@@ -82,6 +82,44 @@ fun Route.materialRoutes(materialService: MaterialService) {
             }
         }
 
+        post("/materials/upload-text") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@post call.respond(HttpStatusCode.Unauthorized)
+            val request = call.receive<MaterialTextUploadRequest>()
+
+            when (val outcome = materialService.uploadTextMaterial(userId, request.goalId, request.fileName, request.text)) {
+                is UploadOutcome.Created -> call.respond(
+                    HttpStatusCode.Accepted,
+                    MaterialUploadResponse(outcome.materialId, outcome.status),
+                )
+                UploadOutcome.GoalNotFound -> call.respond(HttpStatusCode.NotFound, mapOf("error" to "Goal not found"))
+                UploadOutcome.UnsupportedFileType -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("UNSUPPORTED_FILE_TYPE", "Only PDF and DOCX are supported.")),
+                )
+                UploadOutcome.FileTooLarge -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("FILE_TOO_LARGE", "Pasted text must be under 200,000 characters.")),
+                )
+                UploadOutcome.PasswordProtected -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("PASSWORD_PROTECTED", "This PDF is password-protected. Remove the password and try again.")),
+                )
+                UploadOutcome.CorruptedFile -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("CORRUPTED_FILE", "This file couldn't be read. It may be corrupted.")),
+                )
+                UploadOutcome.NoExtractableText -> call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(ErrorBody("NO_EXTRACTABLE_TEXT", "Paste at least a few words of text.")),
+                )
+                is UploadOutcome.DuplicateFile -> call.respond(
+                    HttpStatusCode.Conflict,
+                    DuplicateFileResponse(existingMaterialId = outcome.existingMaterialId),
+                )
+            }
+        }
+
         get("/materials") {
             val userId = call.principal<JWTPrincipal>()?.payload?.subject
                 ?: return@get call.respond(HttpStatusCode.Unauthorized)

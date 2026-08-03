@@ -8,10 +8,13 @@ import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -30,6 +33,7 @@ sealed interface UploadResult {
 
 interface MaterialsRepository {
     suspend fun upload(accessToken: String, goalId: String, fileName: String, mimeType: String, bytes: ByteArray): UploadResult
+    suspend fun uploadText(accessToken: String, goalId: String, fileName: String, text: String): UploadResult
     suspend fun list(accessToken: String): List<Material>
     suspend fun get(accessToken: String, materialId: String): MaterialDetail
     suspend fun reprocess(accessToken: String, materialId: String): Boolean
@@ -37,6 +41,13 @@ interface MaterialsRepository {
 
 @Serializable
 private data class MaterialUploadWireResponse(@SerialName("material_id") val materialId: String, val status: String)
+
+@Serializable
+private data class MaterialTextUploadWireRequest(
+    @SerialName("goal_id") val goalId: String,
+    @SerialName("file_name") val fileName: String,
+    val text: String,
+)
 
 @Serializable
 private data class DuplicateFileWireResponse(@SerialName("existing_material_id") val existingMaterialId: String)
@@ -78,23 +89,34 @@ class HttpMaterialsRepository(
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }
 
-        return when (response.status) {
-            HttpStatusCode.Accepted -> {
-                val body = response.body<MaterialUploadWireResponse>()
-                UploadResult.Success(body.materialId, MaterialStatus.valueOf(body.status))
-            }
-            HttpStatusCode.NotFound -> UploadResult.GoalNotFound
-            HttpStatusCode.Conflict -> UploadResult.DuplicateFile(response.body<DuplicateFileWireResponse>().existingMaterialId)
-            HttpStatusCode.BadRequest -> when (response.errorBody().code) {
-                "UNSUPPORTED_FILE_TYPE" -> UploadResult.UnsupportedFileType
-                "FILE_TOO_LARGE" -> UploadResult.FileTooLarge
-                "PASSWORD_PROTECTED" -> UploadResult.PasswordProtected
-                "CORRUPTED_FILE" -> UploadResult.CorruptedFile
-                "NO_EXTRACTABLE_TEXT" -> UploadResult.NoExtractableText
-                else -> error("Upload failed: HTTP ${response.status.value}")
-            }
-            else -> error("Upload failed: HTTP ${response.status.value}")
+        return response.toUploadResult()
+    }
+
+    override suspend fun uploadText(accessToken: String, goalId: String, fileName: String, text: String): UploadResult {
+        val response = httpClient.post("$baseUrl/materials/upload-text") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            contentType(ContentType.Application.Json)
+            setBody(MaterialTextUploadWireRequest(goalId = goalId, fileName = fileName, text = text))
         }
+        return response.toUploadResult()
+    }
+
+    private suspend fun HttpResponse.toUploadResult(): UploadResult = when (status) {
+        HttpStatusCode.Accepted -> {
+            val body = body<MaterialUploadWireResponse>()
+            UploadResult.Success(body.materialId, MaterialStatus.valueOf(body.status))
+        }
+        HttpStatusCode.NotFound -> UploadResult.GoalNotFound
+        HttpStatusCode.Conflict -> UploadResult.DuplicateFile(body<DuplicateFileWireResponse>().existingMaterialId)
+        HttpStatusCode.BadRequest -> when (errorBody().code) {
+            "UNSUPPORTED_FILE_TYPE" -> UploadResult.UnsupportedFileType
+            "FILE_TOO_LARGE" -> UploadResult.FileTooLarge
+            "PASSWORD_PROTECTED" -> UploadResult.PasswordProtected
+            "CORRUPTED_FILE" -> UploadResult.CorruptedFile
+            "NO_EXTRACTABLE_TEXT" -> UploadResult.NoExtractableText
+            else -> error("Upload failed: HTTP ${status.value}")
+        }
+        else -> error("Upload failed: HTTP ${status.value}")
     }
 
     override suspend fun list(accessToken: String): List<Material> =

@@ -130,6 +130,60 @@ class MaterialServiceTest {
     }
 
     @Test
+    fun `uploading pasted text succeeds and queues an extraction job`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val outcome = materialService.uploadTextMaterial(
+            userId, goalId, "Pasted text",
+            "Der Hund läuft schnell durch den Park und spielt mit dem Ball.",
+        )
+
+        assertIs<UploadOutcome.Created>(outcome)
+        assertEquals("UPLOADED", outcome.status)
+        assertEquals(1, queuedJobs)
+
+        val stored = transaction(database) { MaterialsTable.selectAll().single() }
+        assertEquals("text/plain", stored[MaterialsTable.mimeType])
+    }
+
+    @Test
+    fun `pasted text under the minimum length is rejected`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val outcome = materialService.uploadTextMaterial(userId, goalId, "Pasted text", "too short")
+        assertIs<UploadOutcome.NoExtractableText>(outcome)
+    }
+
+    @Test
+    fun `pasted text over the max length is rejected`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val huge = "a".repeat(200_001)
+        val outcome = materialService.uploadTextMaterial(userId, goalId, "Pasted text", huge)
+        assertIs<UploadOutcome.FileTooLarge>(outcome)
+    }
+
+    @Test
+    fun `pasted text deduplicates against an identical file upload for the same user`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val text = "Der Hund läuft schnell durch den Park und spielt mit dem Ball."
+        val fileOutcome = materialService.uploadMaterial(userId, goalId, "book.pdf", samplePdfBytes(text))
+        assertIs<UploadOutcome.Created>(fileOutcome)
+
+        val textOutcome = materialService.uploadTextMaterial(userId, goalId, "Pasted text", text)
+        assertIs<UploadOutcome.DuplicateFile>(textOutcome)
+        assertEquals(fileOutcome.materialId, textOutcome.existingMaterialId)
+    }
+
+    @Test
+    fun `uploading pasted text for a goal the user doesn't own is rejected`() = runTest {
+        val (userId, _) = registerUserWithGoal()
+        val someoneElsesGoalId = java.util.UUID.randomUUID().toString()
+        val outcome = materialService.uploadTextMaterial(
+            userId, someoneElsesGoalId, "Pasted text",
+            "Der Hund läuft schnell durch den Park und spielt mit dem Ball.",
+        )
+        assertIs<UploadOutcome.GoalNotFound>(outcome)
+    }
+
+    @Test
     fun `uploading a goal the user doesn't own is rejected`() = runTest {
         val (userId, _) = registerUserWithGoal()
         val someoneElsesGoalId = java.util.UUID.randomUUID().toString()
