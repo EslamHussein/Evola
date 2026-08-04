@@ -390,6 +390,13 @@ class LessonSegmentationWorker(
                     it[createdAt] = Instant.now()
                     it[updatedAt] = Instant.now()
                 }
+                GrammarExtractionJobsTable.insert {
+                    it[id] = UUID.randomUUID()
+                    it[this.lessonId] = lessonId
+                    it[status] = "QUEUED"
+                    it[createdAt] = Instant.now()
+                    it[updatedAt] = Instant.now()
+                }
                 newLessonIds.add(lessonId)
             }
         }

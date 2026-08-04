@@ -97,6 +97,9 @@ class MaterialService(
     /** Woken after the cache-hit fast path materializes lessons, mirroring how
      * [LessonSegmentationWorker] wakes the same vocabulary-extraction worker on its own path. */
     private val onVocabJobQueued: () -> Unit = {},
+    /** Grammar extraction is auto-queued in parallel with vocabulary extraction (M7,
+     * 01_PRODUCT_SPEC.md §1.6) at the exact same two lesson-materialization sites. */
+    private val onGrammarJobQueued: () -> Unit = {},
 ) {
 
     suspend fun uploadMaterial(
@@ -177,6 +180,7 @@ class MaterialService(
         val contentHash = sha256(normalizedText)
         var queuedNewJob = false
         var queuedVocabJobs = false
+        var queuedGrammarJobs = false
 
         val outcome = newSuspendedTransaction(Dispatchers.IO, database) {
             val existingForUser = MaterialsTable
@@ -226,7 +230,15 @@ class MaterialService(
                     it[createdAt] = now
                     it[updatedAt] = now
                 }
+                GrammarExtractionJobsTable.insert {
+                    it[id] = UUID.randomUUID()
+                    it[this.lessonId] = lessonId
+                    it[status] = "QUEUED"
+                    it[createdAt] = now
+                    it[updatedAt] = now
+                }
                 queuedVocabJobs = true
+                queuedGrammarJobs = true
                 return@newSuspendedTransaction UploadOutcome.Created(materialId.toString(), "READY")
             }
 
@@ -272,6 +284,7 @@ class MaterialService(
             } else if (status == "READY") {
                 val lessonIds = materializeLessons(materialId, goalUuid, cacheRow[ExtractionCacheTable.segments])
                 queuedVocabJobs = lessonIds.isNotEmpty()
+                queuedGrammarJobs = lessonIds.isNotEmpty()
             }
 
             UploadOutcome.Created(materialId.toString(), status)
@@ -279,6 +292,7 @@ class MaterialService(
 
         if (queuedNewJob) onJobQueued()
         if (queuedVocabJobs) onVocabJobQueued()
+        if (queuedGrammarJobs) onGrammarJobQueued()
         return outcome
     }
 
@@ -393,6 +407,13 @@ class MaterialService(
                 it[createdAt] = Instant.now()
             }
             VocabularyExtractionJobsTable.insert {
+                it[id] = UUID.randomUUID()
+                it[this.lessonId] = lessonId
+                it[status] = "QUEUED"
+                it[createdAt] = Instant.now()
+                it[updatedAt] = Instant.now()
+            }
+            GrammarExtractionJobsTable.insert {
                 it[id] = UUID.randomUUID()
                 it[this.lessonId] = lessonId
                 it[status] = "QUEUED"

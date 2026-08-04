@@ -36,16 +36,21 @@ fun main() {
     val database = DatabaseFactory.connect(databaseUrl, databaseUser, databasePassword)
     val anthropicClient = AnthropicOkHttpClient.builder().apiKey(anthropicApiKey).build()
     val vocabularyExtractionWorker = VocabularyExtractionWorker(database, anthropicClient)
+    val grammarExtractionWorker = GrammarExtractionWorker(database, anthropicClient)
     val lessonSegmentationWorker = LessonSegmentationWorker(
         database,
         anthropicClient,
-        onLessonsQueued = { vocabularyExtractionWorker.wake.trySend(Unit) },
+        onLessonsQueued = {
+            vocabularyExtractionWorker.wake.trySend(Unit)
+            grammarExtractionWorker.wake.trySend(Unit)
+        },
     )
     val materialService = MaterialService(
         database,
         uploadsDir,
         onJobQueued = { lessonSegmentationWorker.wake.trySend(Unit) },
         onVocabJobQueued = { vocabularyExtractionWorker.wake.trySend(Unit) },
+        onGrammarJobQueued = { grammarExtractionWorker.wake.trySend(Unit) },
     )
     val authService = AuthService(database, jwtSecret)
     val goalService = GoalService(database)
@@ -71,6 +76,7 @@ fun main() {
         }
         lessonSegmentationWorker.start(this)
         vocabularyExtractionWorker.start(this)
+        grammarExtractionWorker.start(this)
         routing {
             healthRoutes()
             materialRoutes(materialService)

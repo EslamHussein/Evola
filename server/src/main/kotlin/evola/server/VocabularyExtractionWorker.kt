@@ -161,15 +161,7 @@ class VocabularyExtractionWorker(
             val materialRow = MaterialsTable.selectAll()
                 .where { MaterialsTable.id eq lessonRow[LessonsTable.materialId] }
                 .singleOrNull() ?: return@newSuspendedTransaction null
-            // "entire" mode materials store their (single lesson's) full text directly on the
-            // material row rather than the shared, content-hash-keyed extraction_jobs table - see
-            // MaterialService/Tables.kt.
-            val fullText = materialRow[MaterialsTable.contentText]
-                ?: ExtractionJobsTable.selectAll()
-                    .where { ExtractionJobsTable.contentHash eq materialRow[MaterialsTable.contentHash] }
-                    .singleOrNull()?.get(ExtractionJobsTable.contentText) ?: ""
-
-            val lessonText = sliceLessonText(fullText, lessonRow[LessonsTable.sourceTextRef])
+            val lessonText = resolveLessonText(lessonRow, materialRow)
             val goalId = lessonRow[LessonsTable.goalId]
             val goalRow = GoalsTable.selectAll().where { GoalsTable.id eq goalId }.singleOrNull()
                 ?: return@newSuspendedTransaction null
@@ -184,14 +176,6 @@ class VocabularyExtractionWorker(
                 aiInstructions = materialRow[MaterialsTable.aiInstructions],
             )
         }
-
-    private fun sliceLessonText(fullText: String, sourceTextRef: String?): String {
-        if (sourceTextRef == null) return fullText
-        val parts = sourceTextRef.split(":")
-        val start = parts.getOrNull(0)?.toIntOrNull()?.coerceIn(0, fullText.length) ?: 0
-        val end = parts.getOrNull(1)?.toIntOrNull()?.coerceIn(start, fullText.length) ?: fullText.length
-        return fullText.substring(start, end)
-    }
 
     private suspend fun extractAndStore(job: ClaimedVocabJob) {
         var parsed: VocabExtractionResultJson? = null
