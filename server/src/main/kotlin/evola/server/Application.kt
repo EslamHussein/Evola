@@ -49,7 +49,8 @@ fun main() {
     )
     val authService = AuthService(database, jwtSecret)
     val goalService = GoalService(database)
-    val vocabularyService = VocabularyService(database)
+    val freeProductionGrader = FreeProductionGrader(database, anthropicClient)
+    val vocabularyService = VocabularyService(database, freeProductionGrader)
 
     println("Evola :server starting on 127.0.0.1:$port ...")
     embeddedServer(CIO, port = port, host = "127.0.0.1") {

@@ -396,5 +396,16 @@ fun Route.vocabularyRoutes(vocabularyService: VocabularyService) {
                 ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Session not found"))
             call.respond(HttpStatusCode.OK, result)
         }
+
+        patch("/vocabulary-items/{id}/flags") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@patch call.respond(HttpStatusCode.Unauthorized)
+            val itemId = call.parameters["id"]
+                ?: return@patch call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing item id"))
+            val request = call.receive<VocabularyFlagsRequest>()
+            val result = vocabularyService.updateFlags(userId, itemId, request)
+                ?: return@patch call.respond(HttpStatusCode.NotFound, mapOf("error" to "Vocabulary item not found"))
+            call.respond(HttpStatusCode.OK, result)
+        }
     }
 }

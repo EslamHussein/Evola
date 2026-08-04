@@ -162,6 +162,10 @@ internal object VocabularyProgressTable : Table("vocabulary_progress") {
     val intervalIndex = short("interval_index")
     val nextReviewAt = timestamp("next_review_at")
     val lastReviewedAt = timestamp("last_reviewed_at").nullable()
+    /** Populated from V13 on (pack/stage session redesign) - the Discover card's bookmark and
+     * "mark as difficult" icon buttons. */
+    val isBookmarked = bool("is_bookmarked")
+    val markedDifficult = bool("marked_difficult")
     override val primaryKey = PrimaryKey(id)
 }
 
@@ -197,6 +201,43 @@ internal object VocabularySessionItemsTable : Table("vocabulary_session_items") 
     val choices = text("choices").nullable()
     val answeredCorrectly = bool("answered_correctly").nullable()
     val answeredAt = timestamp("answered_at").nullable()
+    override val primaryKey = PrimaryKey(id)
+}
+
+/** Pack/stage vocabulary session architecture (design handoff Phase 7). One row per pack of ~5
+ * words a user works through for a lesson; [VocabularySessionsTable] stays in place, unused. */
+internal object VocabularyPacksTable : Table("vocabulary_packs") {
+    val id = uuid("id")
+    val userId = uuid("user_id")
+    val lessonId = uuid("lesson_id")
+    val packNumber = integer("pack_number")
+    val startedAt = timestamp("started_at")
+    val completedAt = timestamp("completed_at").nullable()
+    val itemsCount = integer("items_count")
+    val accuracy = decimal("accuracy", 5, 2).nullable()
+    override val primaryKey = PrimaryKey(id)
+}
+
+internal object VocabularyPackWordsTable : Table("vocabulary_pack_words") {
+    val id = uuid("id")
+    val packId = uuid("pack_id")
+    val vocabularyItemId = uuid("vocabulary_item_id")
+    val position = integer("position")
+    /** JSON array of meaning choices for stage 1 (Recognition), computed once at pack creation. */
+    val recognitionChoices = text("recognition_choices").nullable()
+    override val primaryKey = PrimaryKey(id)
+}
+
+/** stage_index is 0-6, matching the design's 7 stages (Discover..Free Production) 0-indexed. One
+ * row per (pack_word, stage) - no retries modeled, since the design's own "Check" -> "Continue"
+ * footer never lets a stage be re-submitted. */
+internal object VocabularyStageAnswersTable : Table("vocabulary_stage_answers") {
+    val id = uuid("id")
+    val packWordId = uuid("pack_word_id")
+    val stageIndex = short("stage_index")
+    val userResponse = text("user_response").nullable()
+    val correct = bool("correct").nullable()
+    val answeredAt = timestamp("answered_at")
     override val primaryKey = PrimaryKey(id)
 }
 

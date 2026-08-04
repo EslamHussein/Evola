@@ -1,8 +1,11 @@
 package evola.server
 
 import kotlinx.coroutines.test.runTest
+import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -13,18 +16,29 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+/** Trivial [VocabularyGrader] double - the batch extraction workers have no unit tests at all
+ * (verified only via curl against a real Anthropic key) because they have no such seam; this one
+ * exists specifically so Stage 6 (Free Production) can be exercised deterministically. */
+private class FakeVocabularyGrader(var passable: Boolean = true) : VocabularyGrader {
+    override suspend fun grade(term: String, userSentence: String): GradingResult =
+        GradingResult(passable, if (passable) "Well done!" else "Try again.")
+}
+
 class VocabularyServiceTest {
 
     private val database = TestDatabase.database
     private val authService = AuthService(database, jwtSecret = "test-secret")
     private val goalService = GoalService(database)
-    private val vocabularyService = VocabularyService(database)
+    private val grader = FakeVocabularyGrader()
+    private val vocabularyService = VocabularyService(database, grader)
 
     @BeforeEach
     fun clearTables() {
+        grader.passable = true
         transaction(database) {
-            VocabularySessionItemsTable.deleteAll()
-            VocabularySessionsTable.deleteAll()
+            VocabularyStageAnswersTable.deleteAll()
+            VocabularyPackWordsTable.deleteAll()
+            VocabularyPacksTable.deleteAll()
             VocabularyProgressTable.deleteAll()
             VocabularyItemsTable.deleteAll()
             VocabularyExtractionJobsTable.deleteAll()
@@ -130,8 +144,22 @@ class VocabularyServiceTest {
         return itemId
     }
 
+    private fun packWordTerms(packId: String): List<String> = transaction(database) {
+        VocabularyPackWordsTable
+            .join(VocabularyItemsTable, JoinType.INNER, VocabularyPackWordsTable.vocabularyItemId, VocabularyItemsTable.id)
+            .selectAll()
+            .where { VocabularyPackWordsTable.packId eq UUID.fromString(packId) }
+            .map { it[VocabularyItemsTable.term] }
+    }
+
+    private fun progressRow(userId: String, itemId: String) = transaction(database) {
+        VocabularyProgressTable.selectAll()
+            .where { (VocabularyProgressTable.userId eq UUID.fromString(userId)) and (VocabularyProgressTable.vocabularyItemId eq UUID.fromString(itemId)) }
+            .single()
+    }
+
     @Test
-    fun `listVocabulary returns the Arabic-metadata fields when present, null when not`() = runTest {
+    fun `listVocabulary returns the Arabic-metadata fields and bookmark defaults`() = runTest {
         val (userId, goalId) = registerUserWithGoal()
         val materialId = insertMaterial(userId, goalId)
         val lessonId = insertLesson(materialId, goalId)
@@ -155,6 +183,8 @@ class VocabularyServiceTest {
         assertEquals("easy", hund.difficultyRating)
         assertEquals("common", hund.frequencyRating)
         assertEquals("Sounds like 'hunt' - dogs hunt.", hund.memoryTip)
+        assertEquals(false, hund.isBookmarked)
+        assertEquals(false, hund.markedDifficult)
 
         val katze = items.single { it.term == "Katze" }
         assertNull(katze.meaningAr)
@@ -162,21 +192,22 @@ class VocabularyServiceTest {
     }
 
     @Test
-    fun `session includes new items from this lesson`() = runTest {
+    fun `starting a session creates a pack capped at pack size from new lesson items`() = runTest {
         val (userId, goalId) = registerUserWithGoal()
         val materialId = insertMaterial(userId, goalId)
         val lessonId = insertLesson(materialId, goalId)
-        insertVocabItem(lessonId, userId, "Hund", "dog")
-        insertVocabItem(lessonId, userId, "Katze", "cat")
+        repeat(8) { i -> insertVocabItem(lessonId, userId, "Wort$i", "word$i") }
 
-        val session = vocabularyService.startOrResumeSession(userId, lessonId.toString())
-        assertNotNull(session)
-        assertEquals(2, session.items.size)
-        assertTrue(session.hasLessonVocabulary)
+        val pack = vocabularyService.startOrResumeSession(userId, lessonId.toString())
+        assertNotNull(pack)
+        assertEquals(1, pack.packNumber)
+        assertEquals(5, pack.wordsCount)
+        assertEquals(0, pack.wordIndex)
+        assertEquals(0, pack.stageIndex)
     }
 
     @Test
-    fun `session resumes instead of creating a new one`() = runTest {
+    fun `session resumes the same pack instead of creating a new one`() = runTest {
         val (userId, goalId) = registerUserWithGoal()
         val materialId = insertMaterial(userId, goalId)
         val lessonId = insertLesson(materialId, goalId)
@@ -186,11 +217,11 @@ class VocabularyServiceTest {
         val second = vocabularyService.startOrResumeSession(userId, lessonId.toString())
         assertNotNull(first)
         assertNotNull(second)
-        assertEquals(first.sessionId, second.sessionId)
+        assertEquals(first.packId, second.packId)
     }
 
     @Test
-    fun `session mixes in due review items from other lessons but not never-reviewed ones`() = runTest {
+    fun `pack mixes due review items from other lessons but not never-reviewed ones`() = runTest {
         val (userId, goalId) = registerUserWithGoal()
         val materialId = insertMaterial(userId, goalId)
         val currentLesson = insertLesson(materialId, goalId, number = 2, title = "Current")
@@ -206,93 +237,12 @@ class VocabularyServiceTest {
         // Never reviewed - should NOT count as "due" despite next_review_at defaulting to now.
         insertVocabItem(otherLesson, userId, "Vogel", "bird")
 
-        val session = vocabularyService.startOrResumeSession(userId, currentLesson.toString())
-        assertNotNull(session)
-        val terms = session.items.map { it.term }
+        val pack = vocabularyService.startOrResumeSession(userId, currentLesson.toString())
+        assertNotNull(pack)
+        val terms = packWordTerms(pack.packId)
         assertTrue("Hund" in terms)
         assertTrue("Katze" in terms)
         assertTrue("Vogel" !in terms)
-    }
-
-    @Test
-    fun `lesson with zero vocabulary reports hasLessonVocabulary false`() = runTest {
-        val (userId, goalId) = registerUserWithGoal()
-        val materialId = insertMaterial(userId, goalId)
-        val lessonId = insertLesson(materialId, goalId)
-
-        val session = vocabularyService.startOrResumeSession(userId, lessonId.toString())
-        assertNotNull(session)
-        assertTrue(!session.hasLessonVocabulary)
-    }
-
-    @Test
-    fun `answering incorrectly floors mastery at new and resurfaces the item later`() = runTest {
-        val (userId, goalId) = registerUserWithGoal()
-        val materialId = insertMaterial(userId, goalId)
-        val lessonId = insertLesson(materialId, goalId)
-        insertVocabItem(lessonId, userId, "Hund", "dog")
-
-        val session = vocabularyService.startOrResumeSession(userId, lessonId.toString())
-        assertNotNull(session)
-        val item = session.items.single()
-
-        val result = vocabularyService.answer(userId, session.sessionId, VocabularyAnswerRequest(item.itemId, "wrong", correct = false))
-        assertNotNull(result)
-        assertEquals("new", result.masteryState)
-        assertTrue(result.resurfaced)
-
-        // Resurfaced as a fresh, unanswered occurrence in the (still-open) session.
-        val remaining = vocabularyService.startOrResumeSession(userId, lessonId.toString())
-        assertNotNull(remaining)
-        assertEquals(1, remaining.items.size)
-    }
-
-    @Test
-    fun `answering correctly advances mastery and does not resurface`() = runTest {
-        val (userId, goalId) = registerUserWithGoal()
-        val materialId = insertMaterial(userId, goalId)
-        val lessonId = insertLesson(materialId, goalId)
-        insertVocabItem(lessonId, userId, "Hund", "dog")
-
-        val session = vocabularyService.startOrResumeSession(userId, lessonId.toString())
-        assertNotNull(session)
-        val item = session.items.single()
-
-        val result = vocabularyService.answer(userId, session.sessionId, VocabularyAnswerRequest(item.itemId, "dog", correct = true))
-        assertNotNull(result)
-        assertEquals("learning", result.masteryState)
-        assertTrue(!result.resurfaced)
-    }
-
-    @Test
-    fun `complete computes accuracy from answered items only`() = runTest {
-        val (userId, goalId) = registerUserWithGoal()
-        val materialId = insertMaterial(userId, goalId)
-        val lessonId = insertLesson(materialId, goalId)
-        insertVocabItem(lessonId, userId, "Hund", "dog")
-        insertVocabItem(lessonId, userId, "Katze", "cat")
-
-        val session = vocabularyService.startOrResumeSession(userId, lessonId.toString())
-        assertNotNull(session)
-        assertEquals(2, session.items.size)
-
-        vocabularyService.answer(userId, session.sessionId, VocabularyAnswerRequest(session.items[0].itemId, "dog", correct = true))
-        vocabularyService.answer(userId, session.sessionId, VocabularyAnswerRequest(session.items[1].itemId, "wrong", correct = false))
-
-        val completed = vocabularyService.complete(userId, session.sessionId)
-        assertNotNull(completed)
-        assertEquals(2, completed.itemsCount)
-        assertEquals(50.0, completed.accuracy)
-    }
-
-    @Test
-    fun `session for a lesson the user does not own returns null`() = runTest {
-        val (userId, goalId) = registerUserWithGoal()
-        val materialId = insertMaterial(userId, goalId)
-        val lessonId = insertLesson(materialId, goalId)
-
-        val otherUserId = UUID.randomUUID().toString()
-        assertNull(vocabularyService.startOrResumeSession(otherUserId, lessonId.toString()))
     }
 
     @Test
@@ -311,45 +261,195 @@ class VocabularyServiceTest {
             masteryState = "mastered", lastReviewedAt = Instant.now(), nextReviewAt = Instant.now().plusSeconds(86_400 * 30),
         )
 
-        val session = vocabularyService.startOrResumeSession(userId, currentLesson.toString())
-        assertNotNull(session)
-        assertEquals(2, session.items.size)
+        val pack = vocabularyService.startOrResumeSession(userId, currentLesson.toString())
+        assertNotNull(pack)
+        val terms = packWordTerms(pack.packId)
+        assertEquals(setOf("Hund", "Katze"), terms.toSet())
     }
 
     @Test
-    fun `fill-blank-eligible items can be assigned the fill_blank drill with a correctly blanked sentence`() = runTest {
+    fun `session for a lesson the user does not own returns null`() = runTest {
         val (userId, goalId) = registerUserWithGoal()
         val materialId = insertMaterial(userId, goalId)
         val lessonId = insertLesson(materialId, goalId)
-        // 12 eligible items (drill type is a 1-in-3 random draw per item) makes the odds of zero
-        // fill_blank draws astronomically small (~(2/3)^12) without needing a seeded Random.
-        repeat(12) { i ->
-            insertVocabItem(
-                lessonId, userId, "Hund$i", "dog",
-                exampleSentence = "Ich habe einen Hund$i.",
-                partOfSpeech = "noun",
-                exampleSentenceTranslation = "I have a dog.",
-            )
+
+        val otherUserId = UUID.randomUUID().toString()
+        assertNull(vocabularyService.startOrResumeSession(otherUserId, lessonId.toString()))
+    }
+
+    @Test
+    fun `answering every gradable stage correctly advances mastery exactly once`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val materialId = insertMaterial(userId, goalId)
+        val lessonId = insertLesson(materialId, goalId)
+        val itemId = insertVocabItem(lessonId, userId, "Hund", "dog", exampleSentence = "Ich habe einen Hund.")
+
+        val pack = vocabularyService.startOrResumeSession(userId, lessonId.toString())!!
+        val packId = pack.packId
+
+        // Stages 0-1 (Discover, Recognition) are never graded.
+        var result = vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 0, ""))!!
+        assertNull(result.correct)
+        result = vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 1, "anything"))!!
+        assertNull(result.correct)
+
+        // Stages 2-4 (Reverse Recall / Partial Recall / Sentence Completion): term match.
+        repeat(3) { i ->
+            result = vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 2 + i, "Hund"))!!
+            assertEquals(true, result.correct)
         }
 
-        val session = vocabularyService.startOrResumeSession(userId, lessonId.toString())
-        assertNotNull(session)
-        val fillBlankItem = session.items.firstOrNull { it.drillType == "fill_blank" }
-        assertNotNull(fillBlankItem, "expected at least one fill_blank item across 12 eligible draws")
-        assertEquals("Ich habe einen ___.", fillBlankItem.sentenceWithBlank)
-        assertEquals("noun", fillBlankItem.partOfSpeech)
-        assertEquals("I have a dog.", fillBlankItem.sentenceTranslation)
+        // Stage 5 (Translation): a matching sentence.
+        result = vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 5, "Ich habe einen Hund."))!!
+        assertEquals(true, result.correct)
+
+        // Stage 6 (Free Production): fake grader passes.
+        result = vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 6, "Der Hund läuft."))!!
+        assertEquals(true, result.correct)
+        assertNotNull(result.next)
+        assertTrue(result.next!!.readyToComplete)
+
+        val progress = progressRow(userId, itemId.toString())
+        assertEquals("learning", progress[VocabularyProgressTable.masteryState])
+        // Exactly one MasterySrs update for the whole word, not one per gradable stage.
+        assertEquals(1, progress[VocabularyProgressTable.correctStreak])
     }
 
     @Test
-    fun `items missing example sentence or translation are never assigned the fill_blank drill`() = runTest {
+    fun `getting one gradable stage wrong marks the whole word incorrect for mastery`() = runTest {
         val (userId, goalId) = registerUserWithGoal()
         val materialId = insertMaterial(userId, goalId)
         val lessonId = insertLesson(materialId, goalId)
-        repeat(12) { i -> insertVocabItem(lessonId, userId, "Hund$i", "dog") }
+        val itemId = insertVocabItem(
+            lessonId, userId, "Hund", "dog",
+            masteryState = "learning", exampleSentence = "Ich habe einen Hund.",
+        )
 
-        val session = vocabularyService.startOrResumeSession(userId, lessonId.toString())
-        assertNotNull(session)
-        assertTrue(session.items.none { it.drillType == "fill_blank" })
+        val pack = vocabularyService.startOrResumeSession(userId, lessonId.toString())!!
+        val packId = pack.packId
+
+        vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 0, ""))
+        vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 1, "anything"))
+        // Stage 2 wrong on purpose.
+        val wrongResult = vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 2, "zzz"))!!
+        assertEquals(false, wrongResult.correct)
+        vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 3, "Hund"))
+        vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 4, "Hund"))
+        vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 5, "Ich habe einen Hund."))
+        vocabularyService.answer(userId, packId, VocabularyAnswerRequest(itemId.toString(), 6, "Der Hund läuft."))
+
+        val progress = progressRow(userId, itemId.toString())
+        assertEquals("new", progress[VocabularyProgressTable.masteryState]) // dropped one stage from "learning"
+        assertEquals(0, progress[VocabularyProgressTable.correctStreak])
+    }
+
+    @Test
+    fun `stage 4 auto-passes when the item has no valid sentence to blank`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val materialId = insertMaterial(userId, goalId)
+        val lessonId = insertLesson(materialId, goalId)
+        val itemId = insertVocabItem(lessonId, userId, "Hund", "dog") // no exampleSentence
+
+        val pack = vocabularyService.startOrResumeSession(userId, lessonId.toString())!!
+        vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 0, ""))
+        vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 1, "x"))
+        vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 2, "Hund"))
+        vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 3, "Hund"))
+        val result = vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 4, "totally irrelevant"))!!
+        assertEquals(true, result.correct)
+    }
+
+    @Test
+    fun `stage 5 rejects an unrelated sentence`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val materialId = insertMaterial(userId, goalId)
+        val lessonId = insertLesson(materialId, goalId)
+        val itemId = insertVocabItem(lessonId, userId, "Hund", "dog", exampleSentence = "Ich habe einen Hund im Garten gesehen.")
+
+        val pack = vocabularyService.startOrResumeSession(userId, lessonId.toString())!!
+        vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 0, ""))
+        vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 1, "x"))
+        vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 2, "Hund"))
+        vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 3, "Hund"))
+        vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 4, "Hund"))
+        val result = vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 5, "Die Katze schläft."))!!
+        assertEquals(false, result.correct)
+    }
+
+    @Test
+    fun `answer rejects a stage submission that does not match the current position`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val materialId = insertMaterial(userId, goalId)
+        val lessonId = insertLesson(materialId, goalId)
+        val itemId = insertVocabItem(lessonId, userId, "Hund", "dog")
+
+        val pack = vocabularyService.startOrResumeSession(userId, lessonId.toString())!!
+        // Current stage is 0, not 3 - this submission is stale/out-of-order.
+        val result = vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId.toString(), 3, "Hund"))
+        assertNull(result)
+    }
+
+    @Test
+    fun `complete computes accuracy across all words in the pack`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val materialId = insertMaterial(userId, goalId)
+        val lessonId = insertLesson(materialId, goalId)
+        insertVocabItem(lessonId, userId, "Hund", "dog", exampleSentence = "Ich habe einen Hund.")
+        insertVocabItem(lessonId, userId, "Katze", "cat", exampleSentence = "Ich habe eine Katze.")
+
+        val pack = vocabularyService.startOrResumeSession(userId, lessonId.toString())!!
+        val terms = packWordTerms(pack.packId)
+        assertEquals(2, terms.size)
+
+        // First word answered entirely correctly, second entirely wrong.
+        var current = pack
+        listOf(true, false).forEach { correctResponses ->
+            val itemId = current.word.itemId
+            val termValue = current.word.term
+            val sentence = current.word.exampleSentence!!
+            vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId, 0, ""))
+            vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId, 1, "x"))
+            vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId, 2, if (correctResponses) termValue else "zzz"))
+            vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId, 3, if (correctResponses) termValue else "zzz"))
+            vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId, 4, if (correctResponses) termValue else "zzz"))
+            vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId, 5, if (correctResponses) sentence else "unrelated"))
+            grader.passable = correctResponses
+            val stage6Result = vocabularyService.answer(userId, pack.packId, VocabularyAnswerRequest(itemId, 6, "some sentence"))!!
+            current = stage6Result.next!!
+        }
+
+        val completed = vocabularyService.complete(userId, pack.packId)
+        assertNotNull(completed)
+        assertEquals(2, completed.wordsLearned)
+        assertEquals(50.0, completed.accuracy)
+    }
+
+    @Test
+    fun `updateFlags sets and returns bookmark and difficulty flags`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val materialId = insertMaterial(userId, goalId)
+        val lessonId = insertLesson(materialId, goalId)
+        val itemId = insertVocabItem(lessonId, userId, "Hund", "dog")
+
+        val updated = vocabularyService.updateFlags(userId, itemId.toString(), VocabularyFlagsRequest(isBookmarked = true))
+        assertNotNull(updated)
+        assertEquals(true, updated.isBookmarked)
+        assertEquals(false, updated.markedDifficult)
+
+        val updatedAgain = vocabularyService.updateFlags(userId, itemId.toString(), VocabularyFlagsRequest(markedDifficult = true))
+        assertNotNull(updatedAgain)
+        assertEquals(true, updatedAgain.isBookmarked) // untouched by this call, stays true
+        assertEquals(true, updatedAgain.markedDifficult)
+    }
+
+    @Test
+    fun `updateFlags for an item the user has no progress on returns null`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val materialId = insertMaterial(userId, goalId)
+        val lessonId = insertLesson(materialId, goalId)
+        insertVocabItem(lessonId, userId, "Hund", "dog")
+
+        val otherUserId = UUID.randomUUID().toString()
+        assertNull(vocabularyService.updateFlags(otherUserId, UUID.randomUUID().toString(), VocabularyFlagsRequest(isBookmarked = true)))
     }
 }
