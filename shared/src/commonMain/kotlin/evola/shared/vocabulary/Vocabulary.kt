@@ -77,6 +77,6 @@ interface VocabularyRepository {
     suspend fun startOrResumeSession(accessToken: String, lessonId: String): VocabularyPack?
     suspend fun listVocabulary(accessToken: String, lessonId: String): List<VocabularyItem>
     suspend fun answer(accessToken: String, packId: String, itemId: String, stageIndex: Int, response: String): VocabularyStageAnswerResult?
-    suspend fun complete(accessToken: String, packId: String): VocabularyPackSummary?
+    suspend fun complete(accessToken: String, packId: String, localDate: String): VocabularyPackSummary?
     suspend fun updateFlags(accessToken: String, itemId: String, isBookmarked: Boolean? = null, markedDifficult: Boolean? = null): VocabularyItem?
 }

@@ -5,6 +5,7 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -42,6 +43,14 @@ private data class LessonWireResponse(
     @SerialName("vocab_progress") val vocabProgress: Float = 0f,
     @SerialName("grammar_progress") val grammarProgress: Float = 0f,
     @SerialName("grammar_count") val grammarCount: Int = 0,
+)
+
+@Serializable
+private data class GoalProgressWireResponse(
+    @SerialName("overall_pct") val overallPct: Float,
+    @SerialName("current_lesson_id") val currentLessonId: String? = null,
+    @SerialName("streak_days") val streakDays: Int,
+    @SerialName("today_completed") val todayCompleted: Boolean,
 )
 
 @Serializable
@@ -101,9 +110,20 @@ class HttpGoalsRepository(
         return response.body<List<LessonWireResponse>>().map { it.toDomain() }
     }
 
+    override suspend fun getProgress(accessToken: String, goalId: String, localDate: String): GoalProgress? {
+        val response = httpClient.get("$baseUrl/goals/$goalId/progress") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            parameter("local_date", localDate)
+        }
+        if (response.status != HttpStatusCode.OK) return null
+        return response.body<GoalProgressWireResponse>().toDomain()
+    }
+
     private suspend fun HttpResponse.errorBody(): WireErrorBody = body<WireErrorResponse>().error
 
     private fun GoalWireResponse.toDomain() = Goal(id, goalText, title, isActive, createdAt)
 
     private fun LessonWireResponse.toDomain() = Lesson(lessonId, number, title, status, vocabProgress, grammarProgress, grammarCount)
+
+    private fun GoalProgressWireResponse.toDomain() = GoalProgress(overallPct, currentLessonId, streakDays, todayCompleted)
 }

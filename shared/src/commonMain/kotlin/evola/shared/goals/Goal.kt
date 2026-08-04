@@ -42,9 +42,20 @@ data class Lesson(
     val isReady: Boolean get() = status == "ready"
 }
 
+/** Progress Dashboard aggregate (01_PRODUCT_SPEC.md §1.10). [currentLessonId] is the first lesson
+ * still below 100% (null once every lesson is done, or there are none yet); the client resolves it
+ * against its own already-fetched lesson list to build the "Continue Lesson N" CTA. */
+data class GoalProgress(
+    val overallPct: Float,
+    val currentLessonId: String?,
+    val streakDays: Int,
+    val todayCompleted: Boolean,
+)
+
 interface GoalsRepository {
     suspend fun createGoal(accessToken: String, goalText: String, title: String?): CreateGoalResult
     suspend fun updateGoal(accessToken: String, goalId: String, goalText: String?, title: String?): UpdateGoalResult
     suspend fun getActiveGoal(accessToken: String): Goal?
     suspend fun listLessons(accessToken: String, goalId: String): List<Lesson>
+    suspend fun getProgress(accessToken: String, goalId: String, localDate: String): GoalProgress?
 }

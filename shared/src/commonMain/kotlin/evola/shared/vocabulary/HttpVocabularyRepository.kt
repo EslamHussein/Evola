@@ -108,6 +108,9 @@ private data class VocabularyFlagsWireRequest(
     @SerialName("marked_difficult") val markedDifficult: Boolean? = null,
 )
 
+@Serializable
+private data class SessionCompleteWireRequest(@SerialName("local_date") val localDate: String)
+
 class HttpVocabularyRepository(
     private val baseUrl: String,
     private val httpClient: HttpClient = HttpClient {
@@ -148,9 +151,11 @@ class HttpVocabularyRepository(
         return VocabularyStageAnswerResult(body.correct, body.feedback, body.next?.toDomain())
     }
 
-    override suspend fun complete(accessToken: String, packId: String): VocabularyPackSummary? {
+    override suspend fun complete(accessToken: String, packId: String, localDate: String): VocabularyPackSummary? {
         val httpResponse = httpClient.post("$baseUrl/vocabulary-sessions/$packId/complete") {
+            contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $accessToken")
+            setBody(SessionCompleteWireRequest(localDate))
         }
         if (httpResponse.status != HttpStatusCode.OK) return null
         val body = httpResponse.body<VocabularyPackCompleteWireResponse>()

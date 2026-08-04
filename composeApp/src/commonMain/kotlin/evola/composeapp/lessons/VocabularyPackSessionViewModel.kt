@@ -2,6 +2,7 @@ package evola.composeapp.lessons
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import evola.shared.todayLocalDate
 import evola.shared.vocabulary.VocabularyPack
 import evola.shared.vocabulary.VocabularyPackSummary
 import evola.shared.vocabulary.VocabularyRepository
@@ -82,7 +83,7 @@ class VocabularyPackSessionViewModel(
         val packNumber = current.pack.packNumber
         viewModelScope.launch {
             try {
-                val summary = repository.complete(accessToken, packId)
+                val summary = repository.complete(accessToken, packId, todayLocalDate())
                 _state.value = if (summary != null) {
                     VocabularyPackSessionState.Summary(summary, packNumber)
                 } else {

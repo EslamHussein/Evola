@@ -3,6 +3,7 @@ package evola.composeapp.lessons
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import evola.shared.grammar.GrammarExercise
+import evola.shared.todayLocalDate
 import evola.shared.grammar.GrammarRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -98,7 +99,7 @@ class GrammarExerciseSessionViewModel(
 
     private suspend fun completeSession(): GrammarExerciseSessionState {
         val sid = sessionId ?: return GrammarExerciseSessionState.Error("Session missing.")
-        val summary = repository.complete(accessToken, sid)
+        val summary = repository.complete(accessToken, sid, todayLocalDate())
         return if (summary != null) {
             GrammarExerciseSessionState.Summary(summary.exercisesCompleted, summary.accuracy)
         } else {

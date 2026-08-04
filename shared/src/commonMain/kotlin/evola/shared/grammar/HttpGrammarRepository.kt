@@ -60,6 +60,9 @@ private data class GrammarSessionCompleteWireResponse(
     val accuracy: Double,
 )
 
+@Serializable
+private data class SessionCompleteWireRequest(@SerialName("local_date") val localDate: String)
+
 class HttpGrammarRepository(
     private val baseUrl: String,
     private val httpClient: HttpClient = HttpClient {
@@ -109,9 +112,11 @@ class HttpGrammarRepository(
         return GrammarAnswerResult(body.masteryState, body.nextReviewAt)
     }
 
-    override suspend fun complete(accessToken: String, sessionId: String): GrammarSessionSummary? {
+    override suspend fun complete(accessToken: String, sessionId: String, localDate: String): GrammarSessionSummary? {
         val httpResponse = httpClient.post("$baseUrl/grammar-sessions/$sessionId/complete") {
+            contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $accessToken")
+            setBody(SessionCompleteWireRequest(localDate))
         }
         if (httpResponse.status != HttpStatusCode.OK) return null
         val body = httpResponse.body<GrammarSessionCompleteWireResponse>()

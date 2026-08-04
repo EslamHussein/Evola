@@ -43,5 +43,5 @@ interface GrammarRepository {
     suspend fun listTopics(accessToken: String, lessonId: String): List<GrammarTopic>
     suspend fun startOrResumeSession(accessToken: String, topicId: String): GrammarSession?
     suspend fun answer(accessToken: String, sessionId: String, exerciseId: String, response: String, correct: Boolean): GrammarAnswerResult?
-    suspend fun complete(accessToken: String, sessionId: String): GrammarSessionSummary?
+    suspend fun complete(accessToken: String, sessionId: String, localDate: String): GrammarSessionSummary?
 }
