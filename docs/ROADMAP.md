@@ -319,7 +319,14 @@ is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full
       end-to-end with real data - all 7 stages for one word (including real AI grading and its
       genuinely useful grammar feedback), word-to-word advancement, and both flag toggles confirmed
       via direct DB queries after tapping
-- [ ] Phase 9 — cross-cutting regression pass, full verification, production deploy
+- [x] Phase 9 — cross-cutting regression pass, full verification: confirmed `VocabularyListScreen`
+      still renders every Phase 4 field, confirmed no dangling `LessonHomeScreen`/old
+      `VocabularySessionItem`/`drillType` references anywhere in the tree, full `./gradlew
+      :server:test` + `:composeApp` Android compile + an iOS `compileKotlinIosSimulatorArm64`
+      build-only check (all green - the file-picker stub and no-op-TTS `expect`/`actual`s still
+      resolve), and one final full-stack production check confirming Lesson Details (Phase 6) and
+      pack-session resume (Phase 7/8) report consistent state for the same lesson against the
+      already-deployed server. M6.5 is fully shipped.
 
 ---
 
