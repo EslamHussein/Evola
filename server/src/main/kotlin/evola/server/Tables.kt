@@ -259,6 +259,34 @@ internal object GrammarSessionsTable : Table("grammar_sessions") {
     override val primaryKey = PrimaryKey(id)
 }
 
+/** M7 work queue for grammar extraction (mirrors [VocabularyExtractionJobsTable] exactly) -
+ * auto-queued in parallel with vocabulary extraction per lesson. */
+internal object GrammarExtractionJobsTable : Table("grammar_extraction_jobs") {
+    val id = uuid("id")
+    val lessonId = uuid("lesson_id").uniqueIndex()
+    val status = text("status")
+    val error = text("error").nullable()
+    val createdAt = timestamp("created_at")
+    val updatedAt = timestamp("updated_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
+/** One row per answered exercise within a grammar_session - NOT a snapshot of session membership
+ * (a topic's exercise set is immutable after generation, so "this session's exercises" is always
+ * derived as grammar_exercises WHERE topic_id = session.topic_id). The mastery snapshot taken
+ * immediately after this answer makes a retried/duplicate POST trivially idempotent. */
+internal object GrammarSessionAnswersTable : Table("grammar_session_answers") {
+    val id = uuid("id")
+    val sessionId = uuid("session_id")
+    val exerciseId = uuid("exercise_id")
+    val response = text("response").nullable()
+    val correct = bool("correct")
+    val masteryStateAfter = text("mastery_state_after")
+    val nextReviewAtAfter = timestamp("next_review_at_after")
+    val answeredAt = timestamp("answered_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
 internal object DailyActivityTable : Table("daily_activity") {
     val id = uuid("id")
     val userId = uuid("user_id")
