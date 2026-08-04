@@ -232,7 +232,7 @@ class VocabularyService(
         }
     }
 
-    suspend fun complete(userId: String, packId: String): VocabularyPackCompleteResponse? =
+    suspend fun complete(userId: String, packId: String, localDate: String? = null): VocabularyPackCompleteResponse? =
         newSuspendedTransaction(Dispatchers.IO, database) {
             val userUuid = UUID.fromString(userId)
             val packUuid = runCatching { UUID.fromString(packId) }.getOrNull() ?: return@newSuspendedTransaction null
@@ -250,6 +250,8 @@ class VocabularyService(
                 it[completedAt] = now
                 it[this.accuracy] = BigDecimal(accuracy).setScale(2, RoundingMode.HALF_UP)
             }
+
+            recordDailyActivity(userUuid, resolveLocalDate(localDate))
 
             VocabularyPackCompleteResponse(
                 wordsLearned = words.size,

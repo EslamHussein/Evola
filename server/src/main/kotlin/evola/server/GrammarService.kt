@@ -212,7 +212,7 @@ class GrammarService(private val database: Database) {
             GrammarAnswerResponse(nextState.masteryState, nextReviewAt.toString())
         }
 
-    suspend fun complete(userId: String, sessionId: String): GrammarSessionCompleteResponse? =
+    suspend fun complete(userId: String, sessionId: String, localDate: String? = null): GrammarSessionCompleteResponse? =
         newSuspendedTransaction(Dispatchers.IO, database) {
             val userUuid = UUID.fromString(userId)
             val sessionUuid = runCatching { UUID.fromString(sessionId) }.getOrNull() ?: return@newSuspendedTransaction null
@@ -231,6 +231,8 @@ class GrammarService(private val database: Database) {
                 it[completedAt] = Instant.now()
                 it[this.accuracy] = BigDecimal(accuracy).setScale(2, RoundingMode.HALF_UP)
             }
+
+            recordDailyActivity(userUuid, resolveLocalDate(localDate))
 
             GrammarSessionCompleteResponse(exercisesCompleted, accuracy)
         }
