@@ -288,8 +288,24 @@ is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full
       `LockedRow` "Coming soon" placeholders for M7 (Grammar)/M8 (Progress) to unlock later; verified
       on-emulator that both entry paths land on identical data and that back-navigation returns each
       to its own origin
-- [ ] Phase 7 — vocabulary session backend redesign: pack-of-~5-words × 7-fixed-stages model,
-      one-mastery-update-per-word rule, Free Production AI grading
+- [x] Phase 7 — vocabulary session backend redesign: pack-of-~5-words × 7-fixed-stages model,
+      one-mastery-update-per-word rule, Free Production AI grading — V13 migration
+      (`vocabulary_packs`/`vocabulary_pack_words`/`vocabulary_stage_answers` + bookmark/
+      marked-difficult columns on `vocabulary_progress`; `vocabulary_sessions`/
+      `vocabulary_session_items` left in place, unused); reuses all 4 existing route paths with
+      repurposed bodies (`POST .../session` starts/resumes a pack, `POST .../answer` gains a
+      `stage_index`, `POST .../complete` unchanged shape); new `PATCH /vocabulary-items/{id}/flags`;
+      Stages 2-4 validate via the shared `isTolerantMatch`, Stage 5 via a new deterministic
+      sentence-overlap match, Stage 6 (Free Production) via a real Anthropic call
+      (`FreeProductionGrader`, logged via `model_call_log`, no rate limit yet per the plan's
+      explicit cost-risk sign-off) - exactly one `MasterySrs` update per word, evaluated once all 7
+      stages are answered, not per-stage; verified with 14 new server unit tests (pack assembly
+      caps, stage sequencing, the one-mastery-update rule, Stage 5 fuzzy-match edge cases, a fake
+      `VocabularyGrader` for Stage 6) and a full local curl walkthrough with a real Anthropic key
+      (all 7 stages, real AI feedback, correct 20% pack accuracy). **Breaking, on purpose**: the
+      wire shape changes for all 4 routes, so the old (Phase 3-era) `VocabularySessionScreen`
+      client breaks until Phase 8 replaces it - shipped this way deliberately, matching the plan's
+      own phase-by-phase sequencing, since this is still a pre-launch/internal build
 - [ ] Phase 8 — vocabulary session UI redesign for the pack/stage model + pack summary screen
 - [ ] Phase 9 — cross-cutting regression pass, full verification, production deploy
 
