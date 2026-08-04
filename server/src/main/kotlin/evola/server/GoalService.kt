@@ -41,6 +41,19 @@ data class LessonSummaryResponse(
     @SerialName("vocab_progress") val vocabProgress: Float = 0f,
     @SerialName("grammar_progress") val grammarProgress: Float = 0f,
     @SerialName("grammar_count") val grammarCount: Int = 0,
+) {
+    /** Same corrected formula as `shared.goals.Lesson.completionPct`/`shared.materials.Lesson.
+     * completionPct` (01_PRODUCT_SPEC.md §1.7/§1.10, the M7-fixed condition: branch on a real topic
+     * count, not on grammarProgress == 0f - indistinguishable from "a topic at 0% mastery"). */
+    fun completionPct(): Float = if (grammarCount == 0) vocabProgress else (vocabProgress + grammarProgress) / 2f
+}
+
+@Serializable
+data class GoalProgressResponse(
+    @SerialName("overall_pct") val overallPct: Float,
+    @SerialName("current_lesson_id") val currentLessonId: String?,
+    @SerialName("streak_days") val streakDays: Int,
+    @SerialName("today_completed") val todayCompleted: Boolean,
 )
 
 sealed interface CreateGoalOutcome {
@@ -186,6 +199,44 @@ class GoalService(private val database: Database) {
                 .where { LessonsTable.goalId eq goalUuid }
                 .orderBy(LessonsTable.createdAt to SortOrder.ASC, LessonsTable.number to SortOrder.ASC)
                 .map { it.toLessonSummary(userUuid) }
+        }
+
+    /** Progress Dashboard (01_PRODUCT_SPEC.md §1.10) - a pure aggregation of everything M6/M7
+     * already compute. `overall_pct` is the average of every lesson's own combined completion pct
+     * (0f, never a broken/fake number, when the goal has 0 lessons yet). `current_lesson_id` is the
+     * first lesson (existing sequential order) still below 100%; null once every lesson is done or
+     * there are none. `streak_days`/`today_completed` come from `daily_activity`, computed against
+     * the CALLER's own local date (see [resolveLocalDate]/[computeStreak] - never server UTC, per
+     * the spec's explicit day-boundary warning). Returns null when the goal isn't the caller's. */
+    suspend fun getProgress(userId: String, goalId: String, localDate: String?): GoalProgressResponse? =
+        newSuspendedTransaction(Dispatchers.IO, database) {
+            val userUuid = UUID.fromString(userId)
+            val goalUuid = UUID.fromString(goalId)
+            val ownsGoal = GoalsTable.selectAll()
+                .where { (GoalsTable.id eq goalUuid) and (GoalsTable.userId eq userUuid) }
+                .any()
+            if (!ownsGoal) return@newSuspendedTransaction null
+
+            val lessons = LessonsTable.selectAll()
+                .where { LessonsTable.goalId eq goalUuid }
+                .orderBy(LessonsTable.createdAt to SortOrder.ASC, LessonsTable.number to SortOrder.ASC)
+                .map { it.toLessonSummary(userUuid) }
+
+            val overallPct = if (lessons.isEmpty()) 0f else lessons.map { it.completionPct() }.average().toFloat()
+            val currentLessonId = lessons.firstOrNull { it.completionPct() < 1f }?.lessonId
+
+            val today = resolveLocalDate(localDate)
+            val activityDates = DailyActivityTable.selectAll()
+                .where { (DailyActivityTable.userId eq userUuid) and (DailyActivityTable.completed eq true) }
+                .map { it[DailyActivityTable.activityDate] }
+                .toSet()
+
+            GoalProgressResponse(
+                overallPct = overallPct,
+                currentLessonId = currentLessonId,
+                streakDays = computeStreak(activityDates, today),
+                todayCompleted = today in activityDates,
+            )
         }
 
     /** Same vocab/grammar-progress computation MaterialService.toLesson uses, against this

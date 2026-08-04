@@ -8,6 +8,7 @@ import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveMultipart
+import io.ktor.server.request.receiveNullable
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -351,6 +352,17 @@ fun Route.goalRoutes(goalService: GoalService) {
                 ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Goal not found"))
             call.respond(HttpStatusCode.OK, lessons)
         }
+
+        get("/goals/{id}/progress") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@get call.respond(HttpStatusCode.Unauthorized)
+            val goalId = call.parameters["id"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing goal id"))
+            val localDate = call.request.queryParameters["local_date"]
+            val progress = goalService.getProgress(userId, goalId, localDate)
+                ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Goal not found"))
+            call.respond(HttpStatusCode.OK, progress)
+        }
     }
 }
 
@@ -392,7 +404,10 @@ fun Route.vocabularyRoutes(vocabularyService: VocabularyService) {
                 ?: return@post call.respond(HttpStatusCode.Unauthorized)
             val sessionId = call.parameters["id"]
                 ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session id"))
-            val result = vocabularyService.complete(userId, sessionId)
+            // Body is optional so an older client that sends none still completes normally - it
+            // just falls back to the server's UTC date for daily_activity (see resolveLocalDate).
+            val body = runCatching { call.receiveNullable<SessionCompleteRequest>() }.getOrNull()
+            val result = vocabularyService.complete(userId, sessionId, body?.localDate)
                 ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Session not found"))
             call.respond(HttpStatusCode.OK, result)
         }
@@ -448,7 +463,8 @@ fun Route.grammarRoutes(grammarService: GrammarService) {
                 ?: return@post call.respond(HttpStatusCode.Unauthorized)
             val sessionId = call.parameters["id"]
                 ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session id"))
-            val result = grammarService.complete(userId, sessionId)
+            val body = runCatching { call.receiveNullable<SessionCompleteRequest>() }.getOrNull()
+            val result = grammarService.complete(userId, sessionId, body?.localDate)
                 ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Session not found"))
             call.respond(HttpStatusCode.OK, result)
         }
