@@ -8,6 +8,7 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.jetbrains.exposed.sql.deleteAll
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -38,6 +39,10 @@ class MaterialServiceTest {
     fun clearTables() {
         queuedJobs = 0
         transaction(database) {
+            VocabularyProgressTable.deleteAll()
+            VocabularyItemsTable.deleteAll()
+            VocabularyExtractionJobsTable.deleteAll()
+            LessonsTable.deleteAll()
             MaterialsTable.deleteAll()
             ExtractionJobsTable.deleteAll()
             ExtractionCacheTable.deleteAll()
@@ -301,5 +306,81 @@ class MaterialServiceTest {
 
         assertTrue(materialService.reprocess(userId, created.materialId))
         assertEquals(2, queuedJobs)
+    }
+
+    @Test
+    fun `getMaterial computes vocab_count and an averaged vocab_progress per lesson`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val created = materialService.uploadMaterial(
+            userId, goalId, "book.pdf", samplePdfBytes(),
+            organizationMode = "entire",
+        )
+        assertIs<UploadOutcome.Created>(created)
+
+        val lessonId = transaction(database) {
+            LessonsTable.selectAll().where { LessonsTable.materialId eq java.util.UUID.fromString(created.materialId) }
+                .single()[LessonsTable.id]
+        }
+
+        // Two items: one "new" (stage 0/3), one "mastered" (stage 3/3) -> average 0.5.
+        transaction(database) {
+            val newItemId = java.util.UUID.randomUUID()
+            VocabularyItemsTable.insert {
+                it[id] = newItemId
+                it[this.lessonId] = lessonId
+                it[term] = "Hund"
+                it[meaning] = "dog"
+                it[createdAt] = java.time.Instant.now()
+            }
+            VocabularyProgressTable.insert {
+                it[id] = java.util.UUID.randomUUID()
+                it[this.userId] = java.util.UUID.fromString(userId)
+                it[vocabularyItemId] = newItemId
+                it[masteryState] = "new"
+                it[correctStreak] = 0
+                it[intervalIndex] = 0
+                it[nextReviewAt] = java.time.Instant.now()
+                it[lastReviewedAt] = null
+            }
+
+            val masteredItemId = java.util.UUID.randomUUID()
+            VocabularyItemsTable.insert {
+                it[id] = masteredItemId
+                it[this.lessonId] = lessonId
+                it[term] = "Katze"
+                it[meaning] = "cat"
+                it[createdAt] = java.time.Instant.now()
+            }
+            VocabularyProgressTable.insert {
+                it[id] = java.util.UUID.randomUUID()
+                it[this.userId] = java.util.UUID.fromString(userId)
+                it[vocabularyItemId] = masteredItemId
+                it[masteryState] = "mastered"
+                it[correctStreak] = 4
+                it[intervalIndex] = 4
+                it[nextReviewAt] = java.time.Instant.now()
+                it[lastReviewedAt] = java.time.Instant.now()
+            }
+        }
+
+        val detail = materialService.getMaterial(created.materialId)!!
+        val lesson = detail.lessons.single()
+        assertEquals(2, lesson.vocabCount)
+        assertEquals(0.5f, lesson.vocabProgress)
+    }
+
+    @Test
+    fun `getMaterial reports 0 vocab_progress for a lesson with no vocabulary yet`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val created = materialService.uploadMaterial(
+            userId, goalId, "book.pdf", samplePdfBytes(),
+            organizationMode = "entire",
+        )
+        assertIs<UploadOutcome.Created>(created)
+
+        val detail = materialService.getMaterial(created.materialId)!!
+        val lesson = detail.lessons.single()
+        assertEquals(0, lesson.vocabCount)
+        assertEquals(0f, lesson.vocabProgress)
     }
 }

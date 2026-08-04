@@ -15,6 +15,7 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.update
 import java.io.File
@@ -300,11 +301,12 @@ class MaterialService(
             val row = MaterialsTable
                 .selectAll().where { MaterialsTable.id eq materialUuid }
                 .singleOrNull() ?: return@newSuspendedTransaction null
+            val ownerUuid = row[MaterialsTable.userId]
 
             val lessons = LessonsTable
                 .selectAll().where { LessonsTable.materialId eq materialUuid }
                 .orderBy(LessonsTable.number, SortOrder.ASC)
-                .map { it.toLesson() }
+                .map { it.toLesson(ownerUuid) }
 
             MaterialDetail(material = row.toMaterial(), lessons = lessons)
         }
@@ -365,14 +367,36 @@ class MaterialService(
         pageCount = this[MaterialsTable.pageCount],
     )
 
-    private fun ResultRow.toLesson() = Lesson(
-        id = this[LessonsTable.id].toString(),
-        materialId = this[LessonsTable.materialId].toString(),
-        goalId = this[LessonsTable.goalId].toString(),
-        number = this[LessonsTable.number],
-        title = this[LessonsTable.title],
-        status = this[LessonsTable.status],
-    )
+    /** Completion percentage is the average mastery-stage-index ratio across this lesson's own
+     * vocabulary items for the material's owner (a lesson only ever belongs to one goal/user, so
+     * no extra ownership filter is needed on the progress join) - 0 for a lesson with no vocabulary
+     * yet, never a fake/rounded-up number. */
+    private fun ResultRow.toLesson(ownerId: UUID): Lesson {
+        val lessonId = this[LessonsTable.id]
+        val vocabItemIds = VocabularyItemsTable.selectAll()
+            .where { VocabularyItemsTable.lessonId eq lessonId }
+            .map { it[VocabularyItemsTable.id] }
+
+        val vocabProgress = if (vocabItemIds.isEmpty()) {
+            0f
+        } else {
+            val stageIndices = VocabularyProgressTable.selectAll()
+                .where { (VocabularyProgressTable.userId eq ownerId) and (VocabularyProgressTable.vocabularyItemId inList vocabItemIds) }
+                .map { MasterySrs.STAGES.indexOf(it[VocabularyProgressTable.masteryState]).coerceAtLeast(0) }
+            if (stageIndices.isEmpty()) 0f else stageIndices.map { it / (MasterySrs.STAGES.size - 1f) }.average().toFloat()
+        }
+
+        return Lesson(
+            id = lessonId.toString(),
+            materialId = this[LessonsTable.materialId].toString(),
+            goalId = this[LessonsTable.goalId].toString(),
+            number = this[LessonsTable.number],
+            title = this[LessonsTable.title],
+            status = this[LessonsTable.status],
+            vocabCount = vocabItemIds.size,
+            vocabProgress = vocabProgress,
+        )
+    }
 
     private fun normalize(text: String): String = text.trim().replace(Regex("\\s+"), " ")
 

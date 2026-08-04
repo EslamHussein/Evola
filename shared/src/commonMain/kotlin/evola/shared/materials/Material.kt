@@ -1,5 +1,6 @@
 package evola.shared.materials
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 enum class MaterialStatus { UPLOADED, PROCESSING, READY, UNSUPPORTED_CONTENT, FAILED }
@@ -19,7 +20,9 @@ data class Material(
 
 /** Mirrors the DB's `lesson_status` enum ("pending" | "ready" | "failed"). M4 only ever creates
  * lessons as "pending" - M6/M7 are what later flip a lesson to "ready" once it has real
- * vocabulary/grammar content. */
+ * vocabulary/grammar content. Grammar/reading/exercises counts stay honestly 0 until M7/M8/M9
+ * populate them - not a fake placeholder, an accurate "not built yet" signal (see Resource
+ * Details' meta-stat row in the design handoff). */
 @Serializable
 data class Lesson(
     val id: String,
@@ -28,6 +31,11 @@ data class Lesson(
     val number: Int,
     val title: String,
     val status: String,
+    @SerialName("vocab_count") val vocabCount: Int = 0,
+    @SerialName("vocab_progress") val vocabProgress: Float = 0f,
+    @SerialName("grammar_count") val grammarCount: Int = 0,
+    @SerialName("reading_count") val readingCount: Int = 0,
+    @SerialName("exercises_count") val exercisesCount: Int = 0,
 )
 
 @Serializable

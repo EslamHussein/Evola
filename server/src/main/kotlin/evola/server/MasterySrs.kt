@@ -10,7 +10,9 @@ object MasterySrs {
     /** Index into this ladder is `interval_index`; the value is days until next review. */
     val INTERVALS_DAYS = listOf(1L, 3L, 7L, 16L, 35L)
 
-    private val STAGES = listOf("new", "learning", "reviewing", "mastered")
+    /** Public so other progress-percentage calculations (e.g. Resource Details' completion ring)
+     * can map a mastery_state to a stage index without duplicating this ladder. */
+    val STAGES = listOf("new", "learning", "reviewing", "mastered")
 
     data class State(val masteryState: String, val intervalIndex: Int, val correctStreak: Int)
 
