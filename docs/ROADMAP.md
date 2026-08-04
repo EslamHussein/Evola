@@ -330,7 +330,7 @@ is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full
 
 ---
 
-## M7 — Grammar Learning + mandatory answer-key validation
+## M7 — Grammar Learning + mandatory answer-key validation ✅ done
 
 Goal: the mandatory validation pass is a correctness guarantee, not a nice-to-have — this is the
 single biggest trust risk in the whole spec if skipped. Full design in
@@ -343,33 +343,52 @@ already declared 1:1 in `Tables.kt` — only two new tables needed (`grammar_ext
 `grammar_session_answers`, V15).
 
 **AI pipeline** (`04_AI_PROMPTS.md` §3)
-- [ ] Topic extraction (0–3 per lesson, never forced) — `claude-haiku-4-5`
-- [ ] Exercise generation (multiple-choice + fill-in-blank only) — `claude-haiku-4-5`
-- [ ] **Second, independent model call validating every exercise before it's ever stored** —
+- [x] Topic extraction (0–3 per lesson, never forced) — `claude-haiku-4-5`
+- [x] Exercise generation (multiple-choice + fill-in-blank only) — `claude-haiku-4-5`
+- [x] **Second, independent model call validating every exercise before it's ever stored** —
       `claude-sonnet-5` (decided; logged as `modelTier = "LARGE"`)
-- [ ] Discard invalid exercises; <3 valid → explanation-only + one recap question (reuses the
+- [x] Discard invalid exercises; <3 valid → explanation-only + one recap question (reuses the
       exercise-generation prompt with a `recapMode` flag rather than a new prompt)
-- [ ] Auto-queued in parallel with vocabulary extraction per lesson (new `onGrammarJobQueued`
+- [x] Auto-queued in parallel with vocabulary extraction per lesson (new `onGrammarJobQueued`
       callback, mirroring `onVocabJobQueued`) — never touches `lessons.status`
 
 **Backend**
-- [ ] `MasterySrs.onPartialCorrect` (new, additive-only) implements the two-consecutive-correct
+- [x] `MasterySrs.onPartialCorrect` (new, additive-only) implements the two-consecutive-correct
       advancement rule via a caller-side parity branch in `GrammarService` — `onCorrect`/
       `onIncorrect` themselves stay unchanged
-- [ ] `GET /lessons/{id}/grammar`, `POST /grammar-topics/{id}/exercise-session`,
+- [x] `GET /lessons/{id}/grammar`, `POST /grammar-topics/{id}/exercise-session`,
       `POST /grammar-sessions/{id}/answer`, `POST /grammar-sessions/{id}/complete`
-- [ ] Client self-grades and reports `correct` (same trust model vocabulary used pre-redesign)
-- [ ] Fixes a real bug found during planning: `goals.Lesson.completionPct` branches on
+- [x] Client self-grades and reports `correct` (same trust model vocabulary used pre-redesign)
+- [x] Fixes a real bug found during planning: `goals.Lesson.completionPct` branches on
       `grammarProgress == 0f` (indistinguishable from "topic exists at 0% mastery") instead of
       `grammarCount == 0` — corrected as part of this milestone, plus the same corrected formula
       added to `materials.Lesson`
 
 **Mobile**
-- [ ] `GrammarTopicListScreen`/`GrammarExerciseSessionScreen` (built from the pre-redesign
+- [x] `GrammarTopicListScreen`/`GrammarExerciseSessionScreen` (built from the pre-redesign
       vocabulary session template), empty state when 0 topics
-- [ ] Fixes a real, currently-latent bug in `LessonDetailScreen`'s `SectionRow`: it hardcodes the
-      Vocabulary callbacks for every unlocked section regardless of `section.key` — invisible today
-      since only Vocabulary is unlocked, would misroute Grammar once its row unlocks
+- [x] Fixes a real, currently-latent bug in `LessonDetailScreen`'s `SectionRow`: it hardcoded the
+      Vocabulary callbacks for every unlocked section regardless of `section.key` — invisible before
+      this milestone since only Vocabulary was ever unlocked; would have misrouted Grammar's row
+      straight into the vocabulary session
+
+Confirmed live via curl against production: a real German lesson (Präteritum, Possessivpronomen,
+Trennbare Verben) yielded 3 topics and 17 validated exercises (5–6, 6, 6 per topic) after 2 were
+discarded by the mandatory `claude-sonnet-5` validation pass — `model_call_log` shows all three new
+task types (`GRAMMAR_TOPIC_EXTRACTION`/`GRAMMAR_EXERCISE_GENERATION` at `modelTier=SMALL`,
+`GRAMMAR_ANSWER_VALIDATION` at `modelTier=LARGE`, 19 validation calls for 17 kept exercises) running
+in parallel with vocabulary extraction on the same lesson. A full answer/complete loop against
+production confirmed: the two-consecutive-correct rule (first correct → mastery unchanged, second
+consecutive correct → advances one stage), a wrong answer dropping mastery immediately regardless of
+streak, idempotent replay of an already-answered exercise returning the stored snapshot instead of
+re-applying `MasterySrs`, and `complete` computing `exercises_completed`/`accuracy` correctly (5
+answered, 1 wrong → 80%). Verified on the Android emulator against local: both the Materials-tab and
+Study-tab entry points reach the identical `LessonDetailScreen`; tapping the unlocked Grammar row
+correctly opens the topic list (not the vocabulary session — the exact routing bug this milestone
+fixed); a full multiple-choice + fill-in-blank exercise session with correct/incorrect branching and
+a completion summary; the Resource Details ring updating live to the combined vocab+grammar formula.
+90/90 server tests passing (`MasterySrsTest`, `GrammarServiceTest`, extended `MaterialServiceTest`/
+`GoalServiceTest`). V15 migration deployed and applied cleanly on the Hetzner production database.
 
 ---
 
