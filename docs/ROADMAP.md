@@ -273,8 +273,10 @@ is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full
 - [x] Phase 3 — AI Wizard UI (4 steps) + the processing/loading screen the handoff's own README
       flags as a gap — Start Analysis is the real upload point now; verified full walkthrough
       on-emulator + confirmed persisted fields in Postgres
-- [ ] Phase 4 — vocabulary extraction schema expansion: Arabic `meaning_ar`, IPA, related words,
-      difficulty/frequency ratings, memory tip
+- [x] Phase 4 — vocabulary extraction schema expansion: Arabic `meaning_ar`, IPA, related words,
+      difficulty/frequency ratings, memory tip — V12 migration; verified live in production
+      (real extraction populated every new field) and on-emulator (Vocabulary List renders
+      correct RTL Arabic script alongside the new tags)
 - [ ] Phase 5 — Resource Details redesign (progress ring, status tags, meta stats) + lesson-card tap
       navigation (didn't exist before)
 - [ ] Phase 6 — new Lesson Details hub (8 section rows), retires `LessonHomeScreen`, unifies the two
