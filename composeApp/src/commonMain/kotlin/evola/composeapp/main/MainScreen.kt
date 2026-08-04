@@ -24,8 +24,8 @@ import evola.composeapp.lessons.LessonDetailScreen
 import evola.composeapp.lessons.LessonDetailViewModel
 import evola.composeapp.lessons.VocabularyListScreen
 import evola.composeapp.lessons.VocabularyListViewModel
-import evola.composeapp.lessons.VocabularySessionScreen
-import evola.composeapp.lessons.VocabularySessionViewModel
+import evola.composeapp.lessons.VocabularyPackSessionScreen
+import evola.composeapp.lessons.VocabularyPackSessionViewModel
 import evola.composeapp.materials.AddMaterialScreen
 import evola.composeapp.materials.AddMaterialViewModel
 import evola.composeapp.materials.MaterialDetailScreen
@@ -162,9 +162,9 @@ fun MainScreen(
 
                     is StudySubScreen.Session -> {
                         val viewModel = remember(sub.lesson.id) {
-                            VocabularySessionViewModel(accessToken, sub.lesson.id, vocabularyRepository)
+                            VocabularyPackSessionViewModel(accessToken, sub.lesson.id, vocabularyRepository)
                         }
-                        VocabularySessionScreen(viewModel = viewModel, onDone = { studySubScreen = StudySubScreen.Home(sub.lesson) })
+                        VocabularyPackSessionScreen(viewModel = viewModel, onDone = { studySubScreen = StudySubScreen.Home(sub.lesson) })
                     }
 
                     is StudySubScreen.VocabularyList -> {
@@ -245,9 +245,9 @@ fun MainScreen(
 
                     is MaterialsSubScreen.Session -> {
                         val viewModel = remember(sub.lessonId) {
-                            VocabularySessionViewModel(accessToken, sub.lessonId, vocabularyRepository)
+                            VocabularyPackSessionViewModel(accessToken, sub.lessonId, vocabularyRepository)
                         }
-                        VocabularySessionScreen(
+                        VocabularyPackSessionScreen(
                             viewModel = viewModel,
                             onDone = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) },
                         )

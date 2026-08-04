@@ -5,6 +5,7 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -30,46 +31,81 @@ private data class VocabularyItemWireResponse(
     @SerialName("difficulty_rating") val difficultyRating: String? = null,
     @SerialName("frequency_rating") val frequencyRating: String? = null,
     @SerialName("memory_tip") val memoryTip: String? = null,
-)
+    @SerialName("is_bookmarked") val isBookmarked: Boolean = false,
+    @SerialName("marked_difficult") val markedDifficult: Boolean = false,
+) {
+    fun toDomain() = VocabularyItem(
+        itemId, term, meaning, gender, exampleSentence, masteryState, meaningAr, ipaPronunciation,
+        relatedWords, difficultyRating, frequencyRating, memoryTip, isBookmarked, markedDifficult,
+    )
+}
 
 @Serializable
-private data class VocabularySessionItemWireResponse(
+private data class PackWordWireResponse(
     @SerialName("item_id") val itemId: String,
     val term: String,
     val meaning: String,
-    @SerialName("drill_type") val drillType: String,
-    val choices: List<String> = emptyList(),
+    val gender: String? = null,
+    @SerialName("example_sentence") val exampleSentence: String? = null,
+    @SerialName("mastery_state") val masteryState: String,
+    @SerialName("meaning_ar") val meaningAr: String? = null,
+    @SerialName("ipa_pronunciation") val ipaPronunciation: String? = null,
+    @SerialName("related_words") val relatedWords: List<String> = emptyList(),
+    @SerialName("difficulty_rating") val difficultyRating: String? = null,
+    @SerialName("frequency_rating") val frequencyRating: String? = null,
+    @SerialName("memory_tip") val memoryTip: String? = null,
+    @SerialName("is_bookmarked") val isBookmarked: Boolean = false,
+    @SerialName("marked_difficult") val markedDifficult: Boolean = false,
+    @SerialName("recognition_choices") val recognitionChoices: List<String> = emptyList(),
+    @SerialName("partial_mask") val partialMask: String? = null,
     @SerialName("sentence_with_blank") val sentenceWithBlank: String? = null,
-    @SerialName("part_of_speech") val partOfSpeech: String? = null,
-    @SerialName("grammatical_case") val grammaticalCase: String? = null,
-    @SerialName("sentence_translation") val sentenceTranslation: String? = null,
-)
+    @SerialName("sentence_translation_prompt") val sentenceTranslationPrompt: String? = null,
+) {
+    fun toDomain() = PackWord(
+        itemId, term, meaning, gender, exampleSentence, masteryState, meaningAr, ipaPronunciation,
+        relatedWords, difficultyRating, frequencyRating, memoryTip, isBookmarked, markedDifficult,
+        recognitionChoices, partialMask, sentenceWithBlank, sentenceTranslationPrompt,
+    )
+}
 
 @Serializable
-private data class VocabularySessionWireResponse(
-    @SerialName("session_id") val sessionId: String,
-    val items: List<VocabularySessionItemWireResponse>,
-    @SerialName("has_lesson_vocabulary") val hasLessonVocabulary: Boolean,
-)
+private data class VocabularyPackWireResponse(
+    @SerialName("pack_id") val packId: String,
+    @SerialName("pack_number") val packNumber: Int,
+    @SerialName("word_index") val wordIndex: Int,
+    @SerialName("words_count") val wordsCount: Int,
+    @SerialName("stage_index") val stageIndex: Int,
+    val word: PackWordWireResponse,
+    @SerialName("ready_to_complete") val readyToComplete: Boolean = false,
+) {
+    fun toDomain() = VocabularyPack(packId, packNumber, wordIndex, wordsCount, stageIndex, word.toDomain(), readyToComplete)
+}
 
 @Serializable
 private data class VocabularyAnswerWireRequest(
     @SerialName("item_id") val itemId: String,
+    @SerialName("stage_index") val stageIndex: Int,
     val response: String,
-    val correct: Boolean,
 )
 
 @Serializable
 private data class VocabularyAnswerWireResponse(
-    @SerialName("mastery_state") val masteryState: String,
-    @SerialName("next_review_at") val nextReviewAt: String,
-    val resurfaced: Boolean,
+    val correct: Boolean? = null,
+    val feedback: String? = null,
+    val next: VocabularyPackWireResponse? = null,
 )
 
 @Serializable
-private data class VocabularySessionCompleteWireResponse(
-    @SerialName("items_count") val itemsCount: Int,
+private data class VocabularyPackCompleteWireResponse(
+    @SerialName("words_learned") val wordsLearned: Int,
     val accuracy: Double,
+    @SerialName("time_seconds") val timeSeconds: Long,
+)
+
+@Serializable
+private data class VocabularyFlagsWireRequest(
+    @SerialName("is_bookmarked") val isBookmarked: Boolean? = null,
+    @SerialName("marked_difficult") val markedDifficult: Boolean? = null,
 )
 
 class HttpVocabularyRepository(
@@ -79,29 +115,12 @@ class HttpVocabularyRepository(
     },
 ) : VocabularyRepository {
 
-    override suspend fun startOrResumeSession(accessToken: String, lessonId: String): VocabularySession? {
+    override suspend fun startOrResumeSession(accessToken: String, lessonId: String): VocabularyPack? {
         val response = httpClient.post("$baseUrl/lessons/$lessonId/vocabulary/session") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }
         if (response.status != HttpStatusCode.Created) return null
-        val body = response.body<VocabularySessionWireResponse>()
-        return VocabularySession(
-            sessionId = body.sessionId,
-            items = body.items.map {
-                VocabularySessionItem(
-                    itemId = it.itemId,
-                    term = it.term,
-                    meaning = it.meaning,
-                    drillType = it.drillType,
-                    choices = it.choices,
-                    sentenceWithBlank = it.sentenceWithBlank,
-                    partOfSpeech = it.partOfSpeech,
-                    grammaticalCase = it.grammaticalCase,
-                    sentenceTranslation = it.sentenceTranslation,
-                )
-            },
-            hasLessonVocabulary = body.hasLessonVocabulary,
-        )
+        return response.body<VocabularyPackWireResponse>().toDomain()
     }
 
     override suspend fun listVocabulary(accessToken: String, lessonId: String): List<VocabularyItem> {
@@ -109,47 +128,47 @@ class HttpVocabularyRepository(
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }
         if (response.status != HttpStatusCode.OK) return emptyList()
-        return response.body<List<VocabularyItemWireResponse>>().map {
-            VocabularyItem(
-                itemId = it.itemId,
-                term = it.term,
-                meaning = it.meaning,
-                gender = it.gender,
-                exampleSentence = it.exampleSentence,
-                masteryState = it.masteryState,
-                meaningAr = it.meaningAr,
-                ipaPronunciation = it.ipaPronunciation,
-                relatedWords = it.relatedWords,
-                difficultyRating = it.difficultyRating,
-                frequencyRating = it.frequencyRating,
-                memoryTip = it.memoryTip,
-            )
-        }
+        return response.body<List<VocabularyItemWireResponse>>().map { it.toDomain() }
     }
 
     override suspend fun answer(
         accessToken: String,
-        sessionId: String,
+        packId: String,
         itemId: String,
+        stageIndex: Int,
         response: String,
-        correct: Boolean,
-    ): VocabularyAnswerResult? {
-        val httpResponse = httpClient.post("$baseUrl/vocabulary-sessions/$sessionId/answer") {
+    ): VocabularyStageAnswerResult? {
+        val httpResponse = httpClient.post("$baseUrl/vocabulary-sessions/$packId/answer") {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $accessToken")
-            setBody(VocabularyAnswerWireRequest(itemId, response, correct))
+            setBody(VocabularyAnswerWireRequest(itemId, stageIndex, response))
         }
         if (httpResponse.status != HttpStatusCode.OK) return null
         val body = httpResponse.body<VocabularyAnswerWireResponse>()
-        return VocabularyAnswerResult(body.masteryState, body.nextReviewAt, body.resurfaced)
+        return VocabularyStageAnswerResult(body.correct, body.feedback, body.next?.toDomain())
     }
 
-    override suspend fun complete(accessToken: String, sessionId: String): VocabularySessionSummary? {
-        val httpResponse = httpClient.post("$baseUrl/vocabulary-sessions/$sessionId/complete") {
+    override suspend fun complete(accessToken: String, packId: String): VocabularyPackSummary? {
+        val httpResponse = httpClient.post("$baseUrl/vocabulary-sessions/$packId/complete") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }
         if (httpResponse.status != HttpStatusCode.OK) return null
-        val body = httpResponse.body<VocabularySessionCompleteWireResponse>()
-        return VocabularySessionSummary(body.itemsCount, body.accuracy)
+        val body = httpResponse.body<VocabularyPackCompleteWireResponse>()
+        return VocabularyPackSummary(body.wordsLearned, body.accuracy, body.timeSeconds)
+    }
+
+    override suspend fun updateFlags(
+        accessToken: String,
+        itemId: String,
+        isBookmarked: Boolean?,
+        markedDifficult: Boolean?,
+    ): VocabularyItem? {
+        val response = httpClient.patch("$baseUrl/vocabulary-items/$itemId/flags") {
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+            setBody(VocabularyFlagsWireRequest(isBookmarked, markedDifficult))
+        }
+        if (response.status != HttpStatusCode.OK) return null
+        return response.body<VocabularyItemWireResponse>().toDomain()
     }
 }
