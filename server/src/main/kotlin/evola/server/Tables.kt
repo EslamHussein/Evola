@@ -169,17 +169,6 @@ internal object VocabularyProgressTable : Table("vocabulary_progress") {
     override val primaryKey = PrimaryKey(id)
 }
 
-internal object VocabularySessionsTable : Table("vocabulary_sessions") {
-    val id = uuid("id")
-    val userId = uuid("user_id")
-    val lessonId = uuid("lesson_id")
-    val startedAt = timestamp("started_at")
-    val completedAt = timestamp("completed_at").nullable()
-    val itemsCount = integer("items_count")
-    val accuracy = decimal("accuracy", 5, 2).nullable()
-    override val primaryKey = PrimaryKey(id)
-}
-
 internal object VocabularyExtractionJobsTable : Table("vocabulary_extraction_jobs") {
     val id = uuid("id")
     val lessonId = uuid("lesson_id").uniqueIndex()
@@ -190,22 +179,9 @@ internal object VocabularyExtractionJobsTable : Table("vocabulary_extraction_job
     override val primaryKey = PrimaryKey(id)
 }
 
-/** position is mutable - a resurfaced occurrence of the same vocabularyItemId gets a new row with
- * a later position instead of replacing the original (see VocabularyService). */
-internal object VocabularySessionItemsTable : Table("vocabulary_session_items") {
-    val id = uuid("id")
-    val sessionId = uuid("session_id")
-    val vocabularyItemId = uuid("vocabulary_item_id")
-    val position = integer("position")
-    val drillType = text("drill_type")
-    val choices = text("choices").nullable()
-    val answeredCorrectly = bool("answered_correctly").nullable()
-    val answeredAt = timestamp("answered_at").nullable()
-    override val primaryKey = PrimaryKey(id)
-}
-
 /** Pack/stage vocabulary session architecture (design handoff Phase 7). One row per pack of ~5
- * words a user works through for a lesson; [VocabularySessionsTable] stays in place, unused. */
+ * words a user works through for a lesson - replaces the old flat-session model entirely (its
+ * tables were dropped in V14 once this architecture was proven in production). */
 internal object VocabularyPacksTable : Table("vocabulary_packs") {
     val id = uuid("id")
     val userId = uuid("user_id")

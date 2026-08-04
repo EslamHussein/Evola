@@ -127,8 +127,8 @@ private data class VocabInfo(
  * Vocabulary Learning, pack/stage architecture (design handoff Phase 7): a lesson's vocabulary is
  * worked through in packs of ~[PACK_SIZE] words, each word walked through 7 fixed stages
  * (Discover, Recognition, Reverse Recall, Partial Recall, Sentence Completion, Translation, Free
- * Production). Replaces the old flat drill-queue model; `vocabulary_sessions`/
- * `vocabulary_session_items` are left in place, unused, per the plan's deprecate-not-drop decision.
+ * Production). Replaces the old flat drill-queue model entirely - `vocabulary_sessions`/
+ * `vocabulary_session_items` were dropped (V14) once this architecture was proven in production.
  *
  * Mastery-update granularity: exactly one [MasterySrs] call per word, evaluated once all 7 stages
  * are answered (see [applyMasteryUpdate]) - not per-stage, since running the SRS ladder 7x/word
