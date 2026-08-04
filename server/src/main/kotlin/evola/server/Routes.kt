@@ -409,3 +409,48 @@ fun Route.vocabularyRoutes(vocabularyService: VocabularyService) {
         }
     }
 }
+
+fun Route.grammarRoutes(grammarService: GrammarService) {
+    authenticate("auth-jwt") {
+        get("/lessons/{id}/grammar") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@get call.respond(HttpStatusCode.Unauthorized)
+            val lessonId = call.parameters["id"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing lesson id"))
+            val topics = grammarService.listTopics(userId, lessonId)
+                ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Lesson not found"))
+            call.respond(HttpStatusCode.OK, topics)
+        }
+
+        post("/grammar-topics/{id}/exercise-session") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@post call.respond(HttpStatusCode.Unauthorized)
+            val topicId = call.parameters["id"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing topic id"))
+            val session = grammarService.startOrResumeSession(userId, topicId)
+                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Topic not found"))
+            call.respond(HttpStatusCode.Created, session)
+        }
+
+        post("/grammar-sessions/{id}/answer") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@post call.respond(HttpStatusCode.Unauthorized)
+            val sessionId = call.parameters["id"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session id"))
+            val request = call.receive<GrammarAnswerRequest>()
+            val result = grammarService.answer(userId, sessionId, request)
+                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Session or exercise not found"))
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+        post("/grammar-sessions/{id}/complete") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@post call.respond(HttpStatusCode.Unauthorized)
+            val sessionId = call.parameters["id"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing session id"))
+            val result = grammarService.complete(userId, sessionId)
+                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Session not found"))
+            call.respond(HttpStatusCode.OK, result)
+        }
+    }
+}

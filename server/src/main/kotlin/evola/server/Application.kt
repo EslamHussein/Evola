@@ -56,6 +56,7 @@ fun main() {
     val goalService = GoalService(database)
     val freeProductionGrader = FreeProductionGrader(database, anthropicClient)
     val vocabularyService = VocabularyService(database, freeProductionGrader)
+    val grammarService = GrammarService(database)
 
     println("Evola :server starting on 127.0.0.1:$port ...")
     embeddedServer(CIO, port = port, host = "127.0.0.1") {
@@ -83,6 +84,7 @@ fun main() {
             authRoutes(authService)
             goalRoutes(goalService)
             vocabularyRoutes(vocabularyService)
+            grammarRoutes(grammarService)
         }
     }.start(wait = true)
 }
