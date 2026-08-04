@@ -280,8 +280,14 @@ is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full
 - [x] Phase 5 — Resource Details redesign (progress ring, status tags, meta stats) — lesson-card tap
       navigation deferred to Phase 6 (no real destination exists until then); verified on-emulator
       and in production that vocab_count/vocab_progress compute and render correctly
-- [ ] Phase 6 — new Lesson Details hub (8 section rows), retires `LessonHomeScreen`, unifies the two
-      different navigation paths into a lesson
+- [x] Phase 6 — new Lesson Details hub (8 section rows), retires `LessonHomeScreen`, unifies the two
+      different navigation paths into a lesson — new `GET /lessons/{id}` resolves ownership through
+      the lesson's material rather than its goal, so both the Materials tab (Resource Details →
+      lesson card) and the Study tab (flat lesson list → lesson row) fetch and render identical
+      state for the same lessonId; only Vocabulary is unlocked, the other 7 rows are honest
+      `LockedRow` "Coming soon" placeholders for M7 (Grammar)/M8 (Progress) to unlock later; verified
+      on-emulator that both entry paths land on identical data and that back-navigation returns each
+      to its own origin
 - [ ] Phase 7 — vocabulary session backend redesign: pack-of-~5-words × 7-fixed-stages model,
       one-mastery-update-per-word rule, Free Production AI grading
 - [ ] Phase 8 — vocabulary session UI redesign for the pack/stage model + pack summary screen
