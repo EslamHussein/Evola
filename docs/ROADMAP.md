@@ -306,7 +306,19 @@ is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full
       wire shape changes for all 4 routes, so the old (Phase 3-era) `VocabularySessionScreen`
       client breaks until Phase 8 replaces it - shipped this way deliberately, matching the plan's
       own phase-by-phase sequencing, since this is still a pre-launch/internal build
-- [ ] Phase 8 — vocabulary session UI redesign for the pack/stage model + pack summary screen
+- [x] Phase 8 — vocabulary session UI redesign for the pack/stage model + pack summary screen —
+      new `VocabularyPackSessionScreen`/`VocabularyPackSessionViewModel` (replaces
+      `VocabularySessionScreen`/`VocabularySessionViewModel`) + `PackSummaryScreen`; one composable
+      per stage (Discover/Recognition/Reverse Recall/Partial Recall/Sentence Completion/
+      Translation/Free Production) sharing a `SegmentedProgressBar` header and a
+      Check→reveal→Continue/"Finish pack" footer; gender badge shape (circle/diamond/square) never
+      color-only; bookmark and "mark as difficult" icons wired to the real
+      `PATCH /vocabulary-items/{id}/flags` endpoint; "Show/Hide AI explanation" reuses the single
+      extracted `memory_tip` field rather than a second AI call, per the plan's own flagged
+      simplification; audio button stays visual-only (no real TTS, out of scope); verified on-emulator
+      end-to-end with real data - all 7 stages for one word (including real AI grading and its
+      genuinely useful grammar feedback), word-to-word advancement, and both flag toggles confirmed
+      via direct DB queries after tapping
 - [ ] Phase 9 — cross-cutting regression pass, full verification, production deploy
 
 ---
