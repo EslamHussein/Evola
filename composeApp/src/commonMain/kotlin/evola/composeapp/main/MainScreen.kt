@@ -145,7 +145,18 @@ fun MainScreen(
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
-                MainTab.HOME -> HomeScreen(goal = goal, onGoToMaterials = { selectedTab = MainTab.MATERIALS })
+                MainTab.HOME -> {
+                    val homeViewModel = remember(goal.id) { HomeViewModel(accessToken, goal.id, goalsRepository) }
+                    HomeScreen(
+                        goal = goal,
+                        viewModel = homeViewModel,
+                        onGoToMaterials = { selectedTab = MainTab.MATERIALS },
+                        onContinueLesson = { lesson ->
+                            selectedTab = MainTab.STUDY
+                            studySubScreen = StudySubScreen.Home(lesson)
+                        },
+                    )
+                }
 
                 MainTab.GOALS -> GoalsScreen(goal = goal)
 
