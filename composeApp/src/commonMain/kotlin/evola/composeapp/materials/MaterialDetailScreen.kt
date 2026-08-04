@@ -51,7 +51,7 @@ import evola.shared.materials.MaterialDetail
 import evola.shared.materials.MaterialStatus
 
 @Composable
-fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit) {
+fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit, onOpenLesson: (String) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -70,7 +70,7 @@ fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit)
             when (val current = state) {
                 is MaterialDetailState.Loading -> ProgressMessage("Loading...")
                 is MaterialDetailState.Error -> CenteredMessage(current.message)
-                is MaterialDetailState.Loaded -> LoadedBody(current.detail, onRetry = viewModel::retry)
+                is MaterialDetailState.Loaded -> LoadedBody(current.detail, onRetry = viewModel::retry, onOpenLesson = onOpenLesson)
             }
         }
     }
@@ -97,7 +97,7 @@ private fun ProgressMessage(message: String) {
 }
 
 @Composable
-private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit) {
+private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit, onOpenLesson: (String) -> Unit) {
     when (detail.material.status) {
         MaterialStatus.UPLOADED, MaterialStatus.PROCESSING ->
             ProgressMessage("Splitting \"${detail.material.filename}\" into lessons...")
@@ -115,18 +115,18 @@ private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit) {
                     }
                 }
             } else {
-                PartialSuccessBody(detail, onRetry)
+                PartialSuccessBody(detail, onRetry, onOpenLesson)
             }
 
         MaterialStatus.UNSUPPORTED_CONTENT ->
             CenteredMessage("\"${detail.material.filename}\" doesn't look like readable text we can use. Try a different file.")
 
-        MaterialStatus.READY -> ResourceDetailBody(detail)
+        MaterialStatus.READY -> ResourceDetailBody(detail, onOpenLesson)
     }
 }
 
 @Composable
-private fun ResourceDetailBody(detail: MaterialDetail) {
+private fun ResourceDetailBody(detail: MaterialDetail, onOpenLesson: (String) -> Unit) {
     val lessons = detail.lessons
     val overallProgress = if (lessons.isEmpty()) 0 else (lessons.map { it.vocabProgress }.average() * 100).toInt()
     val vocabTotal = lessons.sumOf { it.vocabCount }
@@ -143,7 +143,7 @@ private fun ResourceDetailBody(detail: MaterialDetail) {
             Text(lessonCountLabel(lessons.size), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(EvolaSpacing.sm))
         }
-        items(lessons) { LessonRow(it) }
+        items(lessons) { lesson -> LessonRow(lesson, onClick = { onOpenLesson(lesson.id) }) }
     }
 }
 
@@ -191,7 +191,7 @@ private fun MetaStat(icon: androidx.compose.ui.graphics.vector.ImageVector, valu
 }
 
 @Composable
-private fun PartialSuccessBody(detail: MaterialDetail, onRetry: () -> Unit) {
+private fun PartialSuccessBody(detail: MaterialDetail, onRetry: () -> Unit, onOpenLesson: (String) -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         item {
             Text(
@@ -203,19 +203,19 @@ private fun PartialSuccessBody(detail: MaterialDetail, onRetry: () -> Unit) {
             Button(onClick = onRetry) { Text("Retry the rest") }
             Spacer(Modifier.height(16.dp))
         }
-        items(detail.lessons) { LessonRow(it) }
+        items(detail.lessons) { lesson -> LessonRow(lesson, onClick = { onOpenLesson(lesson.id) }) }
     }
 }
 
 @Composable
-private fun LessonRow(lesson: Lesson) {
+private fun LessonRow(lesson: Lesson, onClick: () -> Unit) {
     val (tagLabel, tagStyle) = when {
         lesson.status == "ready" && lesson.vocabProgress >= 1f -> "Fertig" to StatusTagStyle.FILLED
         lesson.status == "ready" && lesson.vocabProgress > 0f -> "Läuft" to StatusTagStyle.OUTLINE
         lesson.status == "ready" -> "Offen" to StatusTagStyle.NEUTRAL
         else -> "Offen" to StatusTagStyle.NEUTRAL
     }
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.md),
             verticalAlignment = Alignment.CenterVertically,

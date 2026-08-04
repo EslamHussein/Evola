@@ -184,6 +184,19 @@ fun Route.materialRoutes(materialService: MaterialService) {
                 call.respond(HttpStatusCode.NotFound, mapOf("error" to "Material not found or not currently failed"))
             }
         }
+
+        // Unified lesson-details destination (Phase 6): not nested under /materials since a
+        // lesson is reached both from the Materials tab and the Study tab, but lives here since
+        // MaterialService already owns the lesson/vocab-progress join it needs.
+        get("/lessons/{id}") {
+            val userId = call.principal<JWTPrincipal>()?.payload?.subject
+                ?: return@get call.respond(HttpStatusCode.Unauthorized)
+            val lessonId = call.parameters["id"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing lesson id"))
+            val detail = materialService.getLessonDetail(userId, lessonId)
+                ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Lesson not found"))
+            call.respond(HttpStatusCode.OK, detail)
+        }
     }
 }
 

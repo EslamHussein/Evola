@@ -383,4 +383,60 @@ class MaterialServiceTest {
         assertEquals(0, lesson.vocabCount)
         assertEquals(0f, lesson.vocabProgress)
     }
+
+    @Test
+    fun `getLessonDetail returns a unified breadcrumb and section list with only vocabulary unlocked`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val created = materialService.uploadMaterial(
+            userId, goalId, "book.pdf", samplePdfBytes(),
+            organizationMode = "entire",
+        )
+        assertIs<UploadOutcome.Created>(created)
+        val lessonId = transaction(database) {
+            LessonsTable.selectAll().where { LessonsTable.materialId eq java.util.UUID.fromString(created.materialId) }
+                .single()[LessonsTable.id]
+        }.toString()
+
+        transaction(database) {
+            val itemId = java.util.UUID.randomUUID()
+            VocabularyItemsTable.insert {
+                it[id] = itemId
+                it[this.lessonId] = java.util.UUID.fromString(lessonId)
+                it[term] = "Hund"
+                it[meaning] = "dog"
+                it[createdAt] = java.time.Instant.now()
+            }
+        }
+
+        val detail = materialService.getLessonDetail(userId, lessonId)!!
+        assertEquals(lessonId, detail.lessonId)
+        assertEquals("book.pdf", detail.breadcrumb)
+        assertEquals(8, detail.sections.size)
+
+        val vocabulary = detail.sections.first { it.key == "vocabulary" }
+        assertEquals(false, vocabulary.locked)
+        assertEquals("1 words", vocabulary.subtitle)
+
+        val lockedSections = detail.sections.filter { it.key != "vocabulary" }
+        assertEquals(7, lockedSections.size)
+        assertTrue(lockedSections.all { it.locked && it.state == "locked" })
+    }
+
+    @Test
+    fun `getLessonDetail returns null for a lesson owned by a different user`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val created = materialService.uploadMaterial(
+            userId, goalId, "book.pdf", samplePdfBytes(),
+            organizationMode = "entire",
+        )
+        assertIs<UploadOutcome.Created>(created)
+        val lessonId = transaction(database) {
+            LessonsTable.selectAll().where { LessonsTable.materialId eq java.util.UUID.fromString(created.materialId) }
+                .single()[LessonsTable.id]
+        }.toString()
+
+        val (otherUserId, _) = registerUserWithGoal(email = "other-lesson-viewer@example.com")
+
+        assertEquals(null, materialService.getLessonDetail(otherUserId, lessonId))
+    }
 }

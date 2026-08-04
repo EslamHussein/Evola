@@ -58,6 +58,26 @@ data class MaterialTextUploadRequest(
 data class MaterialStatusResponse(val status: String, @SerialName("page_count") val pageCount: Int? = null)
 
 @Serializable
+data class LessonSectionResponse(
+    val key: String,
+    val label: String,
+    val subtitle: String,
+    val locked: Boolean,
+    val state: String,
+)
+
+@Serializable
+data class LessonDetailResponse(
+    @SerialName("lesson_id") val lessonId: String,
+    val number: Int,
+    val title: String,
+    val status: String,
+    val breadcrumb: String,
+    @SerialName("progress_percent") val progressPercent: Int,
+    val sections: List<LessonSectionResponse>,
+)
+
+@Serializable
 data class DuplicateFileResponse(
     val error: ErrorBody = ErrorBody("DUPLICATE_FILE", "You've already uploaded this file."),
     @SerialName("existing_material_id") val existingMaterialId: String,
@@ -309,6 +329,47 @@ class MaterialService(
                 .map { it.toLesson(ownerUuid) }
 
             MaterialDetail(material = row.toMaterial(), lessons = lessons)
+        }
+
+    /** Lesson Details hub (Phase 6): one unified destination regardless of whether the caller
+     * arrived via the Materials tab or the Study tab - resolves ownership through the lesson's
+     * material (a lesson always belongs to exactly one material) rather than through the goal,
+     * so both navigation paths see identical data for the same lessonId. Only Vocabulary is real;
+     * every other section is honestly "coming soon" until M7/M8 populate it. */
+    suspend fun getLessonDetail(userId: String, lessonId: String): LessonDetailResponse? =
+        newSuspendedTransaction(Dispatchers.IO, database) {
+            val lessonUuid = UUID.fromString(lessonId)
+            val lessonRow = LessonsTable
+                .selectAll().where { LessonsTable.id eq lessonUuid }
+                .singleOrNull() ?: return@newSuspendedTransaction null
+
+            val materialRow = MaterialsTable
+                .selectAll().where { MaterialsTable.id eq lessonRow[LessonsTable.materialId] }
+                .singleOrNull() ?: return@newSuspendedTransaction null
+            val ownerUuid = materialRow[MaterialsTable.userId]
+            if (ownerUuid.toString() != userId) return@newSuspendedTransaction null
+
+            val lesson = lessonRow.toLesson(ownerUuid)
+            val vocabState = if (lesson.vocabCount > 0 && lesson.vocabProgress >= 1f) "done" else "open"
+
+            LessonDetailResponse(
+                lessonId = lesson.id,
+                number = lesson.number,
+                title = lesson.title,
+                status = lesson.status,
+                breadcrumb = materialRow[MaterialsTable.filename],
+                progressPercent = (lesson.vocabProgress * 100).toInt(),
+                sections = listOf(
+                    LessonSectionResponse("vocabulary", "Vocabulary", "${lesson.vocabCount} words", locked = false, state = vocabState),
+                    LessonSectionResponse("grammar", "Grammar", "Coming soon", locked = true, state = "locked"),
+                    LessonSectionResponse("reading", "Reading", "Coming soon", locked = true, state = "locked"),
+                    LessonSectionResponse("exercises", "Exercises", "Coming soon", locked = true, state = "locked"),
+                    LessonSectionResponse("speaking", "Speaking", "Coming soon", locked = true, state = "locked"),
+                    LessonSectionResponse("writing", "Writing", "Coming soon", locked = true, state = "locked"),
+                    LessonSectionResponse("review", "Review", "Coming soon", locked = true, state = "locked"),
+                    LessonSectionResponse("progress", "Progress", "Coming soon", locked = true, state = "locked"),
+                ),
+            )
         }
 
     /** Cache-hit upload fast path: another material with this exact content already has a

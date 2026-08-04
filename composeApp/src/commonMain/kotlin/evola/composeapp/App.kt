@@ -32,6 +32,7 @@ import evola.shared.auth.AuthUser
 import evola.shared.auth.HttpAuthRepository
 import evola.shared.goals.Goal
 import evola.shared.goals.HttpGoalsRepository
+import evola.shared.lessons.HttpLessonsRepository
 import evola.shared.materials.HttpMaterialsRepository
 import evola.shared.vocabulary.HttpVocabularyRepository
 import kotlinx.coroutines.CancellationException
@@ -60,6 +61,7 @@ fun App() {
         val goalsRepository = remember { HttpGoalsRepository(baseUrl = defaultServerBaseUrl()) }
         val materialsRepository = remember { HttpMaterialsRepository(baseUrl = defaultServerBaseUrl()) }
         val vocabularyRepository = remember { HttpVocabularyRepository(baseUrl = defaultServerBaseUrl()) }
+        val lessonsRepository = remember { HttpLessonsRepository(baseUrl = defaultServerBaseUrl()) }
         val coroutineScope = rememberCoroutineScope()
 
         // Onboarding isn't complete until both Welcome is shown AND a goal exists
@@ -206,6 +208,7 @@ fun App() {
                         goalsRepository = goalsRepository,
                         materialsRepository = materialsRepository,
                         vocabularyRepository = vocabularyRepository,
+                        lessonsRepository = lessonsRepository,
                         accessToken = token,
                         onLogout = onLogout,
                     )
