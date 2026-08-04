@@ -41,6 +41,7 @@ private data class LessonWireResponse(
     val status: String,
     @SerialName("vocab_progress") val vocabProgress: Float = 0f,
     @SerialName("grammar_progress") val grammarProgress: Float = 0f,
+    @SerialName("grammar_count") val grammarCount: Int = 0,
 )
 
 @Serializable
@@ -104,5 +105,5 @@ class HttpGoalsRepository(
 
     private fun GoalWireResponse.toDomain() = Goal(id, goalText, title, isActive, createdAt)
 
-    private fun LessonWireResponse.toDomain() = Lesson(lessonId, number, title, status, vocabProgress, grammarProgress)
+    private fun LessonWireResponse.toDomain() = Lesson(lessonId, number, title, status, vocabProgress, grammarProgress, grammarCount)
 }

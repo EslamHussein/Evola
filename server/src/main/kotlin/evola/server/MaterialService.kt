@@ -366,16 +366,34 @@ class MaterialService(
             val lesson = lessonRow.toLesson(ownerUuid)
             val vocabState = if (lesson.vocabCount > 0 && lesson.vocabProgress >= 1f) "done" else "open"
 
+            // Real as of M7: locked permanently false. A lesson's grammar job may still be
+            // in-flight (parallel to vocab), or done with honestly 0 topics - neither is an error.
+            val grammarJobStatus = GrammarExtractionJobsTable.selectAll()
+                .where { GrammarExtractionJobsTable.lessonId eq lessonUuid }
+                .singleOrNull()?.get(GrammarExtractionJobsTable.status)
+            val (grammarSubtitle, grammarState) = when {
+                grammarJobStatus != "DONE" -> "Still preparing…" to "open"
+                lesson.grammarCount == 0 -> "No grammar topics" to "open"
+                lesson.grammarProgress >= 1f -> "${lesson.grammarCount} topics" to "done"
+                else -> "${lesson.grammarCount} topics" to "open"
+            }
+
+            val completionPercent = if (lesson.grammarCount == 0) {
+                lesson.vocabProgress
+            } else {
+                (lesson.vocabProgress + lesson.grammarProgress) / 2f
+            }
+
             LessonDetailResponse(
                 lessonId = lesson.id,
                 number = lesson.number,
                 title = lesson.title,
                 status = lesson.status,
                 breadcrumb = materialRow[MaterialsTable.filename],
-                progressPercent = (lesson.vocabProgress * 100).toInt(),
+                progressPercent = (completionPercent * 100).toInt(),
                 sections = listOf(
                     LessonSectionResponse("vocabulary", "Vocabulary", "${lesson.vocabCount} words", locked = false, state = vocabState),
-                    LessonSectionResponse("grammar", "Grammar", "Coming soon", locked = true, state = "locked"),
+                    LessonSectionResponse("grammar", "Grammar", grammarSubtitle, locked = false, state = grammarState),
                     LessonSectionResponse("reading", "Reading", "Coming soon", locked = true, state = "locked"),
                     LessonSectionResponse("exercises", "Exercises", "Coming soon", locked = true, state = "locked"),
                     LessonSectionResponse("speaking", "Speaking", "Coming soon", locked = true, state = "locked"),
@@ -468,6 +486,22 @@ class MaterialService(
             if (stageIndices.isEmpty()) 0f else stageIndices.map { it / (MasterySrs.STAGES.size - 1f) }.average().toFloat()
         }
 
+        // Same shape as vocabProgress above, against Grammar's tables (M7) - 0 topics is a valid,
+        // non-error outcome, not distinguished here from "not yet extracted" (the caller checks
+        // grammar_extraction_jobs.status separately when that distinction matters, e.g. Lesson Details).
+        val topicIds = GrammarTopicsTable.selectAll()
+            .where { GrammarTopicsTable.lessonId eq lessonId }
+            .map { it[GrammarTopicsTable.id] }
+
+        val grammarProgress = if (topicIds.isEmpty()) {
+            0f
+        } else {
+            val stageIndices = GrammarProgressTable.selectAll()
+                .where { (GrammarProgressTable.userId eq ownerId) and (GrammarProgressTable.topicId inList topicIds) }
+                .map { MasterySrs.STAGES.indexOf(it[GrammarProgressTable.masteryState]).coerceAtLeast(0) }
+            if (stageIndices.isEmpty()) 0f else stageIndices.map { it / (MasterySrs.STAGES.size - 1f) }.average().toFloat()
+        }
+
         return Lesson(
             id = lessonId.toString(),
             materialId = this[LessonsTable.materialId].toString(),
@@ -477,6 +511,8 @@ class MaterialService(
             status = this[LessonsTable.status],
             vocabCount = vocabItemIds.size,
             vocabProgress = vocabProgress,
+            grammarCount = topicIds.size,
+            grammarProgress = grammarProgress,
         )
     }
 

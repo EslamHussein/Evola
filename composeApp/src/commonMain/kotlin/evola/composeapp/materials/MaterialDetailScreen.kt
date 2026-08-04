@@ -128,7 +128,7 @@ private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit, onOpenLesson
 @Composable
 private fun ResourceDetailBody(detail: MaterialDetail, onOpenLesson: (String) -> Unit) {
     val lessons = detail.lessons
-    val overallProgress = if (lessons.isEmpty()) 0 else (lessons.map { it.vocabProgress }.average() * 100).toInt()
+    val overallProgress = if (lessons.isEmpty()) 0 else (lessons.map { it.completionPct }.average() * 100).toInt()
     val vocabTotal = lessons.sumOf { it.vocabCount }
     val grammarTotal = lessons.sumOf { it.grammarCount }
     val readingTotal = lessons.sumOf { it.readingCount }
@@ -210,8 +210,8 @@ private fun PartialSuccessBody(detail: MaterialDetail, onRetry: () -> Unit, onOp
 @Composable
 private fun LessonRow(lesson: Lesson, onClick: () -> Unit) {
     val (tagLabel, tagStyle) = when {
-        lesson.status == "ready" && lesson.vocabProgress >= 1f -> "Fertig" to StatusTagStyle.FILLED
-        lesson.status == "ready" && lesson.vocabProgress > 0f -> "Läuft" to StatusTagStyle.OUTLINE
+        lesson.status == "ready" && lesson.completionPct >= 1f -> "Fertig" to StatusTagStyle.FILLED
+        lesson.status == "ready" && lesson.completionPct > 0f -> "Läuft" to StatusTagStyle.OUTLINE
         lesson.status == "ready" -> "Offen" to StatusTagStyle.NEUTRAL
         else -> "Offen" to StatusTagStyle.NEUTRAL
     }

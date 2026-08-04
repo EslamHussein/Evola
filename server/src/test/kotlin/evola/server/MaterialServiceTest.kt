@@ -385,7 +385,7 @@ class MaterialServiceTest {
     }
 
     @Test
-    fun `getLessonDetail returns a unified breadcrumb and section list with only vocabulary unlocked`() = runTest {
+    fun `getLessonDetail returns a unified breadcrumb and section list with vocabulary and grammar unlocked`() = runTest {
         val (userId, goalId) = registerUserWithGoal()
         val created = materialService.uploadMaterial(
             userId, goalId, "book.pdf", samplePdfBytes(),
@@ -417,8 +417,15 @@ class MaterialServiceTest {
         assertEquals(false, vocabulary.locked)
         assertEquals("1 words", vocabulary.subtitle)
 
-        val lockedSections = detail.sections.filter { it.key != "vocabulary" }
-        assertEquals(7, lockedSections.size)
+        // "entire" mode auto-queues a grammar_extraction_jobs row alongside vocabulary's (M7,
+        // §1.6) - it hasn't run in this test, so grammar is real/unlocked but honestly "still
+        // preparing", not locked/coming-soon like the still-unbuilt sections.
+        val grammar = detail.sections.first { it.key == "grammar" }
+        assertEquals(false, grammar.locked)
+        assertEquals("Still preparing…", grammar.subtitle)
+
+        val lockedSections = detail.sections.filter { it.key != "vocabulary" && it.key != "grammar" }
+        assertEquals(6, lockedSections.size)
         assertTrue(lockedSections.all { it.locked && it.state == "locked" })
     }
 

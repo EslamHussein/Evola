@@ -34,9 +34,15 @@ data class Lesson(
     @SerialName("vocab_count") val vocabCount: Int = 0,
     @SerialName("vocab_progress") val vocabProgress: Float = 0f,
     @SerialName("grammar_count") val grammarCount: Int = 0,
+    @SerialName("grammar_progress") val grammarProgress: Float = 0f,
     @SerialName("reading_count") val readingCount: Int = 0,
     @SerialName("exercises_count") val exercisesCount: Int = 0,
-)
+) {
+    /** Per 01_PRODUCT_SPEC.md §1.7: average of vocab/grammar progress, or vocab alone when the
+     * lesson has no grammar topics yet - branches on grammarCount (a real topic count), not on
+     * grammarProgress == 0f, which is indistinguishable from "a real topic sitting at 0% mastery". */
+    val completionPct: Float get() = if (grammarCount == 0) vocabProgress else (vocabProgress + grammarProgress) / 2f
+}
 
 @Serializable
 data class MaterialDetail(

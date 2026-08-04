@@ -31,11 +31,14 @@ data class Lesson(
     val status: String,
     val vocabProgress: Float,
     val grammarProgress: Float,
+    val grammarCount: Int = 0,
 ) {
-    /** Per spec: average of vocab/grammar progress, or vocab alone when the lesson has no grammar
-     * topics yet (grammarProgress == 0 is indistinguishable from "no topics" at MVP, matching the
-     * spec's own explicit simplification). */
-    val completionPct: Float get() = if (grammarProgress == 0f) vocabProgress else (vocabProgress + grammarProgress) / 2f
+    /** Per 01_PRODUCT_SPEC.md §1.7: average of vocab/grammar progress, or vocab alone when the
+     * lesson has no grammar topics yet - branches on grammarCount (a real topic count), not on
+     * grammarProgress == 0f (a real bug found during M7 planning: that check is indistinguishable
+     * from "a real topic sitting at 0% mastery," harmless only while grammarProgress was always
+     * hardcoded 0 before M7). */
+    val completionPct: Float get() = if (grammarCount == 0) vocabProgress else (vocabProgress + grammarProgress) / 2f
     val isReady: Boolean get() = status == "ready"
 }
 

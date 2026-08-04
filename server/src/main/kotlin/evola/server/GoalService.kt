@@ -7,6 +7,7 @@ import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -39,6 +40,7 @@ data class LessonSummaryResponse(
     val status: String,
     @SerialName("vocab_progress") val vocabProgress: Float = 0f,
     @SerialName("grammar_progress") val grammarProgress: Float = 0f,
+    @SerialName("grammar_count") val grammarCount: Int = 0,
 )
 
 sealed interface CreateGoalOutcome {
@@ -183,15 +185,51 @@ class GoalService(private val database: Database) {
             LessonsTable.selectAll()
                 .where { LessonsTable.goalId eq goalUuid }
                 .orderBy(LessonsTable.createdAt to SortOrder.ASC, LessonsTable.number to SortOrder.ASC)
-                .map {
-                    LessonSummaryResponse(
-                        lessonId = it[LessonsTable.id].toString(),
-                        number = it[LessonsTable.number],
-                        title = it[LessonsTable.title],
-                        status = it[LessonsTable.status],
-                    )
-                }
+                .map { it.toLessonSummary(userUuid) }
         }
+
+    /** Same vocab/grammar-progress computation MaterialService.toLesson uses, against this
+     * lesson's own items/topics for the given user - kept in sync with that one deliberately,
+     * per the "structurally identical progress tables" shared-module convention (01_PRODUCT_SPEC
+     * §2.1). Not yet extracted into one shared helper - both call sites are still simple enough
+     * that the duplication is cheap to keep matching, not worth a premature abstraction. */
+    private fun ResultRow.toLessonSummary(userId: UUID): LessonSummaryResponse {
+        val lessonId = this[LessonsTable.id]
+
+        val vocabItemIds = VocabularyItemsTable.selectAll()
+            .where { VocabularyItemsTable.lessonId eq lessonId }
+            .map { it[VocabularyItemsTable.id] }
+        val vocabProgress = if (vocabItemIds.isEmpty()) {
+            0f
+        } else {
+            val stageIndices = VocabularyProgressTable.selectAll()
+                .where { (VocabularyProgressTable.userId eq userId) and (VocabularyProgressTable.vocabularyItemId inList vocabItemIds) }
+                .map { MasterySrs.STAGES.indexOf(it[VocabularyProgressTable.masteryState]).coerceAtLeast(0) }
+            if (stageIndices.isEmpty()) 0f else stageIndices.map { it / (MasterySrs.STAGES.size - 1f) }.average().toFloat()
+        }
+
+        val topicIds = GrammarTopicsTable.selectAll()
+            .where { GrammarTopicsTable.lessonId eq lessonId }
+            .map { it[GrammarTopicsTable.id] }
+        val grammarProgress = if (topicIds.isEmpty()) {
+            0f
+        } else {
+            val stageIndices = GrammarProgressTable.selectAll()
+                .where { (GrammarProgressTable.userId eq userId) and (GrammarProgressTable.topicId inList topicIds) }
+                .map { MasterySrs.STAGES.indexOf(it[GrammarProgressTable.masteryState]).coerceAtLeast(0) }
+            if (stageIndices.isEmpty()) 0f else stageIndices.map { it / (MasterySrs.STAGES.size - 1f) }.average().toFloat()
+        }
+
+        return LessonSummaryResponse(
+            lessonId = lessonId.toString(),
+            number = this[LessonsTable.number],
+            title = this[LessonsTable.title],
+            status = this[LessonsTable.status],
+            vocabProgress = vocabProgress,
+            grammarProgress = grammarProgress,
+            grammarCount = topicIds.size,
+        )
+    }
 
     private fun ResultRow.toGoalResponse() = GoalResponse(
         id = this[GoalsTable.id].toString(),
