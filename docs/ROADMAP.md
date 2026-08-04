@@ -277,8 +277,9 @@ is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full
       difficulty/frequency ratings, memory tip — V12 migration; verified live in production
       (real extraction populated every new field) and on-emulator (Vocabulary List renders
       correct RTL Arabic script alongside the new tags)
-- [ ] Phase 5 — Resource Details redesign (progress ring, status tags, meta stats) + lesson-card tap
-      navigation (didn't exist before)
+- [x] Phase 5 — Resource Details redesign (progress ring, status tags, meta stats) — lesson-card tap
+      navigation deferred to Phase 6 (no real destination exists until then); verified on-emulator
+      and in production that vocab_count/vocab_progress compute and render correctly
 - [ ] Phase 6 — new Lesson Details hub (8 section rows), retires `LessonHomeScreen`, unifies the two
       different navigation paths into a lesson
 - [ ] Phase 7 — vocabulary session backend redesign: pack-of-~5-words × 7-fixed-stages model,
