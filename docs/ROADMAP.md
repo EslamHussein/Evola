@@ -392,13 +392,39 @@ a completion summary; the Resource Details ring updating live to the combined vo
 
 ---
 
-## M8 — Progress Dashboard
+## M8 — Progress Dashboard ✅ done
 
-- [ ] `GET /goals/{id}/progress` — overall %, current lesson, streak, today-completed
-- [ ] Streak calculated in the user's **local timezone**, resets on a missed day
-- [ ] `daily_activity` writes on session completion
-- [ ] Empty state (no lesson started) and stale-data fallback
-- [ ] The signature gauge/dial component (first real use — shared, `percent`-prop component)
+The smallest milestone so far — a pure aggregation of M6/M7, no AI calls, and **no new migration**
+(`daily_activity` existed since V5 but had never been written to). The one real design problem was
+the local-timezone streak rule: the client (the only party that knows its timezone) computes and
+sends its own local date on both the write path (session completion) and the read path (dashboard
+fetch) via `kotlinx-datetime`, so a session at 23:58 vs 00:02 lands on the right calendar day.
+
+- [x] `GET /goals/{id}/progress` — `overall_pct` (average of every lesson's own combined vocab+
+      grammar completion, the M7-corrected `grammarCount` formula reused), `current_lesson_id`
+      (first lesson still < 100%, null once all done), `streak_days`, `today_completed`
+- [x] Streak calculated in the user's **local timezone**, resets 0 the day *after* a missed day
+      (pure, unit-tested `computeStreak`); `today_completed` + streak read from `daily_activity`
+- [x] `daily_activity` writes idempotently on both vocabulary and grammar session completion —
+      both `complete` endpoints gained an optional `{"local_date": "..."}` body (older clients
+      that send none fall back to the server's UTC date)
+- [x] Home tab becomes the real dashboard: empty state for a 0-lesson goal, readiness dial +
+      streak row + "Continue Lesson N" once there's something to study, all-complete celebration
+      when every lesson is done. Continue reuses the Study tab's existing lesson stack.
+- [x] The signature gauge/dial is `CircularProgressRing` (built in M6.5 Phase 0), reused as-is at
+      160dp for the dashboard hero — one shared `percent`-prop component, not re-drawn per screen.
+
+Confirmed live via curl against production: a fresh goal returns the honest zero state
+(`overall_pct 0`, null current lesson, streak 0); completing a real grammar session with
+`local_date=2026-08-04` flipped `today_completed` to true and `streak_days` to 1, with
+`current_lesson_id` pointing at the still-incomplete lesson. Streak-across-a-boundary verified
+locally: seeding 08-02/08-03/08-04 reads as streak 3 on 08-04 (today done), still 3 on 08-05 (not
+yet done — the streak only resets the *following* day), and 0 on 08-06 (a full day's gap). Verified
+on the Android emulator: the Home dashboard renders the readiness dial, streak row with the fire
+icon and "Not done yet"/"Done today" pill, and the "Continue Lesson N: Title" CTA; tapping Continue
+switches to the Study tab and lands on the same `LessonDetailScreen` the lesson list itself uses.
+105/105 server tests green (new `DailyActivityTest` + `getProgress`/`daily_activity` coverage). No
+migration to deploy — just the new jar.
 
 ---
 
