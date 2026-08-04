@@ -3,6 +3,7 @@ package evola.server
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -23,6 +24,8 @@ class GoalServiceTest {
     @BeforeEach
     fun clearTables() {
         transaction(database) {
+            GrammarProgressTable.deleteAll()
+            GrammarTopicsTable.deleteAll()
             LessonsTable.deleteAll()
             MaterialsTable.deleteAll()
             GoalsTable.deleteAll()
@@ -177,6 +180,48 @@ class GoalServiceTest {
 
         val otherUserId = UUID.randomUUID().toString()
         assertNull(goalService.listLessonsForGoal(otherUserId, created.goal.id))
+    }
+
+    @Test
+    fun `listLessonsForGoal reports real grammar_count and grammar_progress alongside vocab_progress`() = runTest {
+        val userId = registerUser()
+        val created = goalService.createGoal(userId, CreateGoalRequest("Pass the German B1 exam"))
+        assertIs<CreateGoalOutcome.Created>(created)
+        val goalId = created.goal.id
+        val now = Instant.now()
+
+        val material = insertMaterial(userId, goalId)
+        insertLesson(material, goalId, number = 1, title = "First", status = "ready", createdAt = now)
+        val lessonId = transaction(database) {
+            LessonsTable.selectAll().single()[LessonsTable.id]
+        }
+
+        transaction(database) {
+            val topicId = UUID.randomUUID()
+            GrammarTopicsTable.insert {
+                it[id] = topicId
+                it[this.lessonId] = lessonId
+                it[name] = "Modalverben"
+                it[explanation] = "Modal verbs express ability or necessity."
+                it[createdAt] = Instant.now()
+            }
+            GrammarProgressTable.insert {
+                it[id] = UUID.randomUUID()
+                it[this.userId] = UUID.fromString(userId)
+                it[this.topicId] = topicId
+                it[masteryState] = "learning"
+                it[correctStreak] = 1
+                it[intervalIndex] = 1
+                it[nextReviewAt] = Instant.now()
+            }
+        }
+
+        val lessons = goalService.listLessonsForGoal(userId, goalId)
+        assertNotNull(lessons)
+        val lesson = lessons.single()
+        assertEquals(1, lesson.grammarCount)
+        assertEquals(1f / 3f, lesson.grammarProgress)
+        assertEquals(0f, lesson.vocabProgress)
     }
 
     @Test

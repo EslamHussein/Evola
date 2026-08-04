@@ -39,6 +39,9 @@ class MaterialServiceTest {
     fun clearTables() {
         queuedJobs = 0
         transaction(database) {
+            GrammarProgressTable.deleteAll()
+            GrammarTopicsTable.deleteAll()
+            GrammarExtractionJobsTable.deleteAll()
             VocabularyProgressTable.deleteAll()
             VocabularyItemsTable.deleteAll()
             VocabularyExtractionJobsTable.deleteAll()
@@ -427,6 +430,99 @@ class MaterialServiceTest {
         val lockedSections = detail.sections.filter { it.key != "vocabulary" && it.key != "grammar" }
         assertEquals(6, lockedSections.size)
         assertTrue(lockedSections.all { it.locked && it.state == "locked" })
+    }
+
+    @Test
+    fun `getLessonDetail shows the honest 0-grammar-topics state once extraction finishes with no topics`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val created = materialService.uploadMaterial(
+            userId, goalId, "book.pdf", samplePdfBytes(),
+            organizationMode = "entire",
+        )
+        assertIs<UploadOutcome.Created>(created)
+        val lessonId = transaction(database) {
+            LessonsTable.selectAll().where { LessonsTable.materialId eq java.util.UUID.fromString(created.materialId) }
+                .single()[LessonsTable.id]
+        }.toString()
+
+        transaction(database) {
+            GrammarExtractionJobsTable.update({ GrammarExtractionJobsTable.lessonId eq java.util.UUID.fromString(lessonId) }) {
+                it[status] = "DONE"
+            }
+        }
+
+        val detail = materialService.getLessonDetail(userId, lessonId)!!
+        val grammar = detail.sections.first { it.key == "grammar" }
+        assertEquals(false, grammar.locked)
+        assertEquals("No grammar topics", grammar.subtitle)
+        assertEquals("open", grammar.state)
+    }
+
+    @Test
+    fun `getLessonDetail combines vocab and grammar progress, distinguishing a 0-percent topic from no topics at all`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val created = materialService.uploadMaterial(
+            userId, goalId, "book.pdf", samplePdfBytes(),
+            organizationMode = "entire",
+        )
+        assertIs<UploadOutcome.Created>(created)
+        val lessonUuid = transaction(database) {
+            LessonsTable.selectAll().where { LessonsTable.materialId eq java.util.UUID.fromString(created.materialId) }
+                .single()[LessonsTable.id]
+        }
+        val lessonId = lessonUuid.toString()
+        val userUuid = java.util.UUID.fromString(userId)
+
+        transaction(database) {
+            // Vocabulary is fully mastered (100%); Grammar has a real topic still at 0% mastery -
+            // the corrected completionPct condition (grammarCount == 0, not grammarProgress == 0f)
+            // must still average the two rather than collapsing to vocab-only.
+            val itemId = java.util.UUID.randomUUID()
+            VocabularyItemsTable.insert {
+                it[id] = itemId
+                it[this.lessonId] = lessonUuid
+                it[term] = "Hund"
+                it[meaning] = "dog"
+                it[createdAt] = java.time.Instant.now()
+            }
+            VocabularyProgressTable.insert {
+                it[id] = java.util.UUID.randomUUID()
+                it[this.userId] = userUuid
+                it[vocabularyItemId] = itemId
+                it[masteryState] = "mastered"
+                it[correctStreak] = 6
+                it[intervalIndex] = 4
+                it[nextReviewAt] = java.time.Instant.now()
+            }
+
+            val topicId = java.util.UUID.randomUUID()
+            GrammarTopicsTable.insert {
+                it[id] = topicId
+                it[this.lessonId] = lessonUuid
+                it[name] = "Modalverben"
+                it[explanation] = "Modal verbs express ability or necessity."
+                it[createdAt] = java.time.Instant.now()
+            }
+            GrammarProgressTable.insert {
+                it[id] = java.util.UUID.randomUUID()
+                it[this.userId] = userUuid
+                it[this.topicId] = topicId
+                it[masteryState] = "new"
+                it[correctStreak] = 0
+                it[intervalIndex] = 0
+                it[nextReviewAt] = java.time.Instant.now()
+            }
+            GrammarExtractionJobsTable.update({ GrammarExtractionJobsTable.lessonId eq lessonUuid }) {
+                it[status] = "DONE"
+            }
+        }
+
+        val detail = materialService.getLessonDetail(userId, lessonId)!!
+        // (100% vocab + 0% grammar) / 2 = 50%, not the 100% a grammarProgress==0f-based bug would yield.
+        assertEquals(50, detail.progressPercent)
+        val grammar = detail.sections.first { it.key == "grammar" }
+        assertEquals("1 topics", grammar.subtitle)
+        assertEquals("open", grammar.state)
     }
 
     @Test
