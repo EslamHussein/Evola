@@ -26,6 +26,7 @@ class GrammarServiceTest {
     @BeforeEach
     fun clearTables() {
         transaction(database) {
+            DailyActivityTable.deleteAll()
             GrammarSessionAnswersTable.deleteAll()
             GrammarSessionsTable.deleteAll()
             GrammarProgressTable.deleteAll()
@@ -326,5 +327,33 @@ class GrammarServiceTest {
         assertNotNull(summary)
         assertEquals(3, summary.exercisesCompleted)
         assertEquals(2.0 / 3.0 * 100.0, summary.accuracy, 0.001)
+    }
+
+    @Test
+    fun `complete records a daily_activity row for the client's local date, idempotently`() = runTest {
+        val (userId, goalId) = registerUserWithGoal()
+        val material = insertMaterial(userId, goalId)
+        val lessonId = insertLesson(material, goalId)
+        val topicId = insertGrammarTopic(lessonId)
+        insertGrammarProgress(userId, topicId)
+        insertGrammarExercise(topicId, "fill_in_blank", "p1", "a1")
+
+        val session = grammarService.startOrResumeSession(userId, topicId.toString())!!
+        grammarService.complete(userId, session.sessionId, localDate = "2026-08-04")
+
+        val rows = transaction(database) {
+            DailyActivityTable.selectAll()
+                .where { DailyActivityTable.userId eq UUID.fromString(userId) }
+                .map { it[DailyActivityTable.activityDate] to it[DailyActivityTable.completed] }
+        }
+        assertEquals(listOf(java.time.LocalDate.of(2026, 8, 4) to true), rows)
+
+        // A second completion the same local day must not create a second row - daily_activity is
+        // one row per user per day, not an event log.
+        grammarService.complete(userId, session.sessionId, localDate = "2026-08-04")
+        val rowCount = transaction(database) {
+            DailyActivityTable.selectAll().where { DailyActivityTable.userId eq UUID.fromString(userId) }.count()
+        }
+        assertEquals(1L, rowCount)
     }
 }
