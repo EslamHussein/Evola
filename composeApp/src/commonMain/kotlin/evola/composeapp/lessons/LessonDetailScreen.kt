@@ -60,7 +60,7 @@ import evola.shared.lessons.LessonSection
 fun LessonDetailScreen(
     viewModel: LessonDetailViewModel,
     onBack: () -> Unit,
-    onOpenVocabularySession: () -> Unit,
+    onOpenSection: (key: String) -> Unit,
     onViewVocabularyList: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -83,7 +83,7 @@ fun LessonDetailScreen(
                 is LessonDetailState.Error -> CenteredMessage(current.message)
                 is LessonDetailState.Loaded -> LessonDetailBody(
                     detail = current.detail,
-                    onOpenVocabularySession = onOpenVocabularySession,
+                    onOpenSection = onOpenSection,
                     onViewVocabularyList = onViewVocabularyList,
                 )
             }
@@ -112,7 +112,7 @@ private fun ProgressMessage(message: String) {
 @Composable
 private fun LessonDetailBody(
     detail: LessonDetail,
-    onOpenVocabularySession: () -> Unit,
+    onOpenSection: (key: String) -> Unit,
     onViewVocabularyList: () -> Unit,
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {
@@ -130,7 +130,7 @@ private fun LessonDetailBody(
         items(detail.sections) { section ->
             SectionRow(
                 section = section,
-                onClick = onOpenVocabularySession,
+                onClick = { onOpenSection(section.key) },
                 onViewList = onViewVocabularyList,
             )
             Spacer(Modifier.height(EvolaSpacing.sm))
@@ -171,8 +171,12 @@ private fun SectionRow(section: LessonSection, onClick: () -> Unit, onViewList: 
         Column(modifier = Modifier.weight(1f)) {
             Text(section.label, style = MaterialTheme.typography.titleSmall)
             Text(section.subtitle, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
-            TextButton(onClick = onViewList, contentPadding = PaddingValues(0.dp)) {
-                Text("View list", style = MaterialTheme.typography.labelSmall)
+            // Only Vocabulary has a separate list affordance - Grammar's topic list is the
+            // primary destination reached by the row tap itself, not a secondary link.
+            if (section.key == "vocabulary") {
+                TextButton(onClick = onViewList, contentPadding = PaddingValues(0.dp)) {
+                    Text("View list", style = MaterialTheme.typography.labelSmall)
+                }
             }
         }
         Icon(
