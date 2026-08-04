@@ -40,4 +40,14 @@ object MasterySrs {
     }
 
     fun intervalDaysFor(intervalIndex: Int): Long = INTERVALS_DAYS[intervalIndex.coerceIn(0, INTERVALS_DAYS.lastIndex)]
+
+    /** Grammar-only (M7, 01_PRODUCT_SPEC.md §1.9): "a topic's mastery only advances after two
+     * consecutive correct answers" - prevents guess-inflated progress on 2-option multiple choice.
+     * Increments correctStreak only; masteryState/intervalIndex are untouched. Callers branch on
+     * the CURRENT correctStreak's parity before calling: even (0,2,4...) means "first of a new
+     * pair" -> call this; odd (1,3,5...) means "second of the pair" -> call [onCorrect] instead,
+     * which advances mastery/interval and leaves correctStreak even again for the next pair.
+     * [onIncorrect] is called unconditionally on any wrong answer, exactly as vocabulary does - it
+     * resets correctStreak to 0, restarting pair-counting from scratch. */
+    fun onPartialCorrect(state: State): State = state.copy(correctStreak = state.correctStreak + 1)
 }

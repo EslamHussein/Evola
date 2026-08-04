@@ -55,4 +55,47 @@ class MasterySrsTest {
         assertEquals(35L, MasterySrs.intervalDaysFor(99))
         assertEquals(1L, MasterySrs.intervalDaysFor(-5))
     }
+
+    @Test
+    fun `onPartialCorrect only increments correctStreak, leaving mastery and interval untouched`() {
+        val state = MasterySrs.State(masteryState = "new", intervalIndex = 0, correctStreak = 0)
+        val next = MasterySrs.onPartialCorrect(state)
+        assertEquals("new", next.masteryState)
+        assertEquals(0, next.intervalIndex)
+        assertEquals(1, next.correctStreak)
+    }
+
+    @Test
+    fun `two-consecutive-correct sequence only advances mastery on the second of each pair`() {
+        // Caller-side parity branch (as GrammarService will implement it): even correctStreak ->
+        // onPartialCorrect (first of a pair), odd -> onCorrect (second of a pair, advances mastery).
+        var state = MasterySrs.State(masteryState = "new", intervalIndex = 0, correctStreak = 0)
+
+        // 1st correct (streak 0, even) -> partial only, no stage change.
+        state = MasterySrs.onPartialCorrect(state)
+        assertEquals("new", state.masteryState)
+        assertEquals(1, state.correctStreak)
+
+        // 2nd correct (streak 1, odd) -> real onCorrect, mastery advances.
+        state = MasterySrs.onCorrect(state)
+        assertEquals("learning", state.masteryState)
+        assertEquals(2, state.correctStreak)
+
+        // 3rd correct (streak 2, even) -> partial only again.
+        state = MasterySrs.onPartialCorrect(state)
+        assertEquals("learning", state.masteryState)
+        assertEquals(3, state.correctStreak)
+
+        // 4th correct (streak 3, odd) -> mastery advances again.
+        state = MasterySrs.onCorrect(state)
+        assertEquals("reviewing", state.masteryState)
+        assertEquals(4, state.correctStreak)
+
+        // A wrong answer at any point drops mastery immediately and resets streak - not deferred
+        // until "the pair completes."
+        state = MasterySrs.onIncorrect(state)
+        assertEquals("learning", state.masteryState)
+        assertEquals(0, state.correctStreak)
+        assertEquals(0, state.intervalIndex)
+    }
 }
