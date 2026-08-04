@@ -333,22 +333,43 @@ is exactly what M7 below unlocks, Progress's locked row is what M8 unlocks. Full
 ## M7 — Grammar Learning + mandatory answer-key validation
 
 Goal: the mandatory validation pass is a correctness guarantee, not a nice-to-have — this is the
-single biggest trust risk in the whole spec if skipped.
+single biggest trust risk in the whole spec if skipped. Full design in
+`/Users/eslam.megali/.claude/plans/project-evola-fuzzy-cocoa.md` (prepended at the top of that
+file). Architecturally simpler than M6.5's pack/stage Vocabulary redesign — Grammar stays a
+per-topic flat session (the whole exercise list returned in one `POST`), matching
+`03_API_CONTRACT.md`'s Grammar section almost exactly. `grammar_topics`/`grammar_exercises`/
+`grammar_progress`/`grammar_sessions` already exist (M1 reset migration), empty, unused, and are
+already declared 1:1 in `Tables.kt` — only two new tables needed (`grammar_extraction_jobs`,
+`grammar_session_answers`, V15).
 
 **AI pipeline** (`04_AI_PROMPTS.md` §3)
-- [ ] Topic extraction (0–3 per lesson, never forced)
-- [ ] Exercise generation (multiple-choice + fill-in-blank)
+- [ ] Topic extraction (0–3 per lesson, never forced) — `claude-haiku-4-5`
+- [ ] Exercise generation (multiple-choice + fill-in-blank only) — `claude-haiku-4-5`
 - [ ] **Second, independent model call validating every exercise before it's ever stored** —
-      stronger model tier (per your decision)
-- [ ] Discard invalid exercises; <3 valid → explanation-only + one recap question
+      `claude-sonnet-5` (decided; logged as `modelTier = "LARGE"`)
+- [ ] Discard invalid exercises; <3 valid → explanation-only + one recap question (reuses the
+      exercise-generation prompt with a `recapMode` flag rather than a new prompt)
+- [ ] Auto-queued in parallel with vocabulary extraction per lesson (new `onGrammarJobQueued`
+      callback, mirroring `onVocabJobQueued`) — never touches `lessons.status`
 
 **Backend**
-- [ ] Reuses M6's mastery module unchanged
-- [ ] Two-consecutive-correct advancement rule (not single-answer)
-- [ ] `GET /lessons/{id}/grammar`, session/answer/complete endpoints
+- [ ] `MasterySrs.onPartialCorrect` (new, additive-only) implements the two-consecutive-correct
+      advancement rule via a caller-side parity branch in `GrammarService` — `onCorrect`/
+      `onIncorrect` themselves stay unchanged
+- [ ] `GET /lessons/{id}/grammar`, `POST /grammar-topics/{id}/exercise-session`,
+      `POST /grammar-sessions/{id}/answer`, `POST /grammar-sessions/{id}/complete`
+- [ ] Client self-grades and reports `correct` (same trust model vocabulary used pre-redesign)
+- [ ] Fixes a real bug found during planning: `goals.Lesson.completionPct` branches on
+      `grammarProgress == 0f` (indistinguishable from "topic exists at 0% mastery") instead of
+      `grammarCount == 0` — corrected as part of this milestone, plus the same corrected formula
+      added to `materials.Lesson`
 
 **Mobile**
-- [ ] Grammar Topic Explanation (empty state when 0 topics), Exercise, Topic Summary screens
+- [ ] `GrammarTopicListScreen`/`GrammarExerciseSessionScreen` (built from the pre-redesign
+      vocabulary session template), empty state when 0 topics
+- [ ] Fixes a real, currently-latent bug in `LessonDetailScreen`'s `SectionRow`: it hardcodes the
+      Vocabulary callbacks for every unlocked section regardless of `section.key` — invisible today
+      since only Vocabulary is unlocked, would misroute Grammar once its row unlocks
 
 ---
 
@@ -382,6 +403,6 @@ single biggest trust risk in the whole spec if skipped.
 | File storage | Local disk on the Hetzner box |
 | iOS | Deferred — Android-only verification through M8 |
 | Job queue | Keep the existing DB-polling worker, no Redis/BullMQ |
-| AI model tiering | Cheap model for extraction/generation, strong model for answer-key validation |
+| AI model tiering | `claude-haiku-4-5` for extraction/generation, `claude-sonnet-5` for grammar answer-key validation (M7) |
 | Cross-user extraction caching | Per-user only, not global by content hash |
 | TTS | Skipped for now, no voice in this build |
