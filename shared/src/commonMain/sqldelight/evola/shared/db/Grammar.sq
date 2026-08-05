@@ -68,3 +68,36 @@ SELECT * FROM grammar_exercises WHERE topic_id = ? ORDER BY created_at ASC;
 insertExercise:
 INSERT INTO grammar_exercises(id, topic_id, type, prompt, answer_key, distractors, created_at)
 VALUES (?, ?, ?, ?, ?, ?, ?);
+
+progressForTopic:
+SELECT * FROM grammar_progress WHERE user_id = ? AND topic_id = ?;
+
+insertTopicProgress:
+INSERT INTO grammar_progress(id, user_id, topic_id, mastery_state, correct_streak, interval_index, next_review_at, last_reviewed_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+updateTopicProgress:
+UPDATE grammar_progress SET mastery_state = ?, correct_streak = ?, interval_index = ?, next_review_at = ?, last_reviewed_at = ?
+WHERE user_id = ? AND topic_id = ?;
+
+insertSession:
+INSERT INTO grammar_sessions(id, user_id, topic_id, started_at, completed_at, accuracy) VALUES (?, ?, ?, ?, NULL, NULL);
+
+incompleteSessionForTopic:
+SELECT * FROM grammar_sessions WHERE user_id = ? AND topic_id = ? AND completed_at IS NULL LIMIT 1;
+
+sessionById:
+SELECT * FROM grammar_sessions WHERE id = ?;
+
+completeSession:
+UPDATE grammar_sessions SET completed_at = ?, accuracy = ? WHERE id = ?;
+
+answersForSession:
+SELECT * FROM grammar_session_answers WHERE session_id = ?;
+
+answerForExercise:
+SELECT * FROM grammar_session_answers WHERE session_id = ? AND exercise_id = ?;
+
+insertSessionAnswer:
+INSERT INTO grammar_session_answers(id, session_id, exercise_id, response, correct, mastery_state_after, next_review_at_after, answered_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
