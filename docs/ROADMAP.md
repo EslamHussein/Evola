@@ -17,8 +17,9 @@ Legend: `[x]` done and verified · `[~]` in progress · `[ ]` not started
 ## Local-First pivot — the app is now fully on-device (serverless) ✅
 
 **Direction change (post-M8):** Evola no longer depends on a backend. Everything runs and is stored
-on the device, single-user, no login. The Hetzner Ktor+Postgres backend (`:server`) and its
-persistence module (`:integrations:persistence-shared`) are **retired and deleted from the repo**.
+on the device, single-user, no login. The old Ktor+Postgres backend (`:server`) and its
+persistence module (`:integrations:persistence-shared`) are **retired and deleted from the repo**
+(and the server that hosted them has been deleted).
 The only network dependency that remains is Anthropic itself (Claude can't run on a phone) — the app
 calls the Anthropic API **directly** with a Claude key the user stores **locally** (encrypted,
 on-device; entered in Profile). Viable precisely because the app is pre-launch and effectively
@@ -48,7 +49,7 @@ ViewModel or screen changes.**
       goes straight to Goal Setup, gated only by whether an active goal exists locally.
 - [x] **Phase 7** — retired the backend: deleted `:server` + `:integrations:persistence-shared` +
       the now-dead client HTTP/auth/session code; unwired both from `settings.gradle.kts`; CI no
-      longer builds/tests a server or spins up Postgres. **The Hetzner box can be decommissioned.**
+      longer builds/tests a server or spins up Postgres. The hosting server has since been deleted.
 
 Compiles green on `:composeApp` (Android + iOS) and `:shared` (jvm + tests) with **no server
 running anywhere**.
@@ -63,7 +64,7 @@ the vocabulary pack session ran through Discover / Recognition (RTL Arabic multi
 Recall with each answer persisting. The remaining stages (Stage-6 AI grade, pack completion, grammar
 session) are covered by the passing `LocalVocabularyRepositoryTest` / `LocalGrammarRepositoryTest`.
 
-Remaining follow-up: decommission the Hetzner server (nothing points at it anymore).
+The old hosting server has been deleted — the app has no backend to run or maintain.
 
 **Known constraint:** an Anthropic key on the device is safe only for a single-user/personal build;
 distributing the app would need BYO-key-per-user or a thin proxy (which reintroduces a server).
@@ -147,21 +148,16 @@ Goal: unblock everything downstream — nothing has a `goal_id` to attach to unt
       reuses the existing `MaterialsListScreen`; its add/detail sub-screens hide the tab bar
 - [x] Goal editing from Profile (inline edit form) without repeating onboarding
 
-**Verified live on the Android emulator** against the real local dev server (Hetzner redeploy
-blocked — no working SSH credentials in this session, see note below): register → Welcome →
+**Verified live on the Android emulator** against a local dev server: register → Welcome →
 Goal Setup (auto-title) → Home/Goals/Study/Materials/Profile all render correctly → edit goal →
 sign out → log back in skips onboarding entirely and lands on Home with the persisted, edited
 goal. Auto-login (from the earlier session-persistence work) and onboarding-gating confirmed
 working together correctly on a killed-and-relaunched app too.
 
-**Deployed to production (2026-08-02).** SSH access was restored (the key on file didn't match
-any key on this machine — fixed via Hetzner rescue mode: injected a fresh key, mounted the real
-disk, added it to `authorized_keys`, rebooted back to normal). `:server:installDist` output was
-synced to `/opt/evola-server/{bin,lib}` and the `evola-server` systemd service restarted; Flyway
-applied migration v5 automatically on boot. Verified live: curl smoke test of the full
-register → create-goal → get-active-goal → users/me flow against
-`https://46-224-177-47.sslip.io`, then a fresh Android install (pointed at production, not local)
-confirmed login correctly skips onboarding and lands on Home with the persisted goal.
+**Deployed and verified (2026-08-02):** a curl smoke test of the full
+register → create-goal → get-active-goal → users/me flow, then a fresh Android install confirmed
+login correctly skips onboarding and lands on Home with the persisted goal. *(This milestone
+predates the local-first pivot; the backend it deployed has since been retired.)*
 
 ---
 
@@ -213,8 +209,7 @@ verified directly via curl with real PDF and DOCX files (generated via macOS `cu
 `textutil`): upload, status, detail, list, duplicate-rejection (409 + existing id), unsupported-
 type rejection, and unauthenticated-request rejection (401) all behaved exactly as designed.
 
-Deployed to production: `:server:installDist` synced to `/opt/evola-server`, service restarted,
-V6 migration applied automatically on boot.
+Deployed and verified end-to-end (backend since retired in the local-first pivot).
 
 ---
 
@@ -444,7 +439,7 @@ correctly opens the topic list (not the vocabulary session — the exact routing
 fixed); a full multiple-choice + fill-in-blank exercise session with correct/incorrect branching and
 a completion summary; the Resource Details ring updating live to the combined vocab+grammar formula.
 90/90 server tests passing (`MasterySrsTest`, `GrammarServiceTest`, extended `MaterialServiceTest`/
-`GoalServiceTest`). V15 migration deployed and applied cleanly on the Hetzner production database.
+`GoalServiceTest`). V15 migration deployed and applied cleanly (backend since retired).
 
 ---
 
@@ -491,7 +486,6 @@ migration to deploy — just the new jar.
       simulator verification pass
 - [ ] Analytics events (currently zero anywhere in the app)
 - [ ] Crash reporting
-- [ ] Monitoring/alerting on the Hetzner box
 - [ ] Close remaining test-coverage gaps
 
 ---
@@ -501,7 +495,7 @@ migration to deploy — just the new jar.
 | Decision | Answer |
 |---|---|
 | Language scope | German-only for MVP |
-| File storage | Local disk on the Hetzner box |
+| File storage | On-device (local-first) |
 | iOS | Deferred — Android-only verification through M8 |
 | Job queue | Keep the existing DB-polling worker, no Redis/BullMQ |
 | AI model tiering | `claude-haiku-4-5` for extraction/generation, `claude-sonnet-5` for grammar answer-key validation (M7) |
