@@ -10,111 +10,48 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import evola.composeapp.auth.ForgotPasswordScreen
-import evola.composeapp.auth.ForgotPasswordViewModel
-import evola.composeapp.auth.LoginScreen
-import evola.composeapp.auth.LoginViewModel
-import evola.composeapp.auth.RegisterScreen
-import evola.composeapp.auth.RegisterViewModel
-import evola.composeapp.auth.ResetPasswordScreen
-import evola.composeapp.auth.ResetPasswordViewModel
 import evola.composeapp.di.AppModule
+import evola.composeapp.di.rememberDatabaseDriverFactory
+import evola.composeapp.di.rememberFileTextExtractor
 import evola.composeapp.main.MainScreen
 import evola.composeapp.onboarding.GoalSetupScreen
 import evola.composeapp.onboarding.GoalSetupViewModel
 import evola.composeapp.onboarding.WelcomeScreen
 import evola.composeapp.theme.EvolaTheme
-import evola.shared.auth.AuthTokens
-import evola.shared.auth.AuthUser
-import evola.shared.core.Tokens
 import evola.shared.core.getOrNull
 import evola.shared.goals.Goal
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
 
+/**
+ * Single-user, no-login app (serverless architecture): first run goes straight to Goal Setup; a
+ * stored Anthropic key (entered in Profile) gates the AI features. There is no auth screen, token,
+ * or account — the only gate to the main app is "does an active goal exist yet".
+ */
 private sealed interface AppScreen {
     data object Loading : AppScreen
-    data object Login : AppScreen
-    data object Register : AppScreen
-    data object ForgotPassword : AppScreen
-    data object ResetPassword : AppScreen
     data object OnboardingWelcome : AppScreen
     data object GoalSetup : AppScreen
-    data class Main(val user: AuthUser, val goal: Goal) : AppScreen
+    data class Main(val goal: Goal) : AppScreen
 }
 
 @Composable
 fun App() {
     EvolaTheme {
         var screen by remember { mutableStateOf<AppScreen>(AppScreen.Loading) }
-        var accessToken by remember { mutableStateOf<String?>(null) }
-        var currentUser by remember { mutableStateOf<AuthUser?>(null) }
-        val sessionStorage = rememberSessionStorage()
-        val appModule = remember { AppModule(defaultServerBaseUrl(), sessionStorage) }
-        val authRepository = appModule.authRepository
+
+        val driverFactory = rememberDatabaseDriverFactory()
+        val secureStore = rememberSecureStore()
+        val fileTextExtractor = rememberFileTextExtractor()
+        val appModule = remember { AppModule(driverFactory, secureStore, fileTextExtractor) }
         val goalsRepository = appModule.goalsRepository
-        val coroutineScope = rememberCoroutineScope()
 
-        // Onboarding isn't complete until both Welcome is shown AND a goal exists
-        // (01_PRODUCT_SPEC.md §1.3) - the server only flips onboarding_completed as a side effect
-        // of the first successful goal creation, so a true flag implies a goal already exists.
-        suspend fun routePastLogin(user: AuthUser, token: String) {
-            currentUser = user
-            accessToken = token
-            if (!user.onboardingCompleted) {
-                screen = AppScreen.OnboardingWelcome
-                return
-            }
-            // getActiveGoal() → Success(null) when there's genuinely no goal (→ onboarding), or a
-            // Failure on a network error; getOrNull() collapses both to null, matching the prior
-            // "fall back to onboarding" behavior. The bearer token is already in the token store.
-            val goal = goalsRepository.getActiveGoal().getOrNull()
-            screen = if (goal != null) AppScreen.Main(user, goal) else AppScreen.OnboardingWelcome
-        }
-
-        val onAuthSuccess: (AuthTokens) -> Unit = { tokens ->
-            appModule.tokenStore.save(Tokens(access = tokens.accessToken, refresh = tokens.refreshToken))
-            accessToken = tokens.accessToken
-            coroutineScope.launch { routePastLogin(tokens.user, tokens.accessToken) }
-        }
-
-        val onLogout: () -> Unit = {
-            val refresh = sessionStorage.loadRefreshToken()
-            refresh?.let { token -> coroutineScope.launch { authRepository.logout(token) } }
-            appModule.tokenStore.clear()
-            accessToken = null
-            currentUser = null
-            screen = AppScreen.Login
-        }
-
-        // Silently restore a previous session on launch, so the user only logs in once.
+        // First-run routing: an active goal in the local DB → straight into the app; otherwise
+        // onboarding. getActiveGoal() reads the on-device database, so this never touches the network.
         LaunchedEffect(Unit) {
-            val storedRefreshToken = sessionStorage.loadRefreshToken()
-            if (storedRefreshToken == null) {
-                screen = AppScreen.Login
-                return@LaunchedEffect
-            }
-            val restored = try {
-                val freshAccessToken = authRepository.refresh(storedRefreshToken)
-                val user = freshAccessToken?.let { authRepository.getCurrentUser(it) }
-                if (freshAccessToken != null && user != null) freshAccessToken to user else null
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                null
-            }
-            if (restored != null) {
-                val (freshAccessToken, user) = restored
-                appModule.tokenStore.save(Tokens(access = freshAccessToken, refresh = storedRefreshToken))
-                routePastLogin(user, freshAccessToken)
-            } else {
-                appModule.tokenStore.clear()
-                screen = AppScreen.Login
-            }
+            val goal = goalsRepository.getActiveGoal().getOrNull()
+            screen = if (goal != null) AppScreen.Main(goal) else AppScreen.OnboardingWelcome
         }
 
         when (val current = screen) {
@@ -126,85 +63,27 @@ fun App() {
                 }
             }
 
-            AppScreen.Login -> {
-                val viewModel = remember { LoginViewModel(authRepository) }
-                LoginScreen(
-                    viewModel = viewModel,
-                    onLoggedIn = onAuthSuccess,
-                    onForgotPassword = { screen = AppScreen.ForgotPassword },
-                    onRegister = { screen = AppScreen.Register },
-                )
-            }
-
-            AppScreen.Register -> {
-                BackHandler(onBack = { screen = AppScreen.Login })
-                val viewModel = remember { RegisterViewModel(authRepository) }
-                RegisterScreen(
-                    viewModel = viewModel,
-                    onRegistered = onAuthSuccess,
-                    onBackToLogin = { screen = AppScreen.Login },
-                )
-            }
-
-            AppScreen.ForgotPassword -> {
-                BackHandler(onBack = { screen = AppScreen.Login })
-                val viewModel = remember { ForgotPasswordViewModel(authRepository) }
-                ForgotPasswordScreen(
-                    viewModel = viewModel,
-                    onBackToLogin = { screen = AppScreen.Login },
-                    onHaveResetToken = { screen = AppScreen.ResetPassword },
-                )
-            }
-
-            AppScreen.ResetPassword -> {
-                BackHandler(onBack = { screen = AppScreen.Login })
-                val viewModel = remember { ResetPasswordViewModel(authRepository) }
-                ResetPasswordScreen(
-                    viewModel = viewModel,
-                    onBackToLogin = { screen = AppScreen.Login },
-                )
-            }
-
             AppScreen.OnboardingWelcome -> {
                 WelcomeScreen(onContinue = { screen = AppScreen.GoalSetup })
             }
 
             AppScreen.GoalSetup -> {
-                val token = accessToken
-                if (token == null) {
-                    screen = AppScreen.Login
-                } else {
-                    val viewModel = remember(token) { GoalSetupViewModel(goalsRepository) }
-                    GoalSetupScreen(
-                        viewModel = viewModel,
-                        onGoalCreated = { goal ->
-                            val user = currentUser
-                            if (user != null) {
-                                val updatedUser = user.copy(onboardingCompleted = true)
-                                currentUser = updatedUser
-                                screen = AppScreen.Main(updatedUser, goal)
-                            }
-                        },
-                    )
-                }
+                val viewModel = remember { GoalSetupViewModel(goalsRepository) }
+                GoalSetupScreen(
+                    viewModel = viewModel,
+                    onGoalCreated = { goal -> screen = AppScreen.Main(goal) },
+                )
             }
 
             is AppScreen.Main -> {
-                val token = accessToken
-                if (token == null) {
-                    screen = AppScreen.Login
-                } else {
-                    MainScreen(
-                        user = current.user,
-                        initialGoal = current.goal,
-                        goalsRepository = goalsRepository,
-                        materialsRepository = appModule.materialsRepository,
-                        vocabularyRepository = appModule.vocabularyRepository,
-                        lessonsRepository = appModule.lessonsRepository,
-                        grammarRepository = appModule.grammarRepository,
-                        onLogout = onLogout,
-                    )
-                }
+                MainScreen(
+                    initialGoal = current.goal,
+                    goalsRepository = goalsRepository,
+                    materialsRepository = appModule.materialsRepository,
+                    vocabularyRepository = appModule.vocabularyRepository,
+                    lessonsRepository = appModule.lessonsRepository,
+                    grammarRepository = appModule.grammarRepository,
+                )
             }
         }
     }

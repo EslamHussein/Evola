@@ -1,5 +1,6 @@
 package evola.composeapp.di
 
+import androidx.compose.runtime.Composable
 import app.cash.sqldelight.db.SqlDriver
 
 /** Creates the platform SQLite driver for the on-device database — Android's [android-driver] and
@@ -8,3 +9,8 @@ import app.cash.sqldelight.db.SqlDriver
 expect class DatabaseDriverFactory {
     fun create(): SqlDriver
 }
+
+/** Composable provider so `App.kt` obtains the factory (with the Android `Context` bound) once and
+ * hands it to [AppModule], mirroring [rememberSecureStore]/[rememberFileTextExtractor]. */
+@Composable
+expect fun rememberDatabaseDriverFactory(): DatabaseDriverFactory

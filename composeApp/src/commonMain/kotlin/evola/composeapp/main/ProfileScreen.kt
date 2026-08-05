@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import evola.composeapp.KEY_ANTHROPIC_API_KEY
 import evola.composeapp.rememberSecureStore
-import evola.shared.auth.AuthUser
 import evola.shared.goals.Goal
 
 /** Profile tab per 06_SCREENS_REFERENCE.md - account info + goal editing + sign-out.
@@ -39,11 +38,9 @@ import evola.shared.goals.Goal
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    user: AuthUser,
     goal: Goal,
     viewModel: ProfileViewModel,
     onGoalUpdated: (Goal) -> Unit,
-    onLogout: () -> Unit,
 ) {
     val isSubmitting by viewModel.isSubmitting.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
@@ -54,9 +51,7 @@ fun ProfileScreen(
     Scaffold(topBar = { TopAppBar(title = { Text("Profile") }) }) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-                Text(user.fullName, style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(4.dp))
-                Text(user.email, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Profile", style = MaterialTheme.typography.titleLarge)
 
                 Spacer(Modifier.height(32.dp))
                 Text("Your goal", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
@@ -115,11 +110,6 @@ fun ProfileScreen(
 
                 Spacer(Modifier.height(32.dp))
                 AnthropicKeySection()
-
-                Spacer(Modifier.height(32.dp))
-                OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
-                    Text("Sign out")
-                }
             }
         }
     }

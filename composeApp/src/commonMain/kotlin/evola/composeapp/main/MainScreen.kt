@@ -41,7 +41,6 @@ import evola.composeapp.wizard.AiWizardScreen
 import evola.composeapp.wizard.AiWizardViewModel
 import evola.composeapp.wizard.ProcessingScreen
 import evola.composeapp.wizard.ProcessingViewModel
-import evola.shared.auth.AuthUser
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalsRepository
 import evola.shared.goals.Lesson
@@ -81,14 +80,12 @@ private sealed interface StudySubScreen {
  */
 @Composable
 fun MainScreen(
-    user: AuthUser,
     initialGoal: Goal,
     goalsRepository: GoalsRepository,
     materialsRepository: MaterialsRepository,
     vocabularyRepository: VocabularyRepository,
     lessonsRepository: LessonsRepository,
     grammarRepository: GrammarRepository,
-    onLogout: () -> Unit,
 ) {
     var goal by remember { mutableStateOf(initialGoal) }
     var selectedTab by remember { mutableStateOf(MainTab.HOME) }
@@ -344,11 +341,9 @@ fun MainScreen(
                 MainTab.PROFILE -> {
                     val profileViewModel = remember { ProfileViewModel(goalsRepository) }
                     ProfileScreen(
-                        user = user,
                         goal = goal,
                         viewModel = profileViewModel,
                         onGoalUpdated = { updated -> goal = updated },
-                        onLogout = onLogout,
                     )
                 }
             }

@@ -1,46 +1,54 @@
 package evola.composeapp.di
 
-import evola.composeapp.SessionStorage
-import evola.shared.auth.HttpAuthRepository
-import evola.shared.core.TokenStore
-import evola.shared.core.createApiHttpClient
-import evola.shared.core.createBaseHttpClient
-import evola.shared.goals.HttpGoalsRepository
-import evola.shared.grammar.HttpGrammarRepository
-import evola.shared.lessons.HttpLessonsRepository
-import evola.shared.materials.HttpMaterialsRepository
-import evola.shared.vocabulary.HttpVocabularyRepository
+import evola.composeapp.KEY_ANTHROPIC_API_KEY
+import evola.composeapp.SecureStore
+import evola.shared.ai.AnthropicClient
+import evola.shared.ai.GrammarExtractor
+import evola.shared.ai.SegmentationExtractor
+import evola.shared.ai.VocabularyExtractor
+import evola.shared.db.EvolaDatabase
+import evola.shared.files.FileTextExtractor
+import evola.shared.local.AiVocabularyFreeProductionGrader
+import evola.shared.local.LocalGoalsRepository
+import evola.shared.local.LocalGrammarRepository
+import evola.shared.local.LocalLessonsRepository
+import evola.shared.local.LocalMaterialsRepository
+import evola.shared.local.LocalVocabularyRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 /**
- * The single composition root (manual DI — no Koin at this tier). Builds one JSON config, one HTTP
- * engine, and exactly two clients: a plain [base][createBaseHttpClient] one for the auth
- * token-source endpoints, and one [authenticated][createApiHttpClient] client (bearer plugin) that
- * every data repository shares. Replaces the six independently-constructed `HttpClient`s and the
- * manual token threading that used to live in `App.kt`.
+ * The single composition root for the serverless, single-user app (manual DI — no Koin). Builds the
+ * on-device SQLDelight database, one [AnthropicClient] pointed at the user's own locally-stored key,
+ * the three extraction pipelines, and the five [Local*Repository][LocalGoalsRepository]
+ * implementations behind the identical interfaces the ViewModels already use — so nothing above the
+ * DI layer changed when the Ktor/Evola-backend repositories were swapped out. The only network
+ * dependency left is Anthropic itself (Claude can't run on-device).
  */
-class AppModule(baseUrl: String, sessionStorage: SessionStorage) {
-
-    /** Exposed so `App.kt` can save tokens on login and clear them on logout — the one place the
-     * app writes the session the bearer plugin then reads and refreshes on its own. */
-    val tokenStore: TokenStore = SessionTokenStore(sessionStorage)
-
-    // One engine, shared by both clients (an injected engine isn't owned/closed by the client).
+class AppModule(
+    driverFactory: DatabaseDriverFactory,
+    secureStore: SecureStore,
+    fileTextExtractor: FileTextExtractor,
+) {
+    private val database = EvolaDatabase(driverFactory.create())
     private val engine = platformHttpEngine()
+    private val anthropic = AnthropicClient(engine) { secureStore.get(KEY_ANTHROPIC_API_KEY) }
 
-    private val baseClient = createBaseHttpClient(engine)
-    val authRepository = HttpAuthRepository(baseClient, baseUrl)
+    // Extraction runs here as a coroutine (replacing the server's job-queue workers); a supervisor
+    // scope so one material's failure never cancels another's.
+    private val extractionScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val apiClient = createApiHttpClient(
-        engine = engine,
-        tokenStore = tokenStore,
-        // Refresh runs on the base client (via the auth repo), so it can't be re-intercepted into a
-        // refresh loop by the Auth plugin on the api client.
-        refreshAccessToken = { refreshToken -> authRepository.refresh(refreshToken) },
+    val goalsRepository = LocalGoalsRepository(database)
+    val lessonsRepository = LocalLessonsRepository(database)
+    val vocabularyRepository = LocalVocabularyRepository(database, AiVocabularyFreeProductionGrader(anthropic))
+    val grammarRepository = LocalGrammarRepository(database)
+    val materialsRepository = LocalMaterialsRepository(
+        db = database,
+        fileTextExtractor = fileTextExtractor,
+        segmentation = SegmentationExtractor(anthropic),
+        vocabExtractor = VocabularyExtractor(anthropic),
+        grammarExtractor = GrammarExtractor(anthropic),
+        scope = extractionScope,
     )
-
-    val goalsRepository = HttpGoalsRepository(apiClient, baseUrl)
-    val materialsRepository = HttpMaterialsRepository(apiClient, baseUrl)
-    val vocabularyRepository = HttpVocabularyRepository(apiClient, baseUrl)
-    val lessonsRepository = HttpLessonsRepository(apiClient, baseUrl)
-    val grammarRepository = HttpGrammarRepository(apiClient, baseUrl)
 }
