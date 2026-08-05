@@ -25,8 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import evola.composeapp.KEY_ANTHROPIC_API_KEY
+import evola.composeapp.rememberSecureStore
 import evola.shared.auth.AuthUser
 import evola.shared.goals.Goal
 
@@ -111,9 +114,66 @@ fun ProfileScreen(
                 }
 
                 Spacer(Modifier.height(32.dp))
+                AnthropicKeySection()
+
+                Spacer(Modifier.height(32.dp))
                 OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
                     Text("Sign out")
                 }
+            }
+        }
+    }
+}
+
+/** On-device Anthropic API key entry — Evola calls Claude directly (serverless), so the key lives
+ * in the device's encrypted store, never on a server. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun AnthropicKeySection() {
+    val secureStore = rememberSecureStore()
+    var savedKey by remember { mutableStateOf(secureStore.get(KEY_ANTHROPIC_API_KEY)) }
+    var draft by remember { mutableStateOf("") }
+
+    Text("AI (Claude) key", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
+    Spacer(Modifier.height(8.dp))
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                if (savedKey.isNullOrBlank()) {
+                    "No key set. Evola needs your Anthropic API key to generate lessons on this device."
+                } else {
+                    "A key is saved on this device. Enter a new one to replace it."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                label = { Text("Anthropic API key") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+                if (!savedKey.isNullOrBlank()) {
+                    TextButton(onClick = {
+                        secureStore.remove(KEY_ANTHROPIC_API_KEY)
+                        savedKey = null
+                        draft = ""
+                    }) { Text("Clear") }
+                }
+                Button(
+                    onClick = {
+                        val trimmed = draft.trim()
+                        secureStore.put(KEY_ANTHROPIC_API_KEY, trimmed)
+                        savedKey = trimmed
+                        draft = ""
+                    },
+                    enabled = draft.trim().isNotEmpty(),
+                ) { Text("Save key") }
             }
         }
     }
