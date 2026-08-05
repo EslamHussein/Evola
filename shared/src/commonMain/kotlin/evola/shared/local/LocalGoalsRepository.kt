@@ -8,7 +8,6 @@ import evola.shared.goals.GoalProgress
 import evola.shared.goals.GoalsRepository
 import evola.shared.goals.Lesson
 import evola.shared.goals.UpdateGoalResult
-import evola.shared.srs.MasterySrs
 import evola.shared.srs.computeStreak
 import kotlinx.datetime.LocalDate
 
@@ -45,15 +44,14 @@ class LocalGoalsRepository(private val db: EvolaDatabase) : GoalsRepository {
 
     override suspend fun listLessons(goalId: String): ApiResult<List<Lesson>> {
         val lessons = db.lessonsQueries.selectByGoal(goalId).executeAsList().map { row ->
-            val topicCount = db.grammarQueries.topicsByLesson(row.id).executeAsList().size
             Lesson(
                 id = row.id,
                 number = row.number.toInt(),
                 title = row.title,
                 status = row.status,
-                vocabProgress = lessonVocabProgress(row.id),
-                grammarProgress = lessonGrammarProgress(row.id),
-                grammarCount = topicCount,
+                vocabProgress = db.lessonVocabProgress(row.id),
+                grammarProgress = db.lessonGrammarProgress(row.id),
+                grammarCount = db.grammarTopicCount(row.id),
             )
         }
         return ApiResult.Success(lessons)
@@ -72,25 +70,6 @@ class LocalGoalsRepository(private val db: EvolaDatabase) : GoalsRepository {
 
         return ApiResult.Success(GoalProgress(overall, currentLessonId, streak, todayCompleted))
     }
-
-    private fun lessonVocabProgress(lessonId: String): Float {
-        val items = db.vocabularyQueries.itemsByLesson(lessonId).executeAsList()
-        if (items.isEmpty()) return 0f
-        val stageIndices = items.mapNotNull { db.vocabularyQueries.progressForItem(LOCAL_USER, it.id).executeAsOneOrNull()?.mastery_state }
-            .map { MasterySrs.STAGES.indexOf(it).coerceAtLeast(0) }
-        return stageIndices.averageStageRatio()
-    }
-
-    private fun lessonGrammarProgress(lessonId: String): Float {
-        val topics = db.grammarQueries.topicsByLesson(lessonId).executeAsList()
-        if (topics.isEmpty()) return 0f
-        val stageIndices = topics.mapNotNull { db.grammarQueries.progressForTopic(LOCAL_USER, it.id).executeAsOneOrNull()?.mastery_state }
-            .map { MasterySrs.STAGES.indexOf(it).coerceAtLeast(0) }
-        return stageIndices.averageStageRatio()
-    }
-
-    private fun List<Int>.averageStageRatio(): Float =
-        if (isEmpty()) 0f else map { it / (MasterySrs.STAGES.size - 1f) }.average().toFloat()
 
     private fun autoTitle(goalText: String): String {
         val words = goalText.trim().split(Regex("\\s+")).take(5).joinToString(" ")

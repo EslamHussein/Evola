@@ -74,9 +74,94 @@ insertItem:
 INSERT INTO vocabulary_items(id, lesson_id, term, meaning, gender, example_sentence, part_of_speech, grammatical_case, example_sentence_translation, meaning_ar, ipa_pronunciation, related_words, difficulty_rating, frequency_rating, memory_tip, created_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
+itemById:
+SELECT * FROM vocabulary_items WHERE id = ?;
+
 progressForItem:
 SELECT * FROM vocabulary_progress WHERE user_id = ? AND vocabulary_item_id = ?;
 
 insertProgress:
 INSERT INTO vocabulary_progress(id, user_id, vocabulary_item_id, mastery_state, correct_streak, interval_index, next_review_at, last_reviewed_at, is_bookmarked, marked_difficult)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateProgress:
+UPDATE vocabulary_progress SET mastery_state = ?, correct_streak = ?, interval_index = ?, next_review_at = ?, last_reviewed_at = ?
+WHERE user_id = ? AND vocabulary_item_id = ?;
+
+setBookmarked:
+UPDATE vocabulary_progress SET is_bookmarked = ? WHERE user_id = ? AND vocabulary_item_id = ?;
+
+setMarkedDifficult:
+UPDATE vocabulary_progress SET marked_difficult = ? WHERE user_id = ? AND vocabulary_item_id = ?;
+
+-- item + this user's progress, one row per lesson item (listVocabulary / updateFlags read).
+itemsWithProgressByLesson:
+SELECT vi.*, vp.mastery_state AS p_mastery_state, vp.is_bookmarked AS p_is_bookmarked, vp.marked_difficult AS p_marked_difficult
+FROM vocabulary_items vi
+JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
+WHERE vi.lesson_id = ? AND vp.user_id = ?
+ORDER BY vi.created_at ASC;
+
+itemWithProgress:
+SELECT vi.*, vp.mastery_state AS p_mastery_state, vp.is_bookmarked AS p_is_bookmarked, vp.marked_difficult AS p_marked_difficult
+FROM vocabulary_items vi
+JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
+WHERE vi.id = ? AND vp.user_id = ?;
+
+-- Pack pool draws (assemblePackPool). Only the item id is needed; ordering is by created_at.
+newItemsForLesson:
+SELECT vi.id FROM vocabulary_items vi
+JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
+WHERE vi.lesson_id = ? AND vp.user_id = ? AND vp.last_reviewed_at IS NULL
+ORDER BY vi.created_at ASC LIMIT ?;
+
+dueItemsElsewhere:
+SELECT vi.id FROM vocabulary_items vi
+JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
+WHERE vi.lesson_id != ? AND vp.user_id = ? AND vp.last_reviewed_at IS NOT NULL AND vp.next_review_at <= ?
+LIMIT ?;
+
+masteredItems:
+SELECT vi.id FROM vocabulary_items vi
+JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
+WHERE vp.user_id = ? AND vp.mastery_state = 'mastered'
+LIMIT ?;
+
+allUserVocab:
+SELECT vi.id, vi.term, vi.meaning, vi.meaning_ar, vi.example_sentence, vi.example_sentence_translation
+FROM vocabulary_items vi
+JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
+WHERE vp.user_id = ?;
+
+-- Packs
+incompletePackForLesson:
+SELECT * FROM vocabulary_packs WHERE user_id = ? AND lesson_id = ? AND completed_at IS NULL LIMIT 1;
+
+packById:
+SELECT * FROM vocabulary_packs WHERE id = ? AND user_id = ?;
+
+maxPackNumber:
+SELECT pack_number FROM vocabulary_packs WHERE user_id = ? AND lesson_id = ? ORDER BY pack_number DESC LIMIT 1;
+
+insertPack:
+INSERT INTO vocabulary_packs(id, user_id, lesson_id, pack_number, started_at, completed_at, items_count, accuracy)
+VALUES (?, ?, ?, ?, ?, NULL, ?, NULL);
+
+completePack:
+UPDATE vocabulary_packs SET completed_at = ?, accuracy = ? WHERE id = ?;
+
+-- Pack words
+wordsByPack:
+SELECT * FROM vocabulary_pack_words WHERE pack_id = ? ORDER BY position ASC;
+
+insertPackWord:
+INSERT INTO vocabulary_pack_words(id, pack_id, vocabulary_item_id, position, recognition_choices)
+VALUES (?, ?, ?, ?, ?);
+
+-- Stage answers
+answersForWord:
+SELECT * FROM vocabulary_stage_answers WHERE pack_word_id = ?;
+
+insertStageAnswer:
+INSERT INTO vocabulary_stage_answers(id, pack_word_id, stage_index, user_response, correct, answered_at)
+VALUES (?, ?, ?, ?, ?, ?);

@@ -1,6 +1,9 @@
 package evola.shared.local
 
 import kotlinx.datetime.Clock
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -12,3 +15,11 @@ const val LOCAL_USER = "local"
 internal fun newId(): String = Uuid.random().toString()
 
 internal fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
+
+internal val localJson = Json { ignoreUnknownKeys = true }
+private val stringListSerializer = ListSerializer(String.serializer())
+
+internal fun encodeStringList(list: List<String>): String = localJson.encodeToString(stringListSerializer, list)
+
+internal fun decodeStringList(json: String?): List<String> =
+    json?.let { runCatching { localJson.decodeFromString(stringListSerializer, it) }.getOrDefault(emptyList()) } ?: emptyList()

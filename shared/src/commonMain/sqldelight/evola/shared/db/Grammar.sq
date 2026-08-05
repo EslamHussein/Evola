@@ -59,6 +59,9 @@ CREATE TABLE grammar_extraction_jobs (
 topicsByLesson:
 SELECT * FROM grammar_topics WHERE lesson_id = ? ORDER BY created_at ASC;
 
+topicById:
+SELECT * FROM grammar_topics WHERE id = ?;
+
 insertTopic:
 INSERT INTO grammar_topics(id, lesson_id, name, explanation, created_at) VALUES (?, ?, ?, ?, ?);
 
@@ -101,3 +104,12 @@ SELECT * FROM grammar_session_answers WHERE session_id = ? AND exercise_id = ?;
 insertSessionAnswer:
 INSERT INTO grammar_session_answers(id, session_id, exercise_id, response, correct, mastery_state_after, next_review_at_after, answered_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+jobByLesson:
+SELECT * FROM grammar_extraction_jobs WHERE lesson_id = ?;
+
+insertJob:
+INSERT INTO grammar_extraction_jobs(id, lesson_id, status, error, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?);
+
+updateJobStatus:
+UPDATE grammar_extraction_jobs SET status = ?, error = ?, updated_at = ? WHERE lesson_id = ?;
