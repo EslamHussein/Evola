@@ -98,8 +98,9 @@ private fun evolaColorScheme() = darkColorScheme(
     onPrimary = Color(0xFFFFFFFF),
     secondary = EvolaColors.Accent,
     onSecondary = Color(0xFFFFFFFF),
-    tertiary = EvolaColors.Teal,
-    onTertiary = Color(0xFF06201C),
+    // Accent labels/links (e.g. section headers, "Continue") are purple in the design, not teal.
+    tertiary = EvolaColors.Accent,
+    onTertiary = Color(0xFFFFFFFF),
     // background = deepest navy; surface kept equal so full-screen Surface() paints the same base,
     // while cards use surfaceVariant / EvolaColors.Surface for the lighter elevated tone.
     background = EvolaColors.Paper,
