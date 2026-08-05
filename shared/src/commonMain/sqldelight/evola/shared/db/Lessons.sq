@@ -1,0 +1,26 @@
+CREATE TABLE lessons (
+    id TEXT NOT NULL PRIMARY KEY,
+    material_id TEXT NOT NULL,
+    goal_id TEXT NOT NULL,
+    number INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    status TEXT NOT NULL,
+    source_text_ref TEXT,
+    created_at INTEGER NOT NULL
+);
+
+insert:
+INSERT INTO lessons(id, material_id, goal_id, number, title, status, source_text_ref, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectById:
+SELECT * FROM lessons WHERE id = ?;
+
+selectByMaterial:
+SELECT * FROM lessons WHERE material_id = ? ORDER BY number ASC;
+
+selectByGoal:
+SELECT * FROM lessons WHERE goal_id = ? ORDER BY created_at ASC, number ASC;
+
+updateStatus:
+UPDATE lessons SET status = ? WHERE id = ?;

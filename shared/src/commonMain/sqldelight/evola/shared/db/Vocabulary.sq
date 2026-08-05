@@ -1,0 +1,82 @@
+CREATE TABLE vocabulary_items (
+    id TEXT NOT NULL PRIMARY KEY,
+    lesson_id TEXT NOT NULL,
+    term TEXT NOT NULL,
+    meaning TEXT NOT NULL,
+    gender TEXT,
+    example_sentence TEXT,
+    part_of_speech TEXT,
+    grammatical_case TEXT,
+    example_sentence_translation TEXT,
+    meaning_ar TEXT,
+    ipa_pronunciation TEXT,
+    related_words TEXT,
+    difficulty_rating TEXT,
+    frequency_rating TEXT,
+    memory_tip TEXT,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE vocabulary_progress (
+    id TEXT NOT NULL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    vocabulary_item_id TEXT NOT NULL,
+    mastery_state TEXT NOT NULL,
+    correct_streak INTEGER NOT NULL,
+    interval_index INTEGER NOT NULL,
+    next_review_at INTEGER NOT NULL,
+    last_reviewed_at INTEGER,
+    is_bookmarked INTEGER NOT NULL,
+    marked_difficult INTEGER NOT NULL
+);
+
+CREATE TABLE vocabulary_packs (
+    id TEXT NOT NULL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    lesson_id TEXT NOT NULL,
+    pack_number INTEGER NOT NULL,
+    started_at INTEGER NOT NULL,
+    completed_at INTEGER,
+    items_count INTEGER NOT NULL,
+    accuracy REAL
+);
+
+CREATE TABLE vocabulary_pack_words (
+    id TEXT NOT NULL PRIMARY KEY,
+    pack_id TEXT NOT NULL,
+    vocabulary_item_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    recognition_choices TEXT
+);
+
+CREATE TABLE vocabulary_stage_answers (
+    id TEXT NOT NULL PRIMARY KEY,
+    pack_word_id TEXT NOT NULL,
+    stage_index INTEGER NOT NULL,
+    user_response TEXT,
+    correct INTEGER,
+    answered_at INTEGER NOT NULL
+);
+
+CREATE TABLE vocabulary_extraction_jobs (
+    id TEXT NOT NULL PRIMARY KEY,
+    lesson_id TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL,
+    error TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+itemsByLesson:
+SELECT * FROM vocabulary_items WHERE lesson_id = ? ORDER BY created_at ASC;
+
+insertItem:
+INSERT INTO vocabulary_items(id, lesson_id, term, meaning, gender, example_sentence, part_of_speech, grammatical_case, example_sentence_translation, meaning_ar, ipa_pronunciation, related_words, difficulty_rating, frequency_rating, memory_tip, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+progressForItem:
+SELECT * FROM vocabulary_progress WHERE user_id = ? AND vocabulary_item_id = ?;
+
+insertProgress:
+INSERT INTO vocabulary_progress(id, user_id, vocabulary_item_id, mastery_state, correct_streak, interval_index, next_review_at, last_reviewed_at, is_bookmarked, marked_difficult)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);

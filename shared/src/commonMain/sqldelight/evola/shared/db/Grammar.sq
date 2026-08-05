@@ -1,0 +1,70 @@
+CREATE TABLE grammar_topics (
+    id TEXT NOT NULL PRIMARY KEY,
+    lesson_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    explanation TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE grammar_exercises (
+    id TEXT NOT NULL PRIMARY KEY,
+    topic_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    answer_key TEXT NOT NULL,
+    distractors TEXT,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE grammar_progress (
+    id TEXT NOT NULL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    topic_id TEXT NOT NULL,
+    mastery_state TEXT NOT NULL,
+    correct_streak INTEGER NOT NULL,
+    interval_index INTEGER NOT NULL,
+    next_review_at INTEGER NOT NULL,
+    last_reviewed_at INTEGER
+);
+
+CREATE TABLE grammar_sessions (
+    id TEXT NOT NULL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    topic_id TEXT NOT NULL,
+    started_at INTEGER NOT NULL,
+    completed_at INTEGER,
+    accuracy REAL
+);
+
+CREATE TABLE grammar_session_answers (
+    id TEXT NOT NULL PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    exercise_id TEXT NOT NULL,
+    response TEXT,
+    correct INTEGER NOT NULL,
+    mastery_state_after TEXT NOT NULL,
+    next_review_at_after INTEGER NOT NULL,
+    answered_at INTEGER NOT NULL
+);
+
+CREATE TABLE grammar_extraction_jobs (
+    id TEXT NOT NULL PRIMARY KEY,
+    lesson_id TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL,
+    error TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+topicsByLesson:
+SELECT * FROM grammar_topics WHERE lesson_id = ? ORDER BY created_at ASC;
+
+insertTopic:
+INSERT INTO grammar_topics(id, lesson_id, name, explanation, created_at) VALUES (?, ?, ?, ?, ?);
+
+exercisesByTopic:
+SELECT * FROM grammar_exercises WHERE topic_id = ? ORDER BY created_at ASC;
+
+insertExercise:
+INSERT INTO grammar_exercises(id, topic_id, type, prompt, answer_key, distractors, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);

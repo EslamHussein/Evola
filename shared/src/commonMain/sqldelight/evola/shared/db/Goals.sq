@@ -1,0 +1,29 @@
+-- Single-user local schema (ported from server Tables.kt). Conventions: ids/text = TEXT,
+-- booleans = INTEGER 0/1, timestamps = INTEGER epoch-millis, local dates = TEXT ISO-8601.
+-- user_id is retained (a single constant local user) so the ported services stay near-mechanical.
+
+CREATE TABLE goals (
+    id TEXT NOT NULL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    goal_text TEXT NOT NULL,
+    title TEXT,
+    is_active INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+insert:
+INSERT INTO goals(id, user_id, goal_text, title, is_active, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+selectActive:
+SELECT * FROM goals WHERE user_id = ? AND is_active = 1 LIMIT 1;
+
+selectById:
+SELECT * FROM goals WHERE id = ?;
+
+update:
+UPDATE goals SET goal_text = ?, title = ?, updated_at = ? WHERE id = ?;
+
+deactivateAll:
+UPDATE goals SET is_active = 0 WHERE user_id = ?;
