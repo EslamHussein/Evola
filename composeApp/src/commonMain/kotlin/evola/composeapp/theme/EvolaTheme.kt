@@ -4,7 +4,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -20,23 +20,35 @@ import evola.composeapp.generated.resources.inter_variable
 import evola.composeapp.generated.resources.noto_naskh_arabic_variable
 import org.jetbrains.compose.resources.Font
 
-/** Exact hex values from 05_DESIGN_SYSTEM.md. Gold is reserved for progress/readiness only. */
+/**
+ * Dark "Nocturne" palette (the design the app now targets). The token *names* are kept semantic so
+ * the ~11 screens referencing them re-skin from these values alone: [Paper] = deepest app
+ * background, [Surface]/[SurfaceAlt] = elevated card/input surfaces, [Text]/[Text2]/[Text3] =
+ * primary/secondary/muted foreground, and the accent (formerly gold) is now purple — reused by
+ * [Gold]/[GoldSoft] so progress rings, selected chips, and status badges pick it up automatically.
+ */
 object EvolaColors {
-    val Ink = Color(0xFF16213A)
-    val Ink2 = Color(0xFF2B3B5C)
-    val Paper = Color(0xFFF3EEE1)
-    val Surface = Color(0xFFFFFFFF)
-    val SurfaceAlt = Color(0xFFF1EDE2)
-    val Gold = Color(0xFFC79A3D)
-    val GoldSoft = Color(0xFFF2E4BE)
-    val Teal = Color(0xFF2F6E68)
-    val TealSoft = Color(0xFFDCEAE7)
-    val Rust = Color(0xFF9C4A34)
-    val RustSoft = Color(0xFFF1DFD8)
-    val Text = Color(0xFF16213A)
-    val Text2 = Color(0xFF63697A)
-    val Text3 = Color(0xFF9297A3)
-    val Border = Color(0xFFE4DFD1)
+    val Paper = Color(0xFF0E1220)      // deepest app background
+    val Surface = Color(0xFF1A2030)    // card surface
+    val SurfaceAlt = Color(0xFF232B3D) // input / elevated surface
+    val Border = Color(0xFF2B3345)     // hairline borders
+
+    val Accent = Color(0xFF7C6CF0)     // primary purple accent
+    val AccentSoft = Color(0xFF262149) // selected / soft accent fill
+    // Legacy names remapped to the accent so existing screens re-skin without edits.
+    val Gold = Accent
+    val GoldSoft = AccentSoft
+    val Ink = Accent
+    val Ink2 = Color(0xFF9A93F5)
+
+    val Teal = Color(0xFF4FB6A6)       // success
+    val TealSoft = Color(0xFF16302C)
+    val Rust = Color(0xFFE0715C)       // error
+    val RustSoft = Color(0xFF3A211C)
+
+    val Text = Color(0xFFEEF1F8)       // primary text
+    val Text2 = Color(0xFFAAB2C6)      // secondary text
+    val Text3 = Color(0xFF6E7488)      // muted text
 }
 
 @Composable
@@ -81,38 +93,42 @@ object EvolaTypography {
     )
 }
 
-private fun evolaColorScheme() = lightColorScheme(
-    primary = EvolaColors.Ink,
-    onPrimary = EvolaColors.Surface,
-    secondary = EvolaColors.Gold,
-    onSecondary = EvolaColors.Ink,
+private fun evolaColorScheme() = darkColorScheme(
+    primary = EvolaColors.Accent,
+    onPrimary = Color(0xFFFFFFFF),
+    secondary = EvolaColors.Accent,
+    onSecondary = Color(0xFFFFFFFF),
     tertiary = EvolaColors.Teal,
-    onTertiary = EvolaColors.Surface,
+    onTertiary = Color(0xFF06201C),
+    // background = deepest navy; surface kept equal so full-screen Surface() paints the same base,
+    // while cards use surfaceVariant / EvolaColors.Surface for the lighter elevated tone.
     background = EvolaColors.Paper,
     onBackground = EvolaColors.Text,
-    surface = EvolaColors.Surface,
+    surface = EvolaColors.Paper,
     onSurface = EvolaColors.Text,
-    surfaceVariant = EvolaColors.SurfaceAlt,
+    surfaceVariant = EvolaColors.Surface,
     onSurfaceVariant = EvolaColors.Text2,
     error = EvolaColors.Rust,
-    onError = EvolaColors.Surface,
+    onError = Color(0xFF2A0F0A),
     errorContainer = EvolaColors.RustSoft,
     onErrorContainer = EvolaColors.Rust,
     outline = EvolaColors.Border,
+    outlineVariant = EvolaColors.Border,
 )
 
 @Composable
 private fun evolaTypography(): Typography {
-    val display = frauncesFamily()
+    // The Nocturne design uses a bold sans across the board (no serif display face).
+    val display = interFamily()
     val body = interFamily()
     val base = Typography()
     return base.copy(
-        displayLarge = base.displayLarge.copy(fontFamily = display, fontWeight = FontWeight.SemiBold),
-        displayMedium = base.displayMedium.copy(fontFamily = display, fontWeight = FontWeight.SemiBold),
-        displaySmall = base.displaySmall.copy(fontFamily = display, fontWeight = FontWeight.Medium),
-        headlineLarge = base.headlineLarge.copy(fontFamily = display, fontWeight = FontWeight.SemiBold),
-        headlineMedium = base.headlineMedium.copy(fontFamily = display, fontWeight = FontWeight.Medium),
-        headlineSmall = base.headlineSmall.copy(fontFamily = display, fontWeight = FontWeight.Medium),
+        displayLarge = base.displayLarge.copy(fontFamily = display, fontWeight = FontWeight.Bold),
+        displayMedium = base.displayMedium.copy(fontFamily = display, fontWeight = FontWeight.Bold),
+        displaySmall = base.displaySmall.copy(fontFamily = display, fontWeight = FontWeight.Bold),
+        headlineLarge = base.headlineLarge.copy(fontFamily = display, fontWeight = FontWeight.Bold),
+        headlineMedium = base.headlineMedium.copy(fontFamily = display, fontWeight = FontWeight.Bold),
+        headlineSmall = base.headlineSmall.copy(fontFamily = display, fontWeight = FontWeight.SemiBold),
         titleLarge = base.titleLarge.copy(fontFamily = body, fontWeight = FontWeight.SemiBold),
         titleMedium = base.titleMedium.copy(fontFamily = body, fontWeight = FontWeight.SemiBold),
         titleSmall = base.titleSmall.copy(fontFamily = body, fontWeight = FontWeight.Medium),

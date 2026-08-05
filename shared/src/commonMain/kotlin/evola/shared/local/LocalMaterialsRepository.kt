@@ -176,7 +176,9 @@ class LocalMaterialsRepository(
                 "pending", "${segment.startOffset}:${segment.endOffset}", now,
             )
             extractVocabulary(lessonId, goalText, lessonText, material.ai_instructions, existingTerms)
-            extractGrammar(lessonId, goalText, lessonText, material.ai_instructions)
+            // Vocabulary-only scope: grammar extraction is disabled for now (saves the grammar
+            // generation + answer-key-validation model calls). Re-enable extractGrammar(...) to
+            // bring Grammar back.
             db.lessonsQueries.updateStatus("ready", lessonId)
         }
 

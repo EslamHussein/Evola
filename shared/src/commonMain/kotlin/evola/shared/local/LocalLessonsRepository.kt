@@ -21,17 +21,9 @@ class LocalLessonsRepository(private val db: EvolaDatabase) : LessonsRepository 
         val vocabProgress = db.lessonVocabProgress(lessonId)
         val vocabState = if (vocabCount > 0 && vocabProgress >= 1f) "done" else "open"
 
-        val grammarCount = db.grammarTopicCount(lessonId)
-        val grammarProgress = db.lessonGrammarProgress(lessonId)
-        val grammarJobStatus = db.grammarQueries.jobByLesson(lessonId).executeAsOneOrNull()?.status
-        val (grammarSubtitle, grammarState) = when {
-            grammarJobStatus != "DONE" -> "Still preparing…" to "open"
-            grammarCount == 0 -> "No grammar topics" to "open"
-            grammarProgress >= 1f -> "$grammarCount topics" to "done"
-            else -> "$grammarCount topics" to "open"
-        }
-
-        val completionPercent = if (grammarCount == 0) vocabProgress else (vocabProgress + grammarProgress) / 2f
+        // Vocabulary-only scope for now: Grammar and every other section are locked ("coming soon").
+        // Progress is therefore vocabulary progress alone.
+        val completionPercent = vocabProgress
 
         val detail = LessonDetail(
             lessonId = lesson.id,
@@ -42,7 +34,7 @@ class LocalLessonsRepository(private val db: EvolaDatabase) : LessonsRepository 
             progressPercent = (completionPercent * 100).toInt(),
             sections = listOf(
                 LessonSection("vocabulary", "Vocabulary", "$vocabCount words", locked = false, state = vocabState),
-                LessonSection("grammar", "Grammar", grammarSubtitle, locked = false, state = grammarState),
+                LessonSection("grammar", "Grammar", "Coming soon", locked = true, state = "locked"),
                 LessonSection("reading", "Reading", "Coming soon", locked = true, state = "locked"),
                 LessonSection("exercises", "Exercises", "Coming soon", locked = true, state = "locked"),
                 LessonSection("speaking", "Speaking", "Coming soon", locked = true, state = "locked"),
