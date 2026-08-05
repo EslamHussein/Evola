@@ -1,10 +1,15 @@
 package evola.shared.ai
 
 import evola.shared.core.ApiResult
+import evola.shared.core.DataError
 import evola.shared.segmentation.LessonSegmenter
 import evola.shared.segmentation.RawSegment
+import kotlinx.coroutines.delay
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+
+private const val MAX_CHUNK_ATTEMPTS = 3
+private val RETRYABLE_HTTP = setOf(408, 425, 429, 500, 502, 503, 529)
 
 data class SegmentationResult(
     val segments: List<RawSegment>,
@@ -53,14 +58,28 @@ class SegmentationExtractor(private val client: AnthropicClient) {
 
         val collected = mutableListOf<RawSegment>()
         var detectedLanguage: String? = null
+        var firstProcessed = false
+        var anyChunkSucceeded = false
+        var lastFailure: ApiResult.Failure? = null
         val ranges = LessonSegmenter.chunkRanges(text.length)
-        for ((index, range) in ranges.withIndex()) {
+        for (range in ranges) {
             val chunk = text.substring(range.first, range.last + 1)
             val parsed = when (val r = callChunk(chunk)) {
-                is ApiResult.Failure -> return r
+                is ApiResult.Failure -> {
+                    // A non-retryable client error (bad key, malformed request) is fatal for every
+                    // chunk, so abort immediately. A transient failure that survived retries only
+                    // costs us this one chunk — skip it and keep going (partial success, matching
+                    // the retired server worker) rather than failing the whole document.
+                    val err = r.error
+                    if (err is DataError.Http && err.code in 400..499 && err.code !in RETRYABLE_HTTP) return r
+                    lastFailure = r
+                    continue
+                }
                 is ApiResult.Success -> r.data
             }
-            if (index == 0) {
+            anyChunkSucceeded = true
+            if (!firstProcessed) {
+                firstProcessed = true
                 detectedLanguage = parsed.contentLanguageDetected
                 if (parsed.unsupportedContent) {
                     return ApiResult.Success(SegmentationResult(emptyList(), detectedLanguage, unsupported = true))
@@ -75,17 +94,34 @@ class SegmentationExtractor(private val client: AnthropicClient) {
                 }
             }
         }
+        // Only a total washout (every chunk failed) is a real error — surface it so the material is
+        // marked FAILED and the user can retry. Otherwise proceed with whatever we segmented.
+        if (!anyChunkSucceeded) return lastFailure ?: ApiResult.Failure(DataError.Unexpected)
         return ApiResult.Success(SegmentationResult(LessonSegmenter.mergeAndCap(collected), detectedLanguage, unsupported = false))
     }
 
-    private suspend fun callChunk(chunkText: String): ApiResult<SegResultJson> =
-        when (val r = client.complete(AnthropicModels.SMALL, 1500, SEGMENTATION_SYSTEM_PROMPT, "Content:\n$chunkText")) {
-            is ApiResult.Failure -> r
-            is ApiResult.Success -> {
-                val parsed = runCatching {
-                    extractionJson.decodeFromString(SegResultJson.serializer(), normalizeModelJson(r.data))
-                }.getOrNull()
-                ApiResult.Success(parsed ?: SegResultJson())
+    /** One chunk, retried up to [MAX_CHUNK_ATTEMPTS] with backoff on transient failures (network /
+     * timeout / 429 / 5xx) — a single hiccup among dozens of sequential chunk calls shouldn't fail
+     * the document. A non-retryable HTTP error (e.g. 401 bad key) returns immediately. */
+    private suspend fun callChunk(chunkText: String): ApiResult<SegResultJson> {
+        var lastFailure: ApiResult.Failure = ApiResult.Failure(DataError.Unexpected)
+        repeat(MAX_CHUNK_ATTEMPTS) { attempt ->
+            when (val r = client.complete(AnthropicModels.SMALL, 1500, SEGMENTATION_SYSTEM_PROMPT, "Content:\n$chunkText")) {
+                is ApiResult.Success -> {
+                    val parsed = runCatching {
+                        extractionJson.decodeFromString(SegResultJson.serializer(), normalizeModelJson(r.data))
+                    }.getOrNull()
+                    return ApiResult.Success(parsed ?: SegResultJson())
+                }
+                is ApiResult.Failure -> {
+                    lastFailure = r
+                    val err = r.error
+                    val retryable = err is DataError.Network || (err is DataError.Http && err.code in RETRYABLE_HTTP)
+                    if (!retryable) return r
+                    if (attempt < MAX_CHUNK_ATTEMPTS - 1) delay(600L * (attempt + 1))
+                }
             }
         }
+        return lastFailure
+    }
 }
