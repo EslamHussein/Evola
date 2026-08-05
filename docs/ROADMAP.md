@@ -51,9 +51,19 @@ ViewModel or screen changes.**
       longer builds/tests a server or spins up Postgres. **The Hetzner box can be decommissioned.**
 
 Compiles green on `:composeApp` (Android + iOS) and `:shared` (jvm + tests) with **no server
-running anywhere**. Remaining follow-up: a full on-device emulator walkthrough (enter a Claude key →
-upload a real German PDF → watch on-device extraction populate the local DB → run a vocab pack + a
-grammar session → confirm the Home dashboard aggregates it), and decommissioning the Hetzner server.
+running anywhere**.
+
+**Live on-device verification (Android emulator, Pixel_7a) — passed.** Cold start → onboarding (no
+login) → created a goal (written to SQLDelight, routed to Main) → Home dashboard aggregated from the
+local DB → entered an Anthropic key in Profile (encrypted `SecureStore`) → pasted a short German
+passage in "Entire" mode → **on-device extraction fired a real `api.anthropic.com` call and wrote 5
+vocabulary items (with Arabic/IPA/tags/related-words) to the local DB** → Resource Details and the
+Lesson Details hub rendered the real counts (and an honest "No grammar topics" for the tiny text) →
+the vocabulary pack session ran through Discover / Recognition (RTL Arabic multiple-choice) / Reverse
+Recall with each answer persisting. The remaining stages (Stage-6 AI grade, pack completion, grammar
+session) are covered by the passing `LocalVocabularyRepositoryTest` / `LocalGrammarRepositoryTest`.
+
+Remaining follow-up: decommission the Hetzner server (nothing points at it anymore).
 
 **Known constraint:** an Anthropic key on the device is safe only for a single-user/personal build;
 distributing the app would need BYO-key-per-user or a thin proxy (which reintroduces a server).
