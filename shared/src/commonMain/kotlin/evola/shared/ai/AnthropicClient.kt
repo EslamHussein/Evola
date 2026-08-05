@@ -2,6 +2,7 @@ package evola.shared.ai
 
 import evola.shared.core.ApiResult
 import evola.shared.core.DataError
+import evola.shared.core.EvolaLog
 import evola.shared.core.map
 import evola.shared.core.safeRequest
 import io.ktor.client.HttpClient
@@ -69,14 +70,21 @@ class AnthropicClient(
      * key short-circuits to `Http(401)` so the UI can prompt the user to set it. */
     suspend fun complete(model: String, maxTokens: Int, system: String?, userMessage: String): ApiResult<String> {
         val key = apiKeyProvider()?.takeIf { it.isNotBlank() }
-            ?: return ApiResult.Failure(DataError.Http(401, "No Anthropic API key set. Add it in Profile."))
-        return safeRequest<AnthropicResponse> {
+        if (key == null) {
+            EvolaLog.d("anthropic", "no API key available (null/blank) — short-circuiting to 401")
+            return ApiResult.Failure(DataError.Http(401, "No Anthropic API key set. Add it in Profile."))
+        }
+        val result = safeRequest<AnthropicResponse> {
             client.post("https://api.anthropic.com/v1/messages") {
                 header("x-api-key", key)
                 header("anthropic-version", "2023-06-01")
                 contentType(ContentType.Application.Json)
                 setBody(AnthropicRequest(model, maxTokens, system, listOf(AnthropicMessage("user", userMessage))))
             }
-        }.map { response -> response.content.mapNotNull { it.text }.joinToString("") }
+        }
+        if (result is ApiResult.Failure) {
+            EvolaLog.d("anthropic", "call failed: model=$model keyLen=${key.length} inputChars=${userMessage.length} error=${result.error}")
+        }
+        return result.map { response -> response.content.mapNotNull { it.text }.joinToString("") }
     }
 }

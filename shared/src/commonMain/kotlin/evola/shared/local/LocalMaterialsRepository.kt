@@ -5,6 +5,7 @@ import evola.shared.ai.SegmentationExtractor
 import evola.shared.ai.VocabularyExtractor
 import evola.shared.core.ApiResult
 import evola.shared.core.DataError
+import evola.shared.core.EvolaLog
 import evola.shared.files.FileTextExtractor
 import evola.shared.files.detectMimeType
 import evola.shared.files.MIME_TEXT_PLAIN
@@ -135,10 +136,12 @@ class LocalMaterialsRepository(
     suspend fun processMaterial(materialId: String) {
         val material = db.materialsQueries.selectById(materialId).executeAsOneOrNull() ?: return
         val text = material.content_text ?: run {
+            EvolaLog.d("extract", "material=$materialId FAILED: content_text is null")
             db.materialsQueries.updateStatus("FAILED", materialId)
             return
         }
         val goalText = db.goalsQueries.selectById(material.goal_id).executeAsOneOrNull()?.goal_text ?: ""
+        EvolaLog.d("extract", "processMaterial start: mode=${material.organization_mode} textChars=${text.length} goalChars=${goalText.length}")
 
         val segments: List<RawSegment> = if (material.organization_mode == "entire") {
             listOf(RawSegment(title = material.filename, startOffset = 0, endOffset = text.length, hasRealHeading = true))
@@ -146,17 +149,20 @@ class LocalMaterialsRepository(
             when (val r = segmentation.segment(text)) {
                 is ApiResult.Success -> {
                     if (r.data.unsupported) {
+                        EvolaLog.d("extract", "material=$materialId UNSUPPORTED_CONTENT (segmentation)")
                         db.materialsQueries.updateStatus("UNSUPPORTED_CONTENT", materialId)
                         return
                     }
                     r.data.segments
                 }
                 is ApiResult.Failure -> {
+                    EvolaLog.d("extract", "material=$materialId FAILED: segmentation error=${r.error}")
                     db.materialsQueries.updateStatus("FAILED", materialId)
                     return
                 }
             }
         }
+        EvolaLog.d("extract", "material=$materialId segmented into ${segments.size} lesson(s)")
 
         val existingTerms = db.vocabularyQueries.allUserVocab(LOCAL_USER).executeAsList()
             .map { it.term.lowercase() }.toMutableSet()
@@ -174,6 +180,7 @@ class LocalMaterialsRepository(
             db.lessonsQueries.updateStatus("ready", lessonId)
         }
 
+        EvolaLog.d("extract", "material=$materialId READY")
         db.materialsQueries.updateStatus("READY", materialId)
     }
 
@@ -186,8 +193,12 @@ class LocalMaterialsRepository(
     ) {
         val items = when (val r = vocabExtractor.extract(goalText, lessonText, aiInstructions)) {
             is ApiResult.Success -> r.data
-            is ApiResult.Failure -> return
+            is ApiResult.Failure -> {
+                EvolaLog.d("extract", "vocab extraction failed for lesson=$lessonId error=${r.error}")
+                return
+            }
         }
+        EvolaLog.d("extract", "vocab extracted ${items.size} item(s) for lesson=$lessonId")
         val now = nowMillis()
         items.forEach { item ->
             val key = item.term.lowercase()
