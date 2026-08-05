@@ -8,21 +8,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: evola
-          POSTGRES_PASSWORD: evola
-          POSTGRES_DB: evola_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -35,14 +20,11 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # iOS targets need a macOS runner and aren't verified in this workflow yet - iOS is
-      # deferred until Android-first product work catches up (see docs/ROADMAP.md).
-      - name: Compile :server, :shared (jvm), :composeApp (android)
-        run: ./gradlew :server:compileKotlin :shared:compileKotlinJvm :composeApp:compileDebugKotlinAndroid --console=plain
+      # Serverless (local-first) architecture: no backend to build/test and no Postgres service —
+      # everything runs on-device now. iOS targets need a macOS runner and aren't verified here yet
+      # (deferred until Android-first product work catches up — see docs/ROADMAP.md).
+      - name: Compile :shared (jvm) + :composeApp (android)
+        run: ./gradlew :shared:compileKotlinJvm :composeApp:compileDebugKotlinAndroid --console=plain
 
-      - name: Run :server tests
-        env:
-          TEST_DATABASE_URL: jdbc:postgresql://localhost:5432/evola_test
-          TEST_DATABASE_USER: evola
-          TEST_DATABASE_PASSWORD: evola
-        run: ./gradlew :server:test --console=plain
+      - name: Run :shared tests
+        run: ./gradlew :shared:jvmTest --console=plain

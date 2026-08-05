@@ -14,6 +14,52 @@ Legend: `[x]` done and verified · `[~]` in progress · `[ ]` not started
 
 ---
 
+## Local-First pivot — the app is now fully on-device (serverless) ✅
+
+**Direction change (post-M8):** Evola no longer depends on a backend. Everything runs and is stored
+on the device, single-user, no login. The Hetzner Ktor+Postgres backend (`:server`) and its
+persistence module (`:integrations:persistence-shared`) are **retired and deleted from the repo**.
+The only network dependency that remains is Anthropic itself (Claude can't run on a phone) — the app
+calls the Anthropic API **directly** with a Claude key the user stores **locally** (encrypted,
+on-device; entered in Profile). Viable precisely because the app is pre-launch and effectively
+single-user.
+
+What made this a swap-in-place rather than a rewrite: the earlier Clean-Arch pass had already put
+every screen behind a **repository interface** + `ApiResult`/`DataError` boundary, so each
+`Http*Repository` was replaced by a `Local*Repository` implementing the identical interface — **zero
+ViewModel or screen changes.**
+
+- [x] **Phase 0** — SQLDelight foundation: plugin + `DatabaseDriverFactory` expect/actual + `.sq`
+      schema (the server's V1–V15 collapsed into one initial on-device schema) + typed queries.
+- [x] **Phase 1** — pure logic ported to `:shared/commonMain`: `MasterySrs`, `LessonSegmenter`,
+      `computeStreak` (were server-only).
+- [x] **Phase 2** — on-device encrypted `SecureStore` (Android EncryptedSharedPreferences; iOS
+      NSUserDefaults) + Anthropic-key entry in Profile.
+- [x] **Phase 3** — on-device `AnthropicClient` (raw Ktor → `api.anthropic.com`, key from the secure
+      store) + the segmentation/vocabulary/grammar extraction pipelines ported as `commonMain`
+      extractors (haiku for extraction, sonnet for grammar answer-key validation).
+- [x] **Phase 4** — on-device file text extraction: `FileTextExtractor` (magic-byte MIME sniff) with
+      Android (PdfBox-Android + ZIP DOCX) and iOS (PDFKit) actuals.
+- [x] **Phase 5** — the five `Local*Repository` implementations over SQLDelight (Goals, Lessons,
+      Materials-with-extraction-orchestration, Vocabulary pack/7-stage, Grammar per-topic session);
+      `AppModule` flipped `Http*` → `Local*`. Unit-tested via an in-memory JDBC driver (Goals 3,
+      Grammar 3, Vocabulary 4 — the session engines are covered without an emulator or network).
+- [x] **Phase 6** — single-user, no login: deleted the auth screens + token lifecycle; first run
+      goes straight to Goal Setup, gated only by whether an active goal exists locally.
+- [x] **Phase 7** — retired the backend: deleted `:server` + `:integrations:persistence-shared` +
+      the now-dead client HTTP/auth/session code; unwired both from `settings.gradle.kts`; CI no
+      longer builds/tests a server or spins up Postgres. **The Hetzner box can be decommissioned.**
+
+Compiles green on `:composeApp` (Android + iOS) and `:shared` (jvm + tests) with **no server
+running anywhere**. Remaining follow-up: a full on-device emulator walkthrough (enter a Claude key →
+upload a real German PDF → watch on-device extraction populate the local DB → run a vocab pack + a
+grammar session → confirm the Home dashboard aggregates it), and decommissioning the Hetzner server.
+
+**Known constraint:** an Anthropic key on the device is safe only for a single-user/personal build;
+distributing the app would need BYO-key-per-user or a thin proxy (which reintroduces a server).
+
+---
+
 ## M0 — Housekeeping
 
 Goal: clear the ground before touching real product features, so there's exactly one `Goal`
