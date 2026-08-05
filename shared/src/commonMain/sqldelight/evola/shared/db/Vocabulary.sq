@@ -70,6 +70,17 @@ CREATE TABLE vocabulary_extraction_jobs (
 itemsByLesson:
 SELECT * FROM vocabulary_items WHERE lesson_id = ? ORDER BY created_at ASC;
 
+-- Partial-credit progress: per lesson item, how many DISTINCT gradable stages (2..6) it has ever
+-- been answered correctly on (0..5). Items never practiced correctly return 0 (LEFT JOIN). Drives
+-- the lesson/goal progress %, so any real practice moves the bar instead of requiring full mastery.
+gradedProgressByLesson:
+SELECT vi.id AS item_id, COUNT(DISTINCT sa.stage_index) AS correct_stages
+FROM vocabulary_items vi
+LEFT JOIN vocabulary_pack_words pw ON pw.vocabulary_item_id = vi.id
+LEFT JOIN vocabulary_stage_answers sa ON sa.pack_word_id = pw.id AND sa.stage_index >= 2 AND sa.correct = 1
+WHERE vi.lesson_id = ?
+GROUP BY vi.id;
+
 insertItem:
 INSERT INTO vocabulary_items(id, lesson_id, term, meaning, gender, example_sentence, part_of_speech, grammatical_case, example_sentence_translation, meaning_ar, ipa_pronunciation, related_words, difficulty_rating, frequency_rating, memory_tip, created_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
