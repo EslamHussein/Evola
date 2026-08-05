@@ -2,10 +2,11 @@ package evola.composeapp.materials
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import evola.composeapp.core.toUserMessage
+import evola.shared.core.ApiResult
 import evola.shared.materials.MaterialDetail
 import evola.shared.materials.MaterialStatus
 import evola.shared.materials.MaterialsRepository
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +27,6 @@ private const val POLL_INTERVAL_MS = 3000L
  * progress. Tracks [pollJob] so [retry] restarts polling instead of racing a second loop against
  * the one already running from [init]. */
 class MaterialDetailViewModel(
-    private val accessToken: String,
     private val materialId: String,
     private val repository: MaterialsRepository,
 ) : ViewModel() {
@@ -42,13 +42,8 @@ class MaterialDetailViewModel(
     fun retry() {
         pollJob?.cancel()
         viewModelScope.launch {
-            try {
-                repository.reprocess(accessToken, materialId)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // Surfaced on the next poll tick if the material is still FAILED.
-            }
+            // A reprocess failure is surfaced on the next poll tick if the material is still FAILED.
+            repository.reprocess(materialId)
             pollUntilTerminal()
         }
     }
@@ -57,17 +52,17 @@ class MaterialDetailViewModel(
         pollJob?.cancel()
         pollJob = viewModelScope.launch {
             while (true) {
-                val detail = try {
-                    repository.get(accessToken, materialId)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    _state.value = MaterialDetailState.Error(e.message ?: "Failed to load material.")
-                    return@launch
+                when (val result = repository.get(materialId)) {
+                    is ApiResult.Failure -> {
+                        _state.value = MaterialDetailState.Error(result.error.toUserMessage())
+                        return@launch
+                    }
+                    is ApiResult.Success -> {
+                        _state.value = MaterialDetailState.Loaded(result.data)
+                        if (result.data.material.status in TERMINAL_STATUSES) return@launch
+                        delay(POLL_INTERVAL_MS)
+                    }
                 }
-                _state.value = MaterialDetailState.Loaded(detail)
-                if (detail.material.status in TERMINAL_STATUSES) break
-                delay(POLL_INTERVAL_MS)
             }
         }
     }

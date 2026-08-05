@@ -1,21 +1,17 @@
 package evola.shared.vocabulary
 
+import evola.shared.core.ApiResult
+import evola.shared.core.map
+import evola.shared.core.safeRequest
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 @Serializable
 private data class VocabularyItemWireResponse(
@@ -112,68 +108,50 @@ private data class VocabularyFlagsWireRequest(
 private data class SessionCompleteWireRequest(@SerialName("local_date") val localDate: String)
 
 class HttpVocabularyRepository(
+    private val client: HttpClient,
     private val baseUrl: String,
-    private val httpClient: HttpClient = HttpClient {
-        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-    },
 ) : VocabularyRepository {
 
-    override suspend fun startOrResumeSession(accessToken: String, lessonId: String): VocabularyPack? {
-        val response = httpClient.post("$baseUrl/lessons/$lessonId/vocabulary/session") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-        }
-        if (response.status != HttpStatusCode.Created) return null
-        return response.body<VocabularyPackWireResponse>().toDomain()
-    }
+    override suspend fun startOrResumeSession(lessonId: String): ApiResult<VocabularyPack> =
+        safeRequest<VocabularyPackWireResponse> {
+            client.post("$baseUrl/lessons/$lessonId/vocabulary/session")
+        }.map { it.toDomain() }
 
-    override suspend fun listVocabulary(accessToken: String, lessonId: String): List<VocabularyItem> {
-        val response = httpClient.get("$baseUrl/lessons/$lessonId/vocabulary") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-        }
-        if (response.status != HttpStatusCode.OK) return emptyList()
-        return response.body<List<VocabularyItemWireResponse>>().map { it.toDomain() }
-    }
+    override suspend fun listVocabulary(lessonId: String): ApiResult<List<VocabularyItem>> =
+        safeRequest<List<VocabularyItemWireResponse>> {
+            client.get("$baseUrl/lessons/$lessonId/vocabulary")
+        }.map { items -> items.map { it.toDomain() } }
 
     override suspend fun answer(
-        accessToken: String,
         packId: String,
         itemId: String,
         stageIndex: Int,
         response: String,
-    ): VocabularyStageAnswerResult? {
-        val httpResponse = httpClient.post("$baseUrl/vocabulary-sessions/$packId/answer") {
-            contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-            setBody(VocabularyAnswerWireRequest(itemId, stageIndex, response))
-        }
-        if (httpResponse.status != HttpStatusCode.OK) return null
-        val body = httpResponse.body<VocabularyAnswerWireResponse>()
-        return VocabularyStageAnswerResult(body.correct, body.feedback, body.next?.toDomain())
-    }
+    ): ApiResult<VocabularyStageAnswerResult> =
+        safeRequest<VocabularyAnswerWireResponse> {
+            client.post("$baseUrl/vocabulary-sessions/$packId/answer") {
+                contentType(ContentType.Application.Json)
+                setBody(VocabularyAnswerWireRequest(itemId, stageIndex, response))
+            }
+        }.map { VocabularyStageAnswerResult(it.correct, it.feedback, it.next?.toDomain()) }
 
-    override suspend fun complete(accessToken: String, packId: String, localDate: String): VocabularyPackSummary? {
-        val httpResponse = httpClient.post("$baseUrl/vocabulary-sessions/$packId/complete") {
-            contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-            setBody(SessionCompleteWireRequest(localDate))
-        }
-        if (httpResponse.status != HttpStatusCode.OK) return null
-        val body = httpResponse.body<VocabularyPackCompleteWireResponse>()
-        return VocabularyPackSummary(body.wordsLearned, body.accuracy, body.timeSeconds)
-    }
+    override suspend fun complete(packId: String, localDate: String): ApiResult<VocabularyPackSummary> =
+        safeRequest<VocabularyPackCompleteWireResponse> {
+            client.post("$baseUrl/vocabulary-sessions/$packId/complete") {
+                contentType(ContentType.Application.Json)
+                setBody(SessionCompleteWireRequest(localDate))
+            }
+        }.map { VocabularyPackSummary(it.wordsLearned, it.accuracy, it.timeSeconds) }
 
     override suspend fun updateFlags(
-        accessToken: String,
         itemId: String,
         isBookmarked: Boolean?,
         markedDifficult: Boolean?,
-    ): VocabularyItem? {
-        val response = httpClient.patch("$baseUrl/vocabulary-items/$itemId/flags") {
-            contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-            setBody(VocabularyFlagsWireRequest(isBookmarked, markedDifficult))
-        }
-        if (response.status != HttpStatusCode.OK) return null
-        return response.body<VocabularyItemWireResponse>().toDomain()
-    }
+    ): ApiResult<VocabularyItem> =
+        safeRequest<VocabularyItemWireResponse> {
+            client.patch("$baseUrl/vocabulary-items/$itemId/flags") {
+                contentType(ContentType.Application.Json)
+                setBody(VocabularyFlagsWireRequest(isBookmarked, markedDifficult))
+            }
+        }.map { it.toDomain() }
 }

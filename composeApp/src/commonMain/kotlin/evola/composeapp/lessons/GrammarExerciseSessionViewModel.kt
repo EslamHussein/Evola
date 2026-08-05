@@ -2,10 +2,11 @@ package evola.composeapp.lessons
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import evola.composeapp.core.toUserMessage
+import evola.shared.core.ApiResult
 import evola.shared.grammar.GrammarExercise
-import evola.shared.todayLocalDate
 import evola.shared.grammar.GrammarRepository
-import kotlinx.coroutines.CancellationException
+import evola.shared.todayLocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,7 +31,6 @@ sealed interface GrammarExerciseSessionState {
  * already-answered bookkeeping.
  */
 class GrammarExerciseSessionViewModel(
-    private val accessToken: String,
     private val topicId: String,
     private val repository: GrammarRepository,
 ) : ViewModel() {
@@ -52,19 +52,13 @@ class GrammarExerciseSessionViewModel(
         val current = (state.value as? GrammarExerciseSessionState.InProgress)?.currentExercise ?: return
         val sid = sessionId ?: return
         viewModelScope.launch {
-            try {
-                val result = repository.answer(accessToken, sid, current.exerciseId, response, correct)
-                if (result == null) {
-                    _state.value = GrammarExerciseSessionState.Error("Couldn't submit your answer.")
-                    return@launch
+            when (val result = repository.answer(sid, current.exerciseId, response, correct)) {
+                is ApiResult.Success -> {
+                    answeredCount++
+                    if (correct) correctCount++
+                    loadNext()
                 }
-                answeredCount++
-                if (correct) correctCount++
-                loadNext()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.value = GrammarExerciseSessionState.Error(e.message ?: "Something went wrong.")
+                is ApiResult.Failure -> _state.value = GrammarExerciseSessionState.Error(result.error.toUserMessage())
             }
         }
     }
@@ -77,34 +71,31 @@ class GrammarExerciseSessionViewModel(
     }
 
     private suspend fun loadNext() {
-        try {
-            val session = repository.startOrResumeSession(accessToken, topicId)
-            if (session == null) {
-                _state.value = GrammarExerciseSessionState.Error("Couldn't load this topic's exercises.")
-                return
+        when (val result = repository.startOrResumeSession(topicId)) {
+            is ApiResult.Success -> {
+                val session = result.data
+                sessionId = session.sessionId
+                val unanswered = session.exercises.firstOrNull { !it.answered }
+                _state.value = when {
+                    unanswered != null -> GrammarExerciseSessionState.InProgress(unanswered, answeredCount)
+                    session.exercises.isEmpty() -> GrammarExerciseSessionState.Empty
+                    else -> completeSession()
+                }
             }
-            sessionId = session.sessionId
-            val unanswered = session.exercises.firstOrNull { !it.answered }
-            _state.value = when {
-                unanswered != null -> GrammarExerciseSessionState.InProgress(unanswered, answeredCount)
-                session.exercises.isEmpty() -> GrammarExerciseSessionState.Empty
-                else -> completeSession()
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            _state.value = GrammarExerciseSessionState.Error(e.message ?: "Something went wrong.")
+            is ApiResult.Failure -> _state.value = GrammarExerciseSessionState.Error(result.error.toUserMessage())
         }
     }
 
     private suspend fun completeSession(): GrammarExerciseSessionState {
         val sid = sessionId ?: return GrammarExerciseSessionState.Error("Session missing.")
-        val summary = repository.complete(accessToken, sid, todayLocalDate())
-        return if (summary != null) {
-            GrammarExerciseSessionState.Summary(summary.exercisesCompleted, summary.accuracy)
-        } else {
-            val fallbackAccuracy = if (answeredCount > 0) (correctCount.toDouble() / answeredCount) * 100.0 else 0.0
-            GrammarExerciseSessionState.Summary(answeredCount, fallbackAccuracy)
+        return when (val result = repository.complete(sid, todayLocalDate())) {
+            is ApiResult.Success -> GrammarExerciseSessionState.Summary(result.data.exercisesCompleted, result.data.accuracy)
+            // Completion is a bookkeeping call; if it fails, still show a summary from what we
+            // counted locally rather than blocking the user on a finished session.
+            is ApiResult.Failure -> {
+                val fallbackAccuracy = if (answeredCount > 0) (correctCount.toDouble() / answeredCount) * 100.0 else 0.0
+                GrammarExerciseSessionState.Summary(answeredCount, fallbackAccuracy)
+            }
         }
     }
 }

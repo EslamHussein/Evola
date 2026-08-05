@@ -1,23 +1,22 @@
 package evola.shared.goals
 
+import evola.shared.core.ApiResult
+import evola.shared.core.DataError
+import evola.shared.core.map
+import evola.shared.core.safeRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.json.json
+import io.ktor.client.request.parameter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 @Serializable
 private data class CreateGoalWireRequest(@SerialName("goal_text") val goalText: String, val title: String?)
@@ -59,17 +58,17 @@ private data class WireErrorBody(val code: String, val message: String)
 @Serializable
 private data class WireErrorResponse(val error: WireErrorBody)
 
+/** Data reads (getActiveGoal/listLessons/getProgress) return [ApiResult]; createGoal/updateGoal keep
+ * their own sealed result types (they carry domain-specific outcomes a generic result would flatten)
+ * and let a rare network exception surface to the caller, which already guards them. */
 class HttpGoalsRepository(
+    private val client: HttpClient,
     private val baseUrl: String,
-    private val httpClient: HttpClient = HttpClient {
-        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-    },
 ) : GoalsRepository {
 
-    override suspend fun createGoal(accessToken: String, goalText: String, title: String?): CreateGoalResult {
-        val response = httpClient.post("$baseUrl/goals") {
+    override suspend fun createGoal(goalText: String, title: String?): CreateGoalResult {
+        val response = client.post("$baseUrl/goals") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
             setBody(CreateGoalWireRequest(goalText, title))
         }
         return when (response.status) {
@@ -80,10 +79,9 @@ class HttpGoalsRepository(
         }
     }
 
-    override suspend fun updateGoal(accessToken: String, goalId: String, goalText: String?, title: String?): UpdateGoalResult {
-        val response = httpClient.patch("$baseUrl/goals/$goalId") {
+    override suspend fun updateGoal(goalId: String, goalText: String?, title: String?): UpdateGoalResult {
+        val response = client.patch("$baseUrl/goals/$goalId") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
             setBody(UpdateGoalWireRequest(goalText, title))
         }
         return when (response.status) {
@@ -94,30 +92,25 @@ class HttpGoalsRepository(
         }
     }
 
-    override suspend fun getActiveGoal(accessToken: String): Goal? {
-        val response = httpClient.get("$baseUrl/goals/active") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
+    override suspend fun getActiveGoal(): ApiResult<Goal?> =
+        when (val result = safeRequest<GoalWireResponse> { client.get("$baseUrl/goals/active") }) {
+            is ApiResult.Success -> ApiResult.Success(result.data.toDomain())
+            is ApiResult.Failure -> {
+                val error = result.error
+                // 404 = "no active goal yet", a real state (→ onboarding), not a failure.
+                if (error is DataError.Http && error.code == 404) ApiResult.Success(null) else result
+            }
         }
-        if (response.status != HttpStatusCode.OK) return null
-        return response.body<GoalWireResponse>().toDomain()
-    }
 
-    override suspend fun listLessons(accessToken: String, goalId: String): List<Lesson> {
-        val response = httpClient.get("$baseUrl/goals/$goalId/lessons") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-        }
-        if (response.status != HttpStatusCode.OK) return emptyList()
-        return response.body<List<LessonWireResponse>>().map { it.toDomain() }
-    }
+    override suspend fun listLessons(goalId: String): ApiResult<List<Lesson>> =
+        safeRequest<List<LessonWireResponse>> {
+            client.get("$baseUrl/goals/$goalId/lessons")
+        }.map { lessons -> lessons.map { it.toDomain() } }
 
-    override suspend fun getProgress(accessToken: String, goalId: String, localDate: String): GoalProgress? {
-        val response = httpClient.get("$baseUrl/goals/$goalId/progress") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-            parameter("local_date", localDate)
-        }
-        if (response.status != HttpStatusCode.OK) return null
-        return response.body<GoalProgressWireResponse>().toDomain()
-    }
+    override suspend fun getProgress(goalId: String, localDate: String): ApiResult<GoalProgress> =
+        safeRequest<GoalProgressWireResponse> {
+            client.get("$baseUrl/goals/$goalId/progress") { parameter("local_date", localDate) }
+        }.map { it.toDomain() }
 
     private suspend fun HttpResponse.errorBody(): WireErrorBody = body<WireErrorResponse>().error
 

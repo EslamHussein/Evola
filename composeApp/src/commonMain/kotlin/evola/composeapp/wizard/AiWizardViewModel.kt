@@ -50,7 +50,6 @@ private val STEP_ORDER = listOf(WizardStep.RESOURCE_INFO, WizardStep.ORGANIZATIO
  * where the staged file/text from the Add Resource screen finally gets uploaded, now bundled with
  * resource_type/organization_mode/ai_instructions. */
 class AiWizardViewModel(
-    private val accessToken: String,
     private val goalId: String,
     private val staged: StagedResource,
     private val repository: MaterialsRepository,
@@ -115,13 +114,13 @@ class AiWizardViewModel(
                 val instructions = _aiInstructions.value.trim().ifEmpty { null }
                 val result = when (val resource = staged) {
                     is StagedResource.File -> repository.upload(
-                        accessToken, goalId, resource.fileName, resource.mimeType, resource.bytes,
+                        goalId, resource.fileName, resource.mimeType, resource.bytes,
                         organizationMode = _organizationMode.value.wireValue,
                         aiInstructions = instructions,
                         resourceType = _resourceType.value.wireValue,
                     )
                     is StagedResource.Text -> repository.uploadText(
-                        accessToken, goalId, resource.title, resource.text,
+                        goalId, resource.title, resource.text,
                         organizationMode = _organizationMode.value.wireValue,
                         aiInstructions = instructions,
                         resourceType = _resourceType.value.wireValue,

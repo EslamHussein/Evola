@@ -2,9 +2,10 @@ package evola.composeapp.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import evola.composeapp.core.toUserMessage
+import evola.shared.core.fold
 import evola.shared.goals.GoalsRepository
 import evola.shared.goals.Lesson
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +22,6 @@ sealed interface LessonSelectionState {
  * doesn't need to watch a single in-flight job, just reflect whatever lessons already exist
  * whenever the user visits the Study tab. */
 class LessonSelectionViewModel(
-    private val accessToken: String,
     private val goalId: String,
     private val goalsRepository: GoalsRepository,
 ) : ViewModel() {
@@ -36,14 +36,10 @@ class LessonSelectionViewModel(
     fun refresh() {
         viewModelScope.launch {
             _state.value = LessonSelectionState.Loading
-            try {
-                val lessons = goalsRepository.listLessons(accessToken, goalId)
-                _state.value = LessonSelectionState.Loaded(lessons)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.value = LessonSelectionState.Error(e.message ?: "Failed to load lessons.")
-            }
+            _state.value = goalsRepository.listLessons(goalId).fold(
+                onSuccess = { LessonSelectionState.Loaded(it) },
+                onFailure = { LessonSelectionState.Error(it.toUserMessage()) },
+            )
         }
     }
 }

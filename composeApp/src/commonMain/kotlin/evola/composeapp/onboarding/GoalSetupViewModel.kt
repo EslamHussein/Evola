@@ -2,6 +2,7 @@ package evola.composeapp.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import evola.shared.core.getOrNull
 import evola.shared.goals.CreateGoalResult
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalsRepository
@@ -14,7 +15,6 @@ import kotlinx.coroutines.launch
 /** Goal Setup per 01_PRODUCT_SPEC.md §1.4 - goal_text 3-200 chars required, title optional. */
 class GoalSetupViewModel(
     private val goalsRepository: GoalsRepository,
-    private val accessToken: String,
 ) : ViewModel() {
 
     private val _isSubmitting = MutableStateFlow(false)
@@ -34,12 +34,12 @@ class GoalSetupViewModel(
             _isSubmitting.value = true
             _errorMessage.value = null
             try {
-                when (val result = goalsRepository.createGoal(accessToken, trimmedText, title?.trim()?.ifBlank { null })) {
+                when (val result = goalsRepository.createGoal(trimmedText, title?.trim()?.ifBlank { null })) {
                     is CreateGoalResult.Success -> onSuccess(result.goal)
                     CreateGoalResult.ActiveGoalExists -> onSuccess(
                         // Shouldn't normally happen from this screen, but if it does the user
                         // already has a goal - just continue rather than blocking them here.
-                        goalsRepository.getActiveGoal(accessToken) ?: run {
+                        goalsRepository.getActiveGoal().getOrNull() ?: run {
                             _errorMessage.value = "You already have an active goal."
                             return@launch
                         },

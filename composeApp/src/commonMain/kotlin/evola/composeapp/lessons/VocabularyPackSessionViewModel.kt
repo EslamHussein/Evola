@@ -2,12 +2,14 @@ package evola.composeapp.lessons
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import evola.composeapp.core.toUserMessage
+import evola.shared.core.ApiResult
+import evola.shared.core.getOrNull
 import evola.shared.todayLocalDate
 import evola.shared.vocabulary.VocabularyPack
 import evola.shared.vocabulary.VocabularyPackSummary
 import evola.shared.vocabulary.VocabularyRepository
 import evola.shared.vocabulary.VocabularyStageAnswerResult
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +34,6 @@ sealed interface VocabularyPackSessionState {
  * where the user left off, the same guarantee the old flat-session model had.
  */
 class VocabularyPackSessionViewModel(
-    private val accessToken: String,
     private val lessonId: String,
     private val repository: VocabularyRepository,
 ) : ViewModel() {
@@ -82,17 +83,9 @@ class VocabularyPackSessionViewModel(
         val packId = current.pack.packId
         val packNumber = current.pack.packNumber
         viewModelScope.launch {
-            try {
-                val summary = repository.complete(accessToken, packId, todayLocalDate())
-                _state.value = if (summary != null) {
-                    VocabularyPackSessionState.Summary(summary, packNumber)
-                } else {
-                    VocabularyPackSessionState.Error("Couldn't finish this pack.")
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.value = VocabularyPackSessionState.Error(e.message ?: "Something went wrong.")
+            _state.value = when (val result = repository.complete(packId, todayLocalDate())) {
+                is ApiResult.Success -> VocabularyPackSessionState.Summary(result.data, packNumber)
+                is ApiResult.Failure -> VocabularyPackSessionState.Error(result.error.toUserMessage())
             }
         }
     }
@@ -101,7 +94,7 @@ class VocabularyPackSessionViewModel(
         val current = state.value as? VocabularyPackSessionState.InProgress ?: return
         val word = current.pack.word
         viewModelScope.launch {
-            val updated = runCatching { repository.updateFlags(accessToken, word.itemId, isBookmarked = !word.isBookmarked) }.getOrNull()
+            val updated = repository.updateFlags(word.itemId, isBookmarked = !word.isBookmarked).getOrNull()
                 ?: return@launch
             val latest = state.value as? VocabularyPackSessionState.InProgress ?: return@launch
             if (latest.pack.word.itemId == word.itemId) {
@@ -114,7 +107,7 @@ class VocabularyPackSessionViewModel(
         val current = state.value as? VocabularyPackSessionState.InProgress ?: return
         val word = current.pack.word
         viewModelScope.launch {
-            val updated = runCatching { repository.updateFlags(accessToken, word.itemId, markedDifficult = !word.markedDifficult) }.getOrNull()
+            val updated = repository.updateFlags(word.itemId, markedDifficult = !word.markedDifficult).getOrNull()
                 ?: return@launch
             val latest = state.value as? VocabularyPackSessionState.InProgress ?: return@launch
             if (latest.pack.word.itemId == word.itemId) {
@@ -128,18 +121,12 @@ class VocabularyPackSessionViewModel(
     private fun refresh() {
         viewModelScope.launch {
             _state.value = VocabularyPackSessionState.Loading
-            try {
-                val pack = repository.startOrResumeSession(accessToken, lessonId)
-                _state.value = if (pack != null) {
-                    lastPackNumber = pack.packNumber
-                    VocabularyPackSessionState.InProgress(pack)
-                } else {
-                    VocabularyPackSessionState.Empty
+            _state.value = when (val result = repository.startOrResumeSession(lessonId)) {
+                is ApiResult.Success -> {
+                    lastPackNumber = result.data.packNumber
+                    VocabularyPackSessionState.InProgress(result.data)
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.value = VocabularyPackSessionState.Error(e.message ?: "Something went wrong.")
+                is ApiResult.Failure -> VocabularyPackSessionState.Error(result.error.toUserMessage())
             }
         }
     }
@@ -148,26 +135,21 @@ class VocabularyPackSessionViewModel(
         val current = state.value as? VocabularyPackSessionState.InProgress ?: return
         val itemId = current.pack.word.itemId
         viewModelScope.launch {
-            try {
-                val result = repository.answer(accessToken, current.pack.packId, itemId, stageIndex, response)
-                if (result == null) {
-                    _state.value = VocabularyPackSessionState.Error("Couldn't submit your answer.")
-                    return@launch
-                }
-                _state.value = if (autoAdvance) {
-                    val next = result.next
-                    when {
-                        next == null -> VocabularyPackSessionState.Error("Couldn't load the next step.")
-                        next.readyToComplete -> current.copy(pack = next, answered = result)
-                        else -> VocabularyPackSessionState.InProgress(next)
+            when (val result = repository.answer(current.pack.packId, itemId, stageIndex, response)) {
+                is ApiResult.Failure -> _state.value = VocabularyPackSessionState.Error(result.error.toUserMessage())
+                is ApiResult.Success -> {
+                    val answer = result.data
+                    _state.value = if (autoAdvance) {
+                        val next = answer.next
+                        when {
+                            next == null -> VocabularyPackSessionState.Error("Couldn't load the next step.")
+                            next.readyToComplete -> current.copy(pack = next, answered = answer)
+                            else -> VocabularyPackSessionState.InProgress(next)
+                        }
+                    } else {
+                        current.copy(answered = answer)
                     }
-                } else {
-                    current.copy(answered = result)
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.value = VocabularyPackSessionState.Error(e.message ?: "Something went wrong.")
             }
         }
     }

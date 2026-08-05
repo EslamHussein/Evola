@@ -1,5 +1,7 @@
 package evola.shared.vocabulary
 
+import evola.shared.core.ApiResult
+
 /** A lesson's own vocabulary item plus this user's current mastery state (01_PRODUCT_SPEC.md §1.8).
  * The meaning_ar/ipa/related-words/difficulty/frequency/memory-tip fields are only populated for
  * items extracted from V12 on - null/empty for pre-existing rows. is_bookmarked/marked_difficult
@@ -74,9 +76,9 @@ data class VocabularyPackSummary(
 )
 
 interface VocabularyRepository {
-    suspend fun startOrResumeSession(accessToken: String, lessonId: String): VocabularyPack?
-    suspend fun listVocabulary(accessToken: String, lessonId: String): List<VocabularyItem>
-    suspend fun answer(accessToken: String, packId: String, itemId: String, stageIndex: Int, response: String): VocabularyStageAnswerResult?
-    suspend fun complete(accessToken: String, packId: String, localDate: String): VocabularyPackSummary?
-    suspend fun updateFlags(accessToken: String, itemId: String, isBookmarked: Boolean? = null, markedDifficult: Boolean? = null): VocabularyItem?
+    suspend fun startOrResumeSession(lessonId: String): ApiResult<VocabularyPack>
+    suspend fun listVocabulary(lessonId: String): ApiResult<List<VocabularyItem>>
+    suspend fun answer(packId: String, itemId: String, stageIndex: Int, response: String): ApiResult<VocabularyStageAnswerResult>
+    suspend fun complete(packId: String, localDate: String): ApiResult<VocabularyPackSummary>
+    suspend fun updateFlags(itemId: String, isBookmarked: Boolean? = null, markedDifficult: Boolean? = null): ApiResult<VocabularyItem>
 }

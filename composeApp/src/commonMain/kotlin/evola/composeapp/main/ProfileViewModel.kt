@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 /** Goal editing from Profile per 01_PRODUCT_SPEC.md §1.4 - editable later without repeating onboarding. */
 class ProfileViewModel(
     private val goalsRepository: GoalsRepository,
-    private val accessToken: String,
 ) : ViewModel() {
 
     private val _isSubmitting = MutableStateFlow(false)
@@ -34,7 +33,7 @@ class ProfileViewModel(
             _isSubmitting.value = true
             _errorMessage.value = null
             try {
-                when (val result = goalsRepository.updateGoal(accessToken, goalId, trimmedText, title?.trim()?.ifBlank { null })) {
+                when (val result = goalsRepository.updateGoal(goalId, trimmedText, title?.trim()?.ifBlank { null })) {
                     is UpdateGoalResult.Success -> onSuccess(result.goal)
                     UpdateGoalResult.NotFound -> _errorMessage.value = "This goal could not be found."
                     is UpdateGoalResult.ValidationError -> _errorMessage.value = result.message

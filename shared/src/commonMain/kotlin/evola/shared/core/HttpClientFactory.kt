@@ -25,10 +25,10 @@ fun evolaJson(): Json = Json {
  * (login/register/refresh/logout), and as the base the api client below refreshes through, so a
  * refresh POST can never be re-intercepted by the [Auth] plugin (the loop the kmp-ktor skill warns
  * about). `expectSuccess = false`: status is inspected in [safeRequest], never thrown by Ktor. */
-fun createBaseHttpClient(engine: HttpClientEngine, json: Json = evolaJson()): HttpClient =
+fun createBaseHttpClient(engine: HttpClientEngine): HttpClient =
     HttpClient(engine) {
         expectSuccess = false
-        install(ContentNegotiation) { json(json) }
+        install(ContentNegotiation) { json(evolaJson()) }
         install(HttpRequestRetry) {
             retryOnServerErrors(maxRetries = 3)
             exponentialDelay()
@@ -52,11 +52,10 @@ fun createBaseHttpClient(engine: HttpClientEngine, json: Json = evolaJson()): Ht
 fun createApiHttpClient(
     engine: HttpClientEngine,
     tokenStore: TokenStore,
-    json: Json = evolaJson(),
     refreshAccessToken: suspend (refreshToken: String) -> String?,
 ): HttpClient = HttpClient(engine) {
     expectSuccess = false
-    install(ContentNegotiation) { json(json) }
+    install(ContentNegotiation) { json(evolaJson()) }
     install(Auth) {
         bearer {
             loadTokens { tokenStore.get()?.let { BearerTokens(it.access, it.refresh) } }

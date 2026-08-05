@@ -88,7 +88,6 @@ fun MainScreen(
     vocabularyRepository: VocabularyRepository,
     lessonsRepository: LessonsRepository,
     grammarRepository: GrammarRepository,
-    accessToken: String,
     onLogout: () -> Unit,
 ) {
     var goal by remember { mutableStateOf(initialGoal) }
@@ -146,7 +145,7 @@ fun MainScreen(
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
                 MainTab.HOME -> {
-                    val homeViewModel = remember(goal.id) { HomeViewModel(accessToken, goal.id, goalsRepository) }
+                    val homeViewModel = remember(goal.id) { HomeViewModel(goal.id, goalsRepository) }
                     HomeScreen(
                         goal = goal,
                         viewModel = homeViewModel,
@@ -163,7 +162,7 @@ fun MainScreen(
                 MainTab.STUDY -> when (val sub = studySubScreen) {
                     StudySubScreen.List -> {
                         val viewModel = remember(goal.id) {
-                            LessonSelectionViewModel(accessToken, goal.id, goalsRepository)
+                            LessonSelectionViewModel(goal.id, goalsRepository)
                         }
                         StudyScreen(viewModel = viewModel, onOpenLesson = { lesson -> studySubScreen = StudySubScreen.Home(lesson) })
                     }
@@ -171,7 +170,7 @@ fun MainScreen(
                     is StudySubScreen.Home -> {
                         BackHandler(onBack = { studySubScreen = StudySubScreen.List })
                         val viewModel = remember(sub.lesson.id) {
-                            LessonDetailViewModel(accessToken, sub.lesson.id, lessonsRepository)
+                            LessonDetailViewModel(sub.lesson.id, lessonsRepository)
                         }
                         LessonDetailScreen(
                             viewModel = viewModel,
@@ -188,7 +187,7 @@ fun MainScreen(
 
                     is StudySubScreen.Session -> {
                         val viewModel = remember(sub.lesson.id) {
-                            VocabularyPackSessionViewModel(accessToken, sub.lesson.id, vocabularyRepository)
+                            VocabularyPackSessionViewModel(sub.lesson.id, vocabularyRepository)
                         }
                         VocabularyPackSessionScreen(viewModel = viewModel, onDone = { studySubScreen = StudySubScreen.Home(sub.lesson) })
                     }
@@ -196,7 +195,7 @@ fun MainScreen(
                     is StudySubScreen.VocabularyList -> {
                         BackHandler(onBack = { studySubScreen = StudySubScreen.Home(sub.lesson) })
                         val viewModel = remember(sub.lesson.id) {
-                            VocabularyListViewModel(accessToken, sub.lesson.id, vocabularyRepository)
+                            VocabularyListViewModel(sub.lesson.id, vocabularyRepository)
                         }
                         VocabularyListScreen(viewModel = viewModel, onBack = { studySubScreen = StudySubScreen.Home(sub.lesson) })
                     }
@@ -204,7 +203,7 @@ fun MainScreen(
                     is StudySubScreen.GrammarTopics -> {
                         BackHandler(onBack = { studySubScreen = StudySubScreen.Home(sub.lesson) })
                         val viewModel = remember(sub.lesson.id) {
-                            GrammarTopicListViewModel(accessToken, sub.lesson.id, grammarRepository)
+                            GrammarTopicListViewModel(sub.lesson.id, grammarRepository)
                         }
                         GrammarTopicListScreen(
                             viewModel = viewModel,
@@ -215,7 +214,7 @@ fun MainScreen(
 
                     is StudySubScreen.GrammarSession -> {
                         val viewModel = remember(sub.topicId) {
-                            GrammarExerciseSessionViewModel(accessToken, sub.topicId, grammarRepository)
+                            GrammarExerciseSessionViewModel(sub.topicId, grammarRepository)
                         }
                         GrammarExerciseSessionScreen(
                             viewModel = viewModel,
@@ -226,7 +225,7 @@ fun MainScreen(
 
                 MainTab.MATERIALS -> when (val sub = materialsSubScreen) {
                     MaterialsSubScreen.List -> {
-                        val viewModel = remember { MaterialsListViewModel(accessToken, materialsRepository) }
+                        val viewModel = remember { MaterialsListViewModel(materialsRepository) }
                         MaterialsListScreen(
                             viewModel = viewModel,
                             onAddMaterial = { materialsSubScreen = MaterialsSubScreen.Add },
@@ -247,7 +246,7 @@ fun MainScreen(
                     is MaterialsSubScreen.Wizard -> {
                         BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.Add })
                         val viewModel = remember(sub.staged) {
-                            AiWizardViewModel(accessToken, goal.id, sub.staged, materialsRepository)
+                            AiWizardViewModel(goal.id, sub.staged, materialsRepository)
                         }
                         AiWizardScreen(
                             viewModel = viewModel,
@@ -258,7 +257,7 @@ fun MainScreen(
 
                     is MaterialsSubScreen.Processing -> {
                         val viewModel = remember(sub.materialId) {
-                            ProcessingViewModel(accessToken, sub.materialId, materialsRepository)
+                            ProcessingViewModel(sub.materialId, materialsRepository)
                         }
                         ProcessingScreen(
                             viewModel = viewModel,
@@ -269,7 +268,7 @@ fun MainScreen(
                     is MaterialsSubScreen.Detail -> {
                         BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.List })
                         val viewModel = remember(sub.materialId) {
-                            MaterialDetailViewModel(accessToken, sub.materialId, materialsRepository)
+                            MaterialDetailViewModel(sub.materialId, materialsRepository)
                         }
                         MaterialDetailScreen(
                             viewModel = viewModel,
@@ -281,7 +280,7 @@ fun MainScreen(
                     is MaterialsSubScreen.LessonDetail -> {
                         BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.Detail(sub.materialId) })
                         val viewModel = remember(sub.lessonId) {
-                            LessonDetailViewModel(accessToken, sub.lessonId, lessonsRepository)
+                            LessonDetailViewModel(sub.lessonId, lessonsRepository)
                         }
                         LessonDetailScreen(
                             viewModel = viewModel,
@@ -298,7 +297,7 @@ fun MainScreen(
 
                     is MaterialsSubScreen.Session -> {
                         val viewModel = remember(sub.lessonId) {
-                            VocabularyPackSessionViewModel(accessToken, sub.lessonId, vocabularyRepository)
+                            VocabularyPackSessionViewModel(sub.lessonId, vocabularyRepository)
                         }
                         VocabularyPackSessionScreen(
                             viewModel = viewModel,
@@ -309,7 +308,7 @@ fun MainScreen(
                     is MaterialsSubScreen.VocabularyList -> {
                         BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) })
                         val viewModel = remember(sub.lessonId) {
-                            VocabularyListViewModel(accessToken, sub.lessonId, vocabularyRepository)
+                            VocabularyListViewModel(sub.lessonId, vocabularyRepository)
                         }
                         VocabularyListScreen(
                             viewModel = viewModel,
@@ -320,7 +319,7 @@ fun MainScreen(
                     is MaterialsSubScreen.GrammarTopics -> {
                         BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) })
                         val viewModel = remember(sub.lessonId) {
-                            GrammarTopicListViewModel(accessToken, sub.lessonId, grammarRepository)
+                            GrammarTopicListViewModel(sub.lessonId, grammarRepository)
                         }
                         GrammarTopicListScreen(
                             viewModel = viewModel,
@@ -333,7 +332,7 @@ fun MainScreen(
 
                     is MaterialsSubScreen.GrammarSession -> {
                         val viewModel = remember(sub.topicId) {
-                            GrammarExerciseSessionViewModel(accessToken, sub.topicId, grammarRepository)
+                            GrammarExerciseSessionViewModel(sub.topicId, grammarRepository)
                         }
                         GrammarExerciseSessionScreen(
                             viewModel = viewModel,
@@ -343,7 +342,7 @@ fun MainScreen(
                 }
 
                 MainTab.PROFILE -> {
-                    val profileViewModel = remember { ProfileViewModel(goalsRepository, accessToken) }
+                    val profileViewModel = remember { ProfileViewModel(goalsRepository) }
                     ProfileScreen(
                         user = user,
                         goal = goal,

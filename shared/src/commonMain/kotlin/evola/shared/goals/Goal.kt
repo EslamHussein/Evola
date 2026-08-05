@@ -1,5 +1,7 @@
 package evola.shared.goals
 
+import evola.shared.core.ApiResult
+
 /** Onboarding + Goal Setup per 01_PRODUCT_SPEC.md §1.3-1.4: exactly one active goal per account. */
 data class Goal(
     val id: String,
@@ -53,9 +55,13 @@ data class GoalProgress(
 )
 
 interface GoalsRepository {
-    suspend fun createGoal(accessToken: String, goalText: String, title: String?): CreateGoalResult
-    suspend fun updateGoal(accessToken: String, goalId: String, goalText: String?, title: String?): UpdateGoalResult
-    suspend fun getActiveGoal(accessToken: String): Goal?
-    suspend fun listLessons(accessToken: String, goalId: String): List<Lesson>
-    suspend fun getProgress(accessToken: String, goalId: String, localDate: String): GoalProgress?
+    // createGoal/updateGoal keep their own sealed result types — they model domain-specific
+    // outcomes (active-goal conflict, validation) that a generic ApiResult would flatten.
+    suspend fun createGoal(goalText: String, title: String?): CreateGoalResult
+    suspend fun updateGoal(goalId: String, goalText: String?, title: String?): UpdateGoalResult
+    /** Success(null) means "no active goal yet" (a real state → onboarding), distinct from a
+     * Failure (network/server) — the old `Goal?` couldn't tell them apart. */
+    suspend fun getActiveGoal(): ApiResult<Goal?>
+    suspend fun listLessons(goalId: String): ApiResult<List<Lesson>>
+    suspend fun getProgress(goalId: String, localDate: String): ApiResult<GoalProgress>
 }

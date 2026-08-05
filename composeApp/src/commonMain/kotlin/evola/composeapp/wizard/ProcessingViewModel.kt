@@ -2,9 +2,10 @@ package evola.composeapp.wizard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import evola.composeapp.core.toUserMessage
+import evola.shared.core.ApiResult
 import evola.shared.materials.MaterialStatus
 import evola.shared.materials.MaterialsRepository
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +26,6 @@ private const val POLL_INTERVAL_MS = 3000L
  * an existing one, then hands off to Resource Details once segmentation reaches a terminal state
  * (regardless of outcome - Resource Details already knows how to render FAILED/UNSUPPORTED_CONTENT). */
 class ProcessingViewModel(
-    private val accessToken: String,
     private val materialId: String,
     private val repository: MaterialsRepository,
 ) : ViewModel() {
@@ -40,17 +40,15 @@ class ProcessingViewModel(
     private fun pollUntilTerminal() {
         viewModelScope.launch {
             while (true) {
-                val detail = try {
-                    repository.get(accessToken, materialId)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    _state.value = ProcessingState.Error(e.message ?: "Failed to check progress.")
-                    return@launch
-                }
-                if (detail.material.status in TERMINAL_STATUSES) {
-                    _state.value = ProcessingState.Done(materialId)
-                    return@launch
+                when (val result = repository.get(materialId)) {
+                    is ApiResult.Failure -> {
+                        _state.value = ProcessingState.Error(result.error.toUserMessage())
+                        return@launch
+                    }
+                    is ApiResult.Success -> if (result.data.material.status in TERMINAL_STATUSES) {
+                        _state.value = ProcessingState.Done(materialId)
+                        return@launch
+                    }
                 }
                 delay(POLL_INTERVAL_MS)
             }

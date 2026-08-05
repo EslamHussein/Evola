@@ -2,6 +2,8 @@ package evola.composeapp.lessons
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import evola.composeapp.core.toUserMessage
+import evola.shared.core.fold
 import evola.shared.vocabulary.VocabularyItem
 import evola.shared.vocabulary.VocabularyRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,10 +14,10 @@ import kotlinx.coroutines.launch
 sealed interface VocabularyListState {
     data object Loading : VocabularyListState
     data class Loaded(val items: List<VocabularyItem>) : VocabularyListState
+    data class Error(val message: String) : VocabularyListState
 }
 
 class VocabularyListViewModel(
-    private val accessToken: String,
     private val lessonId: String,
     private val repository: VocabularyRepository,
 ) : ViewModel() {
@@ -25,7 +27,10 @@ class VocabularyListViewModel(
 
     init {
         viewModelScope.launch {
-            _state.value = VocabularyListState.Loaded(repository.listVocabulary(accessToken, lessonId))
+            _state.value = repository.listVocabulary(lessonId).fold(
+                onSuccess = { VocabularyListState.Loaded(it) },
+                onFailure = { VocabularyListState.Error(it.toUserMessage()) },
+            )
         }
     }
 }

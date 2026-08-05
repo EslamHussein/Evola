@@ -1,5 +1,7 @@
 package evola.shared.grammar
 
+import evola.shared.core.ApiResult
+
 /** A lesson's own grammar topic plus this user's current mastery state (01_PRODUCT_SPEC.md §1.9). */
 data class GrammarTopic(
     val topicId: String,
@@ -40,8 +42,8 @@ data class GrammarSessionSummary(
 )
 
 interface GrammarRepository {
-    suspend fun listTopics(accessToken: String, lessonId: String): List<GrammarTopic>
-    suspend fun startOrResumeSession(accessToken: String, topicId: String): GrammarSession?
-    suspend fun answer(accessToken: String, sessionId: String, exerciseId: String, response: String, correct: Boolean): GrammarAnswerResult?
-    suspend fun complete(accessToken: String, sessionId: String, localDate: String): GrammarSessionSummary?
+    suspend fun listTopics(lessonId: String): ApiResult<List<GrammarTopic>>
+    suspend fun startOrResumeSession(topicId: String): ApiResult<GrammarSession>
+    suspend fun answer(sessionId: String, exerciseId: String, response: String, correct: Boolean): ApiResult<GrammarAnswerResult>
+    suspend fun complete(sessionId: String, localDate: String): ApiResult<GrammarSessionSummary>
 }

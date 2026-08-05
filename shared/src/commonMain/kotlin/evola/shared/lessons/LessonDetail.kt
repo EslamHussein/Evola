@@ -1,5 +1,7 @@
 package evola.shared.lessons
 
+import evola.shared.core.ApiResult
+
 /** One row in the Lesson Details hub (Phase 6). Only "vocabulary" is ever unlocked today; every
  * other section is honestly locked until M7/M8 back it with real content. */
 data class LessonSection(
@@ -25,5 +27,5 @@ data class LessonDetail(
 )
 
 interface LessonsRepository {
-    suspend fun getLessonDetail(accessToken: String, lessonId: String): LessonDetail?
+    suspend fun getLessonDetail(lessonId: String): ApiResult<LessonDetail>
 }

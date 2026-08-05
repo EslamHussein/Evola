@@ -60,11 +60,13 @@ private data class WireErrorResponse(val error: WireErrorBody)
 @Serializable
 private data class AccessTokenWireResponse(@SerialName("access_token") val accessToken: String)
 
+/** Uses the plain base client (no Auth plugin): these are the token-source endpoints, so they
+ * carry their tokens explicitly (login/register produce them; logout/refresh/getCurrentUser are
+ * about them) — a refresh POST here can never be re-intercepted into a refresh loop. Keeps its own
+ * sealed result types, which model auth-specific outcomes (account locked, email taken, …). */
 class HttpAuthRepository(
+    private val httpClient: HttpClient,
     private val baseUrl: String,
-    private val httpClient: HttpClient = HttpClient {
-        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-    },
 ) : AuthRepository {
 
     override suspend fun register(fullName: String, email: String, password: String): AuthResult {

@@ -2,9 +2,10 @@ package evola.composeapp.materials
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import evola.composeapp.core.toUserMessage
+import evola.shared.core.fold
 import evola.shared.materials.Material
 import evola.shared.materials.MaterialsRepository
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +18,6 @@ sealed interface MaterialsListState {
 }
 
 class MaterialsListViewModel(
-    private val accessToken: String,
     private val repository: MaterialsRepository,
 ) : ViewModel() {
 
@@ -31,13 +31,10 @@ class MaterialsListViewModel(
     fun refresh() {
         viewModelScope.launch {
             _state.value = MaterialsListState.Loading
-            _state.value = try {
-                MaterialsListState.Loaded(repository.list(accessToken))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                MaterialsListState.Error(e.message ?: "Failed to load materials.")
-            }
+            _state.value = repository.list().fold(
+                onSuccess = { MaterialsListState.Loaded(it) },
+                onFailure = { MaterialsListState.Error(it.toUserMessage()) },
+            )
         }
     }
 }

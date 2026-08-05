@@ -22,6 +22,7 @@ import evola.composeapp.auth.RegisterScreen
 import evola.composeapp.auth.RegisterViewModel
 import evola.composeapp.auth.ResetPasswordScreen
 import evola.composeapp.auth.ResetPasswordViewModel
+import evola.composeapp.di.AppModule
 import evola.composeapp.main.MainScreen
 import evola.composeapp.onboarding.GoalSetupScreen
 import evola.composeapp.onboarding.GoalSetupViewModel
@@ -29,13 +30,9 @@ import evola.composeapp.onboarding.WelcomeScreen
 import evola.composeapp.theme.EvolaTheme
 import evola.shared.auth.AuthTokens
 import evola.shared.auth.AuthUser
-import evola.shared.auth.HttpAuthRepository
+import evola.shared.core.Tokens
+import evola.shared.core.getOrNull
 import evola.shared.goals.Goal
-import evola.shared.goals.HttpGoalsRepository
-import evola.shared.lessons.HttpLessonsRepository
-import evola.shared.materials.HttpMaterialsRepository
-import evola.shared.grammar.HttpGrammarRepository
-import evola.shared.vocabulary.HttpVocabularyRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -54,16 +51,12 @@ private sealed interface AppScreen {
 fun App() {
     EvolaTheme {
         var screen by remember { mutableStateOf<AppScreen>(AppScreen.Loading) }
-        var refreshToken by remember { mutableStateOf<String?>(null) }
         var accessToken by remember { mutableStateOf<String?>(null) }
         var currentUser by remember { mutableStateOf<AuthUser?>(null) }
         val sessionStorage = rememberSessionStorage()
-        val authRepository = remember { HttpAuthRepository(baseUrl = defaultServerBaseUrl()) }
-        val goalsRepository = remember { HttpGoalsRepository(baseUrl = defaultServerBaseUrl()) }
-        val materialsRepository = remember { HttpMaterialsRepository(baseUrl = defaultServerBaseUrl()) }
-        val vocabularyRepository = remember { HttpVocabularyRepository(baseUrl = defaultServerBaseUrl()) }
-        val lessonsRepository = remember { HttpLessonsRepository(baseUrl = defaultServerBaseUrl()) }
-        val grammarRepository = remember { HttpGrammarRepository(baseUrl = defaultServerBaseUrl()) }
+        val appModule = remember { AppModule(defaultServerBaseUrl(), sessionStorage) }
+        val authRepository = appModule.authRepository
+        val goalsRepository = appModule.goalsRepository
         val coroutineScope = rememberCoroutineScope()
 
         // Onboarding isn't complete until both Welcome is shown AND a goal exists
@@ -76,26 +69,23 @@ fun App() {
                 screen = AppScreen.OnboardingWelcome
                 return
             }
-            val goal = try {
-                goalsRepository.getActiveGoal(token)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                null
-            }
+            // getActiveGoal() → Success(null) when there's genuinely no goal (→ onboarding), or a
+            // Failure on a network error; getOrNull() collapses both to null, matching the prior
+            // "fall back to onboarding" behavior. The bearer token is already in the token store.
+            val goal = goalsRepository.getActiveGoal().getOrNull()
             screen = if (goal != null) AppScreen.Main(user, goal) else AppScreen.OnboardingWelcome
         }
 
         val onAuthSuccess: (AuthTokens) -> Unit = { tokens ->
-            refreshToken = tokens.refreshToken
-            sessionStorage.saveRefreshToken(tokens.refreshToken)
+            appModule.tokenStore.save(Tokens(access = tokens.accessToken, refresh = tokens.refreshToken))
+            accessToken = tokens.accessToken
             coroutineScope.launch { routePastLogin(tokens.user, tokens.accessToken) }
         }
 
         val onLogout: () -> Unit = {
-            refreshToken?.let { token -> coroutineScope.launch { authRepository.logout(token) } }
-            sessionStorage.clear()
-            refreshToken = null
+            val refresh = sessionStorage.loadRefreshToken()
+            refresh?.let { token -> coroutineScope.launch { authRepository.logout(token) } }
+            appModule.tokenStore.clear()
             accessToken = null
             currentUser = null
             screen = AppScreen.Login
@@ -119,10 +109,10 @@ fun App() {
             }
             if (restored != null) {
                 val (freshAccessToken, user) = restored
-                refreshToken = storedRefreshToken
+                appModule.tokenStore.save(Tokens(access = freshAccessToken, refresh = storedRefreshToken))
                 routePastLogin(user, freshAccessToken)
             } else {
-                sessionStorage.clear()
+                appModule.tokenStore.clear()
                 screen = AppScreen.Login
             }
         }
@@ -184,7 +174,7 @@ fun App() {
                 if (token == null) {
                     screen = AppScreen.Login
                 } else {
-                    val viewModel = remember(token) { GoalSetupViewModel(goalsRepository, token) }
+                    val viewModel = remember(token) { GoalSetupViewModel(goalsRepository) }
                     GoalSetupScreen(
                         viewModel = viewModel,
                         onGoalCreated = { goal ->
@@ -208,11 +198,10 @@ fun App() {
                         user = current.user,
                         initialGoal = current.goal,
                         goalsRepository = goalsRepository,
-                        materialsRepository = materialsRepository,
-                        vocabularyRepository = vocabularyRepository,
-                        lessonsRepository = lessonsRepository,
-                        grammarRepository = grammarRepository,
-                        accessToken = token,
+                        materialsRepository = appModule.materialsRepository,
+                        vocabularyRepository = appModule.vocabularyRepository,
+                        lessonsRepository = appModule.lessonsRepository,
+                        grammarRepository = appModule.grammarRepository,
                         onLogout = onLogout,
                     )
                 }

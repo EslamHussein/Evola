@@ -1,16 +1,12 @@
 package evola.shared.lessons
 
+import evola.shared.core.ApiResult
+import evola.shared.core.map
+import evola.shared.core.safeRequest
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 @Serializable
 private data class LessonSectionWireResponse(
@@ -33,19 +29,14 @@ private data class LessonDetailWireResponse(
 )
 
 class HttpLessonsRepository(
+    private val client: HttpClient,
     private val baseUrl: String,
-    private val httpClient: HttpClient = HttpClient {
-        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-    },
 ) : LessonsRepository {
 
-    override suspend fun getLessonDetail(accessToken: String, lessonId: String): LessonDetail? {
-        val response = httpClient.get("$baseUrl/lessons/$lessonId") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-        }
-        if (response.status != HttpStatusCode.OK) return null
-        return response.body<LessonDetailWireResponse>().toDomain()
-    }
+    override suspend fun getLessonDetail(lessonId: String): ApiResult<LessonDetail> =
+        safeRequest<LessonDetailWireResponse> {
+            client.get("$baseUrl/lessons/$lessonId")
+        }.map { it.toDomain() }
 
     private fun LessonDetailWireResponse.toDomain() = LessonDetail(
         lessonId = lessonId,

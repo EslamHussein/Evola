@@ -58,6 +58,10 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                     CircularProgressIndicator()
                 }
 
+                is VocabularyListState.Error -> Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                }
+
                 is VocabularyListState.Loaded -> {
                     if (current.items.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {

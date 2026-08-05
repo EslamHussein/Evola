@@ -1,8 +1,10 @@
 package evola.shared.materials
 
+import evola.shared.core.ApiResult
+import evola.shared.core.map
+import evola.shared.core.safeRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
@@ -15,10 +17,9 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.json.json
+import io.ktor.http.isSuccess
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 sealed interface UploadResult {
     data class Success(val materialId: String, val status: MaterialStatus) : UploadResult
@@ -32,8 +33,9 @@ sealed interface UploadResult {
 }
 
 interface MaterialsRepository {
+    // upload/uploadText keep the UploadResult sealed type — it models seven specific outcomes
+    // (duplicate, password-protected, no extractable text, …) a generic ApiResult would flatten.
     suspend fun upload(
-        accessToken: String,
         goalId: String,
         fileName: String,
         mimeType: String,
@@ -43,7 +45,6 @@ interface MaterialsRepository {
         resourceType: String? = null,
     ): UploadResult
     suspend fun uploadText(
-        accessToken: String,
         goalId: String,
         fileName: String,
         text: String,
@@ -51,9 +52,9 @@ interface MaterialsRepository {
         aiInstructions: String? = null,
         resourceType: String? = null,
     ): UploadResult
-    suspend fun list(accessToken: String): List<Material>
-    suspend fun get(accessToken: String, materialId: String): MaterialDetail
-    suspend fun reprocess(accessToken: String, materialId: String): Boolean
+    suspend fun list(): ApiResult<List<Material>>
+    suspend fun get(materialId: String): ApiResult<MaterialDetail>
+    suspend fun reprocess(materialId: String): ApiResult<Unit>
 }
 
 @Serializable
@@ -79,14 +80,11 @@ private data class WireErrorBody(val code: String, val message: String)
 private data class WireErrorResponse(val error: WireErrorBody)
 
 class HttpMaterialsRepository(
+    private val client: HttpClient,
     private val baseUrl: String,
-    private val httpClient: HttpClient = HttpClient {
-        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-    },
 ) : MaterialsRepository {
 
     override suspend fun upload(
-        accessToken: String,
         goalId: String,
         fileName: String,
         mimeType: String,
@@ -95,7 +93,7 @@ class HttpMaterialsRepository(
         aiInstructions: String?,
         resourceType: String?,
     ): UploadResult {
-        val response = httpClient.submitFormWithBinaryData(
+        val response = client.submitFormWithBinaryData(
             url = "$baseUrl/materials/upload",
             formData = formData {
                 append("goal_id", goalId)
@@ -111,15 +109,11 @@ class HttpMaterialsRepository(
                     },
                 )
             },
-        ) {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-        }
-
+        )
         return response.toUploadResult()
     }
 
     override suspend fun uploadText(
-        accessToken: String,
         goalId: String,
         fileName: String,
         text: String,
@@ -127,8 +121,7 @@ class HttpMaterialsRepository(
         aiInstructions: String?,
         resourceType: String?,
     ): UploadResult {
-        val response = httpClient.post("$baseUrl/materials/upload-text") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        val response = client.post("$baseUrl/materials/upload-text") {
             contentType(ContentType.Application.Json)
             setBody(
                 MaterialTextUploadWireRequest(
@@ -162,22 +155,14 @@ class HttpMaterialsRepository(
         else -> error("Upload failed: HTTP ${status.value}")
     }
 
-    override suspend fun list(accessToken: String): List<Material> =
-        httpClient.get("$baseUrl/materials") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-        }.body()
+    override suspend fun list(): ApiResult<List<Material>> =
+        safeRequest { client.get("$baseUrl/materials") }
 
-    override suspend fun get(accessToken: String, materialId: String): MaterialDetail =
-        httpClient.get("$baseUrl/materials/$materialId") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-        }.body()
+    override suspend fun get(materialId: String): ApiResult<MaterialDetail> =
+        safeRequest { client.get("$baseUrl/materials/$materialId") }
 
-    override suspend fun reprocess(accessToken: String, materialId: String): Boolean {
-        val response = httpClient.post("$baseUrl/materials/$materialId/reprocess") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-        }
-        return response.status == HttpStatusCode.Accepted
-    }
+    override suspend fun reprocess(materialId: String): ApiResult<Unit> =
+        safeRequest<String> { client.post("$baseUrl/materials/$materialId/reprocess") }.map { }
 
     private suspend fun HttpResponse.errorBody(): WireErrorBody = body<WireErrorResponse>().error
 }

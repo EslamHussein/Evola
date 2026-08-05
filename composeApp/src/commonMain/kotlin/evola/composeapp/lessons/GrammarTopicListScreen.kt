@@ -59,6 +59,10 @@ fun GrammarTopicListScreen(viewModel: GrammarTopicListViewModel, onOpenTopic: (S
                     CircularProgressIndicator()
                 }
 
+                is GrammarTopicListState.Error -> Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                }
+
                 is GrammarTopicListState.Loaded -> {
                     if (current.topics.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {

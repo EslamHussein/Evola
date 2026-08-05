@@ -29,6 +29,13 @@ sealed interface ApiResult<out T> {
 /** The value on success, or null on failure — for call sites that don't care *why* it failed. */
 fun <T> ApiResult<T>.getOrNull(): T? = (this as? ApiResult.Success)?.data
 
+/** Transforms the success value (e.g. wire DTO → domain type), leaving a failure untouched — lets a
+ * repository write `safeRequest<Wire> { … }.map { it.toDomain() }`. */
+inline fun <T, R> ApiResult<T>.map(transform: (T) -> R): ApiResult<R> = when (this) {
+    is ApiResult.Success -> ApiResult.Success(transform(data))
+    is ApiResult.Failure -> this
+}
+
 inline fun <T, R> ApiResult<T>.fold(onSuccess: (T) -> R, onFailure: (DataError) -> R): R = when (this) {
     is ApiResult.Success -> onSuccess(data)
     is ApiResult.Failure -> onFailure(error)

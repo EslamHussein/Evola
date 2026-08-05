@@ -2,11 +2,13 @@ package evola.composeapp.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import evola.composeapp.core.toUserMessage
+import evola.shared.core.ApiResult
+import evola.shared.core.getOrNull
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.GoalsRepository
 import evola.shared.goals.Lesson
 import evola.shared.todayLocalDate
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +34,6 @@ sealed interface HomeState {
  * `current_lesson_id`, so the lesson list is what resolves that id to a titled [Lesson] for the
  * "Continue Lesson N" CTA). Sends the device's own local date so streak/today are day-correct. */
 class HomeViewModel(
-    private val accessToken: String,
     private val goalId: String,
     private val repository: GoalsRepository,
 ) : ViewModel() {
@@ -47,19 +48,15 @@ class HomeViewModel(
     fun refresh() {
         viewModelScope.launch {
             _state.value = HomeState.Loading
-            try {
-                val lessons = repository.listLessons(accessToken, goalId)
-                val progress = repository.getProgress(accessToken, goalId, todayLocalDate())
-                if (progress == null) {
-                    _state.value = HomeState.Error("Couldn't load your progress.")
-                    return@launch
+            // Progress is the primary read; the lesson list is best-effort (only used to resolve the
+            // current lesson's title for the CTA), so its failure degrades gracefully to no CTA.
+            _state.value = when (val progress = repository.getProgress(goalId, todayLocalDate())) {
+                is ApiResult.Failure -> HomeState.Error(progress.error.toUserMessage())
+                is ApiResult.Success -> {
+                    val lessons = repository.listLessons(goalId).getOrNull() ?: emptyList()
+                    val currentLesson = progress.data.currentLessonId?.let { id -> lessons.firstOrNull { it.id == id } }
+                    HomeState.Loaded(progress.data, currentLesson, hasLessons = lessons.isNotEmpty())
                 }
-                val currentLesson = progress.currentLessonId?.let { id -> lessons.firstOrNull { it.id == id } }
-                _state.value = HomeState.Loaded(progress, currentLesson, hasLessons = lessons.isNotEmpty())
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.value = HomeState.Error(e.message ?: "Something went wrong.")
             }
         }
     }
