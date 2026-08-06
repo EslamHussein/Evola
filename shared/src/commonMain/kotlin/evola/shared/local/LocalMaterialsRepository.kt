@@ -211,9 +211,9 @@ class LocalMaterialsRepository(
                 itemId, lessonId, item.term, item.meaning, item.gender, item.exampleSentence,
                 item.partOfSpeech, item.grammaticalCase, item.exampleSentenceTranslation, item.meaningAr,
                 item.ipaPronunciation, encodeStringList(item.relatedWords), item.difficultyRating,
-                item.frequencyRating, item.memoryTip, now,
+                item.frequencyRating, item.memoryTip, item.grammarNote, now,
             )
-            db.vocabularyQueries.insertProgress(newId(), LOCAL_USER, itemId, "new", 0L, 0L, now, null, 0L, 0L)
+            db.vocabularyQueries.insertProgress(newId(), LOCAL_USER, itemId, "unseen", 0L, 0L, 0L, now, null, 0L, 0L)
         }
     }
 

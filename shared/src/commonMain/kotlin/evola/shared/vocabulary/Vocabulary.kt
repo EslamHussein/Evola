@@ -2,17 +2,15 @@ package evola.shared.vocabulary
 
 import evola.shared.core.ApiResult
 
-/** A lesson's own vocabulary item plus this user's current mastery state (01_PRODUCT_SPEC.md §1.8).
- * The meaning_ar/ipa/related-words/difficulty/frequency/memory-tip fields are only populated for
- * items extracted from V12 on - null/empty for pre-existing rows. is_bookmarked/marked_difficult
- * are populated from V13 on (pack/stage session redesign). */
+/** A lesson's own vocabulary item plus this user's current SRS status (Lingvist-style flat-queue
+ * engine). [status] is one of [VocabularySrs.STATUSES]. */
 data class VocabularyItem(
     val itemId: String,
     val term: String,
     val meaning: String,
     val gender: String? = null,
     val exampleSentence: String? = null,
-    val masteryState: String,
+    val status: String,
     val meaningAr: String? = null,
     val ipaPronunciation: String? = null,
     val relatedWords: List<String> = emptyList(),
@@ -23,62 +21,127 @@ data class VocabularyItem(
     val markedDifficult: Boolean = false,
 )
 
-/** One word's full Discover-card payload plus whichever stage-specific fields the current stage
- * needs (design handoff Phase 7/8 pack session). */
-data class PackWord(
-    val itemId: String,
-    val term: String,
-    val meaning: String,
-    val gender: String? = null,
-    val exampleSentence: String? = null,
-    val masteryState: String,
-    val meaningAr: String? = null,
-    val ipaPronunciation: String? = null,
-    val relatedWords: List<String> = emptyList(),
-    val difficultyRating: String? = null,
-    val frequencyRating: String? = null,
-    val memoryTip: String? = null,
-    val isBookmarked: Boolean = false,
-    val markedDifficult: Boolean = false,
-    val recognitionChoices: List<String> = emptyList(),
-    val partialMask: String? = null,
-    val sentenceWithBlank: String? = null,
-    val sentenceTranslationPrompt: String? = null,
+/** The five card types the session queue can hand back. A new word walks its own difficulty ladder
+ * ([Intro] -> [Recognition] -> [WordBank] -> [Hint] -> [Blind]); a review-due word skips straight to
+ * [Blind]. No answer/term field is ever exposed before grading - the reveal (correct term/choice +
+ * completed sentence) only comes back from [VocabularyRepository.submitChoice]/[submitTyped]'s
+ * result. */
+sealed interface VocabularyCard {
+    val itemId: String
+
+    /** Shown once, the first time a word is presented. No recall required - "Got it" proceeds
+     * straight to this same word's [Recognition] card. */
+    data class Intro(
+        override val itemId: String,
+        val term: String,
+        val gender: String?,
+        val ipaPronunciation: String?,
+        val meaning: String,
+        val exampleSentence: String?,
+        val exampleSentenceTranslation: String?,
+        val grammarNote: String?,
+        val relatedWords: List<String>,
+        val difficultyRating: String?,
+        val frequencyRating: String?,
+        val memoryTip: String?,
+        val isBookmarked: Boolean,
+        val markedDifficult: Boolean,
+    ) : VocabularyCard
+
+    /** Ladder step 1 (graded): the term is shown, the learner picks its correct translation from
+     * [choices] (4 options, persisted so a resumed session doesn't reshuffle). Submitted via
+     * [VocabularyRepository.submitChoice]. */
+    data class Recognition(
+        override val itemId: String,
+        val term: String,
+        val choices: List<String>,
+        val isBookmarked: Boolean,
+        val markedDifficult: Boolean,
+    ) : VocabularyCard
+
+    /** Ladder step 2 (graded): a blanked sentence, the learner taps the correct German term from
+     * [choices] instead of typing. Submitted via [VocabularyRepository.submitChoice]. */
+    data class WordBank(
+        override val itemId: String,
+        val sentenceWithBlank: String,
+        val sentenceTranslation: String?,
+        val grammarNote: String?,
+        val choices: List<String>,
+        val isBookmarked: Boolean,
+        val markedDifficult: Boolean,
+    ) : VocabularyCard
+
+    /** Ladder step 3 (graded): a blanked sentence, typed recall, but the input starts pre-filled
+     * with [hintPrefix] (the first half of the term). Submitted via
+     * [VocabularyRepository.submitTyped]. */
+    data class Hint(
+        override val itemId: String,
+        val sentenceWithBlank: String,
+        val sentenceTranslation: String?,
+        val grammarNote: String?,
+        val hintPrefix: String,
+        val isBookmarked: Boolean,
+        val markedDifficult: Boolean,
+    ) : VocabularyCard
+
+    /** Ladder step 4 (graded, final) for new words, and the *only* step for due-for-review words: a
+     * blanked sentence, typed from scratch, no scaffolding. Submitted via
+     * [VocabularyRepository.submitTyped]. */
+    data class Blind(
+        override val itemId: String,
+        val sentenceWithBlank: String,
+        val sentenceTranslation: String?,
+        val grammarNote: String?,
+        val isBookmarked: Boolean,
+        val markedDifficult: Boolean,
+    ) : VocabularyCard
+}
+
+/** Current position in the session queue. Exiting mid-card is always safe - the queue durably
+ * tracks position, so [VocabularyRepository.startOrResumeSession] always resumes exactly where the
+ * user left off. [origin] is "new" (walking its own difficulty ladder), "due_review" (skipped
+ * straight to Blind), or "repeat" (re-queued after a wrong answer) - drives whether the UI shows a
+ * per-word ladder step label or a plain "Review" pill. */
+data class VocabularySessionState(
+    val sessionId: String,
+    val sessionNumber: Int,
+    val cardsCompleted: Int,
+    val cardsRemaining: Int,
+    val card: VocabularyCard,
+    val origin: String,
 )
 
-/** The current position within a ~5-word pack: which word (0-based), which of the 7 fixed stages
- * (Discover..Free Production, also 0-based), and that word's full payload. [readyToComplete] is
- * true once every word in the pack has finished all 7 stages - the client should show "Finish
- * pack" and call [VocabularyRepository.complete] rather than render another stage. */
-data class VocabularyPack(
-    val packId: String,
-    val packNumber: Int,
-    val wordIndex: Int,
-    val wordsCount: Int,
-    val stageIndex: Int,
-    val word: PackWord,
-    val readyToComplete: Boolean = false,
-)
-
-/** [correct] is null for Stage 0 (Discover) and Stage 1 (Recognition) - never graded, since the
- * design always reveals the correct answer regardless of input. [feedback] is only populated for
- * Stage 6 (Free Production)'s AI grading. */
-data class VocabularyStageAnswerResult(
+/** [correct] is null for Intro (never graded - "Got it" always proceeds). [correctAnswer] is the
+ * correct translation (Recognition), German term (WordBank/Hint/Blind), populated regardless of
+ * right/wrong so the UI can always reveal it. [completedSentence] is only populated for the
+ * sentence-based steps (WordBank/Hint/Blind). [next] is null once the queue is exhausted - the
+ * caller should then call [VocabularyRepository.complete]. */
+data class VocabularyAnswerResult(
     val correct: Boolean?,
-    val feedback: String? = null,
-    val next: VocabularyPack? = null,
+    val correctAnswer: String? = null,
+    val completedSentence: String? = null,
+    val next: VocabularySessionState?,
 )
 
-data class VocabularyPackSummary(
+data class VocabularySessionSummary(
+    val sessionNumber: Int,
     val wordsLearned: Int,
     val accuracy: Double,
     val timeSeconds: Long,
+    val newWordsCount: Int,
+    val reviewWordsCount: Int,
 )
 
 interface VocabularyRepository {
-    suspend fun startOrResumeSession(lessonId: String): ApiResult<VocabularyPack>
+    suspend fun startOrResumeSession(lessonId: String): ApiResult<VocabularySessionState>
     suspend fun listVocabulary(lessonId: String): ApiResult<List<VocabularyItem>>
-    suspend fun answer(packId: String, itemId: String, stageIndex: Int, response: String): ApiResult<VocabularyStageAnswerResult>
-    suspend fun complete(packId: String, localDate: String): ApiResult<VocabularyPackSummary>
+    suspend fun submitIntro(sessionId: String, itemId: String): ApiResult<VocabularyAnswerResult>
+
+    /** For [VocabularyCard.Recognition]/[VocabularyCard.WordBank] - the tapped option. */
+    suspend fun submitChoice(sessionId: String, itemId: String, selectedChoice: String): ApiResult<VocabularyAnswerResult>
+
+    /** For [VocabularyCard.Hint]/[VocabularyCard.Blind] - the typed response. */
+    suspend fun submitTyped(sessionId: String, itemId: String, response: String): ApiResult<VocabularyAnswerResult>
+    suspend fun complete(sessionId: String, localDate: String): ApiResult<VocabularySessionSummary>
     suspend fun updateFlags(itemId: String, isBookmarked: Boolean? = null, markedDifficult: Boolean? = null): ApiResult<VocabularyItem>
 }

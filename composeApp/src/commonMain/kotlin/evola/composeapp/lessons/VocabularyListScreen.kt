@@ -101,7 +101,7 @@ private fun VocabularyRow(item: VocabularyItem) {
                     Text(item.meaning, style = MaterialTheme.typography.bodyMedium)
                 }
                 Text(
-                    item.masteryState.replaceFirstChar { it.uppercase() },
+                    item.status.replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.tertiary,
                 )

@@ -3,15 +3,14 @@ package evola.shared.local
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.shared.core.ApiResult
 import evola.shared.db.EvolaDatabase
-import evola.shared.vocabulary.VocabularyPack
+import evola.shared.vocabulary.VocabularyCard
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class LocalVocabularyRepositoryTest {
-
-    private val passingGrader = VocabularyFreeProductionGrader { _, _ -> VocabGradingResult(true, "gut") }
 
     private fun setup(itemCount: Int = 3): Pair<LocalVocabularyRepository, EvolaDatabase> {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
@@ -24,60 +23,127 @@ class LocalVocabularyRepositoryTest {
             val id = "v$i"
             db.vocabularyQueries.insertItem(
                 id, "l1", "Wort$i", "word$i", "der", "Das Wort$i ist gut.",
-                null, null, null, null, null, null, null, null, null, 0L,
+                null, null, null, null, null, null, null, null, null, null, 0L,
             )
-            db.vocabularyQueries.insertProgress("p$i", LOCAL_USER, id, "new", 0L, 0L, 0L, null, 0L, 0L)
+            db.vocabularyQueries.insertProgress("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
         }
-        return LocalVocabularyRepository(db, passingGrader) to db
-    }
-
-    /** Craft a correct response for the current stage of [pack]'s current word. */
-    private fun correctResponse(db: EvolaDatabase, pack: VocabularyPack): String {
-        val item = db.vocabularyQueries.itemById(pack.word.itemId).executeAsOne()
-        return when (pack.stageIndex) {
-            0, 1 -> "" // ungraded
-            2, 3, 4 -> item.term
-            5 -> item.example_sentence ?: ""
-            else -> "Ein Satz."
-        }
+        return LocalVocabularyRepository(db) to db
     }
 
     @Test
-    fun `session assembles a pack capped at 5 words`() = runTest {
-        val (repo, _) = setup(itemCount = 8)
-        val pack = (repo.startOrResumeSession("l1") as ApiResult.Success).data
-        assertEquals(5, pack.wordsCount)
-        assertEquals(0, pack.stageIndex)
-        assertEquals(0, pack.wordIndex)
+    fun `new words are queued via an intro card immediately before their recognition step`() = runTest {
+        val (repo, _) = setup(itemCount = 3)
+        val session = (repo.startOrResumeSession("l1") as ApiResult.Success).data
+        assertIs<VocabularyCard.Intro>(session.card)
+        assertEquals("v0", session.card.itemId)
     }
 
     @Test
-    fun `answering all 7 stages of a word advances to the next word`() = runTest {
+    fun `intro Got it advances straight to the same word's recognition card`() = runTest {
+        val (repo, _) = setup(itemCount = 1)
+        val session = (repo.startOrResumeSession("l1") as ApiResult.Success).data
+        val result = (repo.submitIntro(session.sessionId, session.card.itemId) as ApiResult.Success).data
+        val next = result.next!!
+        assertIs<VocabularyCard.Recognition>(next.card)
+        assertEquals("v0", next.card.itemId)
+    }
+
+    @Test
+    fun `a full correct ladder walk climbs recognition to wordbank to hint to blind and mastery advances each step`() = runTest {
+        val (repo, db) = setup(itemCount = 1)
+        var session = (repo.startOrResumeSession("l1") as ApiResult.Success).data
+        session = (repo.submitIntro(session.sessionId, session.card.itemId) as ApiResult.Success).data.next!!
+
+        val recognition = session.card as VocabularyCard.Recognition
+        var result = (repo.submitChoice(session.sessionId, recognition.itemId, "word0") as ApiResult.Success).data
+        assertEquals(true, result.correct)
+        assertEquals("learning", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
+
+        val wordbank = result.next!!.card as VocabularyCard.WordBank
+        result = (repo.submitChoice(result.next!!.sessionId, wordbank.itemId, "Wort0") as ApiResult.Success).data
+        assertEquals(true, result.correct)
+        assertEquals("review", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
+
+        val hint = result.next!!.card as VocabularyCard.Hint
+        assertTrue(hint.hintPrefix.isNotEmpty() && "Wort0".startsWith(hint.hintPrefix))
+        result = (repo.submitTyped(result.next!!.sessionId, hint.itemId, "Wort0") as ApiResult.Success).data
+        assertEquals(true, result.correct)
+        assertEquals("mastered", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
+
+        val blind = result.next!!.card
+        assertIs<VocabularyCard.Blind>(blind)
+        result = (repo.submitTyped(result.next!!.sessionId, blind.itemId, "Wort0") as ApiResult.Success).data
+        assertEquals(true, result.correct)
+        assertEquals("mastered", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
+        // Ladder complete for this word this session - queue is now exhausted.
+        assertEquals(null, result.next)
+    }
+
+    @Test
+    fun `a wrong answer at any rung does not advance the ladder and repeats later, not immediately next`() = runTest {
         val (repo, db) = setup(itemCount = 3)
-        var pack = (repo.startOrResumeSession("l1") as ApiResult.Success).data
-        val firstItem = pack.word.itemId
-        repeat(7) { stage ->
-            val result = (repo.answer(pack.packId, pack.word.itemId, pack.stageIndex, correctResponse(db, pack)) as ApiResult.Success).data
-            pack = result.next!!
+        var session = (repo.startOrResumeSession("l1") as ApiResult.Success).data
+        session = (repo.submitIntro(session.sessionId, session.card.itemId) as ApiResult.Success).data.next!!
+
+        val wrongWord = session.card.itemId
+        assertIs<VocabularyCard.Recognition>(session.card)
+        val result = (repo.submitChoice(session.sessionId, wrongWord, "totally wrong") as ApiResult.Success).data
+        assertEquals(false, result.correct)
+        assertEquals("word0", result.correctAnswer)
+        // First-ever drill still exits "introduced" -> "learning", right or wrong - never regresses to unseen.
+        assertEquals("learning", db.vocabularyQueries.progressForItem(LOCAL_USER, wrongWord).executeAsOne().status)
+
+        // The very next card must NOT be the repeated recognition - other words' cards come first.
+        val nextCard = result.next!!.card
+        assertTrue(nextCard.itemId != wrongWord, "repeat card must not appear immediately next")
+
+        // Drain forward (answering everything else wrong is fine - we only care whether the wrong
+        // word's own recognition rung ever resurfaces, not whether other words progress).
+        var current = result.next!!
+        var sawRepeatOfWrongWord = false
+        var guard = 0
+        while (guard < 30 && !sawRepeatOfWrongWord) {
+            guard++
+            val card = current.card
+            if (card.itemId == wrongWord && card is VocabularyCard.Recognition) sawRepeatOfWrongWord = true
+            val answerResult = when (card) {
+                is VocabularyCard.Intro -> (repo.submitIntro(current.sessionId, card.itemId) as ApiResult.Success).data
+                is VocabularyCard.Recognition -> (repo.submitChoice(current.sessionId, card.itemId, "x") as ApiResult.Success).data
+                is VocabularyCard.WordBank -> (repo.submitChoice(current.sessionId, card.itemId, "x") as ApiResult.Success).data
+                is VocabularyCard.Hint -> (repo.submitTyped(current.sessionId, card.itemId, "x") as ApiResult.Success).data
+                is VocabularyCard.Blind -> (repo.submitTyped(current.sessionId, card.itemId, "x") as ApiResult.Success).data
+            }
+            current = answerResult.next ?: break
         }
-        assertTrue(pack.word.itemId != firstItem || pack.readyToComplete)
-        assertEquals(1, pack.wordIndex)
+        assertTrue(sawRepeatOfWrongWord, "wrong word's repeated recognition card never resurfaced")
     }
 
     @Test
-    fun `full correct pack marks mastery advanced and completes`() = runTest {
-        val (repo, db) = setup(itemCount = 2)
-        var pack = (repo.startOrResumeSession("l1") as ApiResult.Success).data
-        while (!pack.readyToComplete) {
-            val result = (repo.answer(pack.packId, pack.word.itemId, pack.stageIndex, correctResponse(db, pack)) as ApiResult.Success).data
-            pack = result.next!!
-        }
-        val summary = (repo.complete(pack.packId, "2026-08-05") as ApiResult.Success).data
-        assertEquals(2, summary.wordsLearned)
+    fun `complete records session stats and daily activity`() = runTest {
+        val (repo, db) = setup(itemCount = 1)
+        var session = (repo.startOrResumeSession("l1") as ApiResult.Success).data
+        session = (repo.submitIntro(session.sessionId, session.card.itemId) as ApiResult.Success).data.next!!
+        var result = (repo.submitChoice(session.sessionId, session.card.itemId, "word0") as ApiResult.Success).data
+        result = (repo.submitChoice(result.next!!.sessionId, result.next!!.card.itemId, "Wort0") as ApiResult.Success).data
+        result = (repo.submitTyped(result.next!!.sessionId, result.next!!.card.itemId, "Wort0") as ApiResult.Success).data
+        result = (repo.submitTyped(result.next!!.sessionId, result.next!!.card.itemId, "Wort0") as ApiResult.Success).data
+
+        val summary = (repo.complete(session.sessionId, "2026-08-05") as ApiResult.Success).data
+        assertEquals(1, summary.wordsLearned)
         assertEquals(100.0, summary.accuracy)
-        // every word answered correctly → mastery advanced off "new"
-        assertEquals("learning", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().mastery_state)
         assertTrue(db.activityQueries.forDate(LOCAL_USER, "2026-08-05").executeAsOneOrNull() != null)
+    }
+
+    @Test
+    fun `a due-for-review word skips the ladder entirely and opens straight on a blind card`() = runTest {
+        val (repo, db) = setup(itemCount = 1)
+        // Fast-forward v0 straight to "review" status, due now - simulating a word already seen in
+        // an earlier session, rather than walking the ladder to get there.
+        db.vocabularyQueries.updateProgress("review", 2L, 0L, 1L, 0L, nowMillis(), LOCAL_USER, "v0")
+
+        val session = (repo.startOrResumeSession("l1") as ApiResult.Success).data
+        assertIs<VocabularyCard.Blind>(session.card)
+        assertEquals("v0", session.card.itemId)
     }
 
     @Test

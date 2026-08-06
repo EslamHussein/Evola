@@ -8,7 +8,6 @@ import evola.shared.ai.SegmentationExtractor
 import evola.shared.ai.VocabularyExtractor
 import evola.shared.db.EvolaDatabase
 import evola.shared.files.FileTextExtractor
-import evola.shared.local.AiVocabularyFreeProductionGrader
 import evola.shared.local.LocalGoalsRepository
 import evola.shared.local.LocalGrammarRepository
 import evola.shared.local.LocalLessonsRepository
@@ -41,7 +40,7 @@ class AppModule(
 
     val goalsRepository = LocalGoalsRepository(database)
     val lessonsRepository = LocalLessonsRepository(database)
-    val vocabularyRepository = LocalVocabularyRepository(database, AiVocabularyFreeProductionGrader(anthropic))
+    val vocabularyRepository = LocalVocabularyRepository(database)
     val grammarRepository = LocalGrammarRepository(database)
     val materialsRepository = LocalMaterialsRepository(
         db = database,

@@ -14,89 +14,91 @@ CREATE TABLE vocabulary_items (
     difficulty_rating TEXT,
     frequency_rating TEXT,
     memory_tip TEXT,
+    grammar_note TEXT,
     created_at INTEGER NOT NULL
 );
 
+-- Lingvist-style flat-queue engine (replaces the retired pack/7-stage model). status is one of
+-- unseen|introduced|learning|review|mastered (evola.shared.vocabulary.VocabularySrs.STATUSES).
 CREATE TABLE vocabulary_progress (
     id TEXT NOT NULL PRIMARY KEY,
     user_id TEXT NOT NULL,
     vocabulary_item_id TEXT NOT NULL,
-    mastery_state TEXT NOT NULL,
+    status TEXT NOT NULL,
     correct_streak INTEGER NOT NULL,
+    incorrect_streak INTEGER NOT NULL,
     interval_index INTEGER NOT NULL,
     next_review_at INTEGER NOT NULL,
-    last_reviewed_at INTEGER,
+    last_seen_at INTEGER,
     is_bookmarked INTEGER NOT NULL,
     marked_difficult INTEGER NOT NULL
 );
 
-CREATE TABLE vocabulary_packs (
+CREATE INDEX vocabulary_progress_due_idx ON vocabulary_progress(user_id, next_review_at);
+
+-- One row per study session for a lesson. Composition stats feed the summary screen directly -
+-- no need to recompute from the queue at complete() time beyond the distinct-word count.
+CREATE TABLE vocabulary_sessions (
     id TEXT NOT NULL PRIMARY KEY,
     user_id TEXT NOT NULL,
     lesson_id TEXT NOT NULL,
-    pack_number INTEGER NOT NULL,
+    session_number INTEGER NOT NULL,
     started_at INTEGER NOT NULL,
     completed_at INTEGER,
-    items_count INTEGER NOT NULL,
-    accuracy REAL
+    new_words_count INTEGER NOT NULL,
+    review_words_count INTEGER NOT NULL,
+    correct_count INTEGER NOT NULL,
+    incorrect_count INTEGER NOT NULL
 );
 
-CREATE TABLE vocabulary_pack_words (
+-- Persisted ordered queue: one row per card the session will show (or has shown). "Current card" is
+-- the first unanswered row by position - the same live-recompute-from-data convention the retired
+-- pack model used for its own current-position lookup, so exiting mid-card is always safe and
+-- resuming lands exactly where the user left off. card_type is one of intro|recognition|wordbank|
+-- hint|blind (evola.shared.vocabulary.VocabularyCard) - a new word's ladder (recognition->wordbank->
+-- hint->blind) is spliced in one step at a time (never pre-inserted) as each step is answered
+-- correctly, at `answeredPosition + 1` (well inside the 100-wide gap left between initially-inserted
+-- rows). A wrong answer at any graded step appends one row of the SAME card_type at
+-- `maxQueuePosition + 100`, origin='repeat' - simply past every existing row, so it reappears later
+-- in the session without ever needing to shift other rows. choices (JSON-encoded, nullable) holds
+-- the shuffled option set for recognition/wordbank rows, persisted so a resumed session shows the
+-- identical choices rather than a reshuffle.
+CREATE TABLE vocabulary_session_queue (
     id TEXT NOT NULL PRIMARY KEY,
-    pack_id TEXT NOT NULL,
-    vocabulary_item_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
     position INTEGER NOT NULL,
-    recognition_choices TEXT
-);
-
-CREATE TABLE vocabulary_stage_answers (
-    id TEXT NOT NULL PRIMARY KEY,
-    pack_word_id TEXT NOT NULL,
-    stage_index INTEGER NOT NULL,
-    user_response TEXT,
+    vocabulary_item_id TEXT NOT NULL,
+    card_type TEXT NOT NULL,
+    origin TEXT NOT NULL,
+    choices TEXT,
+    answered_at INTEGER,
     correct INTEGER,
-    answered_at INTEGER NOT NULL
+    user_response TEXT
 );
 
-CREATE TABLE vocabulary_extraction_jobs (
-    id TEXT NOT NULL PRIMARY KEY,
-    lesson_id TEXT NOT NULL UNIQUE,
-    status TEXT NOT NULL,
-    error TEXT,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
-);
+-- items -----------------------------------------------------------------
 
 itemsByLesson:
 SELECT * FROM vocabulary_items WHERE lesson_id = ? ORDER BY created_at ASC;
 
--- Partial-credit progress: per lesson item, how many DISTINCT gradable stages (2..6) it has ever
--- been answered correctly on (0..5). Items never practiced correctly return 0 (LEFT JOIN). Drives
--- the lesson/goal progress %, so any real practice moves the bar instead of requiring full mastery.
-gradedProgressByLesson:
-SELECT vi.id AS item_id, COUNT(DISTINCT sa.stage_index) AS correct_stages
-FROM vocabulary_items vi
-LEFT JOIN vocabulary_pack_words pw ON pw.vocabulary_item_id = vi.id
-LEFT JOIN vocabulary_stage_answers sa ON sa.pack_word_id = pw.id AND sa.stage_index >= 2 AND sa.correct = 1
-WHERE vi.lesson_id = ?
-GROUP BY vi.id;
-
 insertItem:
-INSERT INTO vocabulary_items(id, lesson_id, term, meaning, gender, example_sentence, part_of_speech, grammatical_case, example_sentence_translation, meaning_ar, ipa_pronunciation, related_words, difficulty_rating, frequency_rating, memory_tip, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO vocabulary_items(id, lesson_id, term, meaning, gender, example_sentence, part_of_speech, grammatical_case, example_sentence_translation, meaning_ar, ipa_pronunciation, related_words, difficulty_rating, frequency_rating, memory_tip, grammar_note, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 itemById:
 SELECT * FROM vocabulary_items WHERE id = ?;
+
+-- progress ----------------------------------------------------------------
 
 progressForItem:
 SELECT * FROM vocabulary_progress WHERE user_id = ? AND vocabulary_item_id = ?;
 
 insertProgress:
-INSERT INTO vocabulary_progress(id, user_id, vocabulary_item_id, mastery_state, correct_streak, interval_index, next_review_at, last_reviewed_at, is_bookmarked, marked_difficult)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO vocabulary_progress(id, user_id, vocabulary_item_id, status, correct_streak, incorrect_streak, interval_index, next_review_at, last_seen_at, is_bookmarked, marked_difficult)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 updateProgress:
-UPDATE vocabulary_progress SET mastery_state = ?, correct_streak = ?, interval_index = ?, next_review_at = ?, last_reviewed_at = ?
+UPDATE vocabulary_progress SET status = ?, correct_streak = ?, incorrect_streak = ?, interval_index = ?, next_review_at = ?, last_seen_at = ?
 WHERE user_id = ? AND vocabulary_item_id = ?;
 
 setBookmarked:
@@ -107,35 +109,61 @@ UPDATE vocabulary_progress SET marked_difficult = ? WHERE user_id = ? AND vocabu
 
 -- item + this user's progress, one row per lesson item (listVocabulary / updateFlags read).
 itemsWithProgressByLesson:
-SELECT vi.*, vp.mastery_state AS p_mastery_state, vp.is_bookmarked AS p_is_bookmarked, vp.marked_difficult AS p_marked_difficult
+SELECT vi.*, vp.status AS p_status, vp.is_bookmarked AS p_is_bookmarked, vp.marked_difficult AS p_marked_difficult
 FROM vocabulary_items vi
 JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
 WHERE vi.lesson_id = ? AND vp.user_id = ?
 ORDER BY vi.created_at ASC;
 
 itemWithProgress:
-SELECT vi.*, vp.mastery_state AS p_mastery_state, vp.is_bookmarked AS p_is_bookmarked, vp.marked_difficult AS p_marked_difficult
+SELECT vi.*, vp.status AS p_status, vp.is_bookmarked AS p_is_bookmarked, vp.marked_difficult AS p_marked_difficult
 FROM vocabulary_items vi
 JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
 WHERE vi.id = ? AND vp.user_id = ?;
 
--- Pack pool draws (assemblePackPool). Only the item id is needed; ordering is by created_at.
+-- Partial-credit progress, Lingvist-engine version: per lesson item, current status (unseen if no
+-- progress row yet). LocalProgress.lessonVocabProgress maps each status through
+-- VocabularySrs.STATUSES.indexOf(status) / (STATUSES.size - 1f) and averages - the same shape
+-- LocalProgress.lessonGrammarProgress already uses against MasterySrs.STAGES.
+statusByLesson:
+SELECT vi.id AS item_id, COALESCE(vp.status, 'unseen') AS status
+FROM vocabulary_items vi
+LEFT JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
+WHERE vi.lesson_id = ?;
+
+-- Every word's current status across every lesson in a goal, for the Home dashboard's
+-- not-started/in-progress/mastered breakdown (bucketed in Kotlin against VocabularySrs.STATUSES).
+wordStatusesByGoal:
+SELECT vi.id AS item_id, COALESCE(vp.status, 'unseen') AS status
+FROM vocabulary_items vi
+JOIN lessons l ON l.id = vi.lesson_id
+LEFT JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
+WHERE l.goal_id = ?;
+
+-- Session queue assembly draws --------------------------------------------
+
 newItemsForLesson:
 SELECT vi.id FROM vocabulary_items vi
-JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
-WHERE vi.lesson_id = ? AND vp.user_id = ? AND vp.last_reviewed_at IS NULL
+LEFT JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
+WHERE vi.lesson_id = ? AND (vp.id IS NULL OR vp.status = 'unseen')
 ORDER BY vi.created_at ASC LIMIT ?;
+
+dueItemsInLesson:
+SELECT vi.id FROM vocabulary_items vi
+JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
+WHERE vi.lesson_id = ? AND vp.user_id = ? AND vp.status NOT IN ('unseen', 'introduced') AND vp.next_review_at <= ?
+ORDER BY vp.next_review_at ASC LIMIT ?;
 
 dueItemsElsewhere:
 SELECT vi.id FROM vocabulary_items vi
 JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
-WHERE vi.lesson_id != ? AND vp.user_id = ? AND vp.last_reviewed_at IS NOT NULL AND vp.next_review_at <= ?
-LIMIT ?;
+WHERE vi.lesson_id != ? AND vp.user_id = ? AND vp.status NOT IN ('unseen', 'introduced') AND vp.next_review_at <= ?
+ORDER BY vp.next_review_at ASC LIMIT ?;
 
 masteredItems:
 SELECT vi.id FROM vocabulary_items vi
 JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
-WHERE vp.user_id = ? AND vp.mastery_state = 'mastered'
+WHERE vp.user_id = ? AND vp.status = 'mastered'
 LIMIT ?;
 
 allUserVocab:
@@ -144,35 +172,44 @@ FROM vocabulary_items vi
 JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
 WHERE vp.user_id = ?;
 
--- Packs
-incompletePackForLesson:
-SELECT * FROM vocabulary_packs WHERE user_id = ? AND lesson_id = ? AND completed_at IS NULL LIMIT 1;
+-- Sessions -----------------------------------------------------------------
 
-packById:
-SELECT * FROM vocabulary_packs WHERE id = ? AND user_id = ?;
+incompleteSessionForLesson:
+SELECT * FROM vocabulary_sessions WHERE user_id = ? AND lesson_id = ? AND completed_at IS NULL LIMIT 1;
 
-maxPackNumber:
-SELECT pack_number FROM vocabulary_packs WHERE user_id = ? AND lesson_id = ? ORDER BY pack_number DESC LIMIT 1;
+sessionById:
+SELECT * FROM vocabulary_sessions WHERE id = ? AND user_id = ?;
 
-insertPack:
-INSERT INTO vocabulary_packs(id, user_id, lesson_id, pack_number, started_at, completed_at, items_count, accuracy)
-VALUES (?, ?, ?, ?, ?, NULL, ?, NULL);
+maxSessionNumber:
+SELECT session_number FROM vocabulary_sessions WHERE user_id = ? AND lesson_id = ? ORDER BY session_number DESC LIMIT 1;
 
-completePack:
-UPDATE vocabulary_packs SET completed_at = ?, accuracy = ? WHERE id = ?;
+insertSession:
+INSERT INTO vocabulary_sessions(id, user_id, lesson_id, session_number, started_at, completed_at, new_words_count, review_words_count, correct_count, incorrect_count)
+VALUES (?, ?, ?, ?, ?, NULL, ?, ?, 0, 0);
 
--- Pack words
-wordsByPack:
-SELECT * FROM vocabulary_pack_words WHERE pack_id = ? ORDER BY position ASC;
+incrementSessionCounters:
+UPDATE vocabulary_sessions SET correct_count = correct_count + ?, incorrect_count = incorrect_count + ? WHERE id = ?;
 
-insertPackWord:
-INSERT INTO vocabulary_pack_words(id, pack_id, vocabulary_item_id, position, recognition_choices)
-VALUES (?, ?, ?, ?, ?);
+completeSession:
+UPDATE vocabulary_sessions SET completed_at = ? WHERE id = ?;
 
--- Stage answers
-answersForWord:
-SELECT * FROM vocabulary_stage_answers WHERE pack_word_id = ?;
+-- Queue ---------------------------------------------------------------------
 
-insertStageAnswer:
-INSERT INTO vocabulary_stage_answers(id, pack_word_id, stage_index, user_response, correct, answered_at)
-VALUES (?, ?, ?, ?, ?, ?);
+queueForSession:
+SELECT * FROM vocabulary_session_queue WHERE session_id = ? ORDER BY position ASC;
+
+nextQueueItem:
+SELECT * FROM vocabulary_session_queue WHERE session_id = ? AND answered_at IS NULL ORDER BY position ASC LIMIT 1;
+
+maxQueuePosition:
+SELECT MAX(position) FROM vocabulary_session_queue WHERE session_id = ?;
+
+insertQueueItem:
+INSERT INTO vocabulary_session_queue(id, session_id, position, vocabulary_item_id, card_type, origin, choices, answered_at, correct, user_response)
+VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL);
+
+answerQueueItem:
+UPDATE vocabulary_session_queue SET answered_at = ?, correct = ?, user_response = ? WHERE id = ?;
+
+wordsPracticedInSession:
+SELECT COUNT(DISTINCT vocabulary_item_id) FROM vocabulary_session_queue WHERE session_id = ?;

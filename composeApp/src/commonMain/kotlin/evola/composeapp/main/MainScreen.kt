@@ -28,8 +28,8 @@ import evola.composeapp.lessons.LessonDetailScreen
 import evola.composeapp.lessons.LessonDetailViewModel
 import evola.composeapp.lessons.VocabularyListScreen
 import evola.composeapp.lessons.VocabularyListViewModel
-import evola.composeapp.lessons.VocabularyPackSessionScreen
-import evola.composeapp.lessons.VocabularyPackSessionViewModel
+import evola.composeapp.lessons.VocabularySessionScreen
+import evola.composeapp.lessons.VocabularySessionViewModel
 import evola.composeapp.materials.AddMaterialScreen
 import evola.composeapp.materials.AddMaterialViewModel
 import evola.composeapp.materials.MaterialDetailScreen
@@ -151,6 +151,7 @@ fun MainScreen(
                             selectedTab = MainTab.STUDY
                             studySubScreen = StudySubScreen.Home(lesson)
                         },
+                        onProfile = { selectedTab = MainTab.PROFILE },
                     )
                 }
 
@@ -184,9 +185,9 @@ fun MainScreen(
 
                     is StudySubScreen.Session -> {
                         val viewModel = remember(sub.lesson.id) {
-                            VocabularyPackSessionViewModel(sub.lesson.id, vocabularyRepository)
+                            VocabularySessionViewModel(sub.lesson.id, vocabularyRepository)
                         }
-                        VocabularyPackSessionScreen(viewModel = viewModel, onDone = { studySubScreen = StudySubScreen.Home(sub.lesson) })
+                        VocabularySessionScreen(viewModel = viewModel, onDone = { studySubScreen = StudySubScreen.Home(sub.lesson) })
                     }
 
                     is StudySubScreen.VocabularyList -> {
@@ -294,9 +295,9 @@ fun MainScreen(
 
                     is MaterialsSubScreen.Session -> {
                         val viewModel = remember(sub.lessonId) {
-                            VocabularyPackSessionViewModel(sub.lessonId, vocabularyRepository)
+                            VocabularySessionViewModel(sub.lessonId, vocabularyRepository)
                         }
-                        VocabularyPackSessionScreen(
+                        VocabularySessionScreen(
                             viewModel = viewModel,
                             onDone = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) },
                         )

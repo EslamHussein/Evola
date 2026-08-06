@@ -24,23 +24,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
-import evola.shared.vocabulary.VocabularyPackSummary
+import evola.shared.vocabulary.VocabularySessionSummary
 
-/** Pack completion screen (design handoff Phase 7/8 - "after stage 7 -> 'Finish pack'"): confetti
- * icon, headline, 3 stat cards, and a primary action back to Lesson Details (or straight into the
- * next pack, if there's more vocabulary left for this lesson). */
+/** Session completion screen for the Lingvist-style flat SRS queue: confetti icon, headline, 3 stat
+ * cards, and a primary action to start the next session or head back to Lesson Details. */
 @Composable
-fun PackSummaryScreen(
-    summary: VocabularyPackSummary,
-    packNumber: Int,
-    onContinueToNextPack: () -> Unit,
+fun SessionSummaryScreen(
+    summary: VocabularySessionSummary,
+    onContinueToNextSession: () -> Unit,
     onDone: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = EvolaColors.Gold, modifier = Modifier.height(56.dp))
             Spacer(Modifier.height(EvolaSpacing.md))
-            Text("Pack $packNumber complete!", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+            Text("Session complete!", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
             Spacer(Modifier.height(EvolaSpacing.sm))
             Text(
                 "Great work - keep it up!",
@@ -57,8 +55,8 @@ fun PackSummaryScreen(
             }
             Spacer(Modifier.height(EvolaSpacing.xl))
 
-            Button(onClick = onContinueToNextPack, modifier = Modifier.fillMaxWidth()) {
-                Text("Continue to Pack ${packNumber + 1}")
+            Button(onClick = onContinueToNextSession, modifier = Modifier.fillMaxWidth()) {
+                Text("Continue")
             }
             Spacer(Modifier.height(EvolaSpacing.sm))
             OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {

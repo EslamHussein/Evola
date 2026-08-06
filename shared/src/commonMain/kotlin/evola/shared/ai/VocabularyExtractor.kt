@@ -19,6 +19,7 @@ data class ExtractedVocabItem(
     val difficultyRating: String? = null,
     val frequencyRating: String? = null,
     val memoryTip: String? = null,
+    val grammarNote: String? = null,
 )
 
 @Serializable
@@ -36,6 +37,7 @@ private data class VocabItemJson(
     @SerialName("difficulty_rating") val difficultyRating: String? = null,
     @SerialName("frequency_rating") val frequencyRating: String? = null,
     @SerialName("memory_tip") val memoryTip: String? = null,
+    @SerialName("grammar_note") val grammarNote: String? = null,
 )
 
 @Serializable
@@ -63,7 +65,9 @@ private const val SYSTEM_PREFIX =
         "- related_words: 2-4 related German words (array of strings), empty if none\n" +
         "- difficulty_rating: easy, medium, or hard\n" +
         "- frequency_rating: common, uncommon, or rare\n" +
-        "- memory_tip: a short mnemonic\n\n" +
+        "- memory_tip: a short mnemonic\n" +
+        "- grammar_note: a short (<12 words) grammar rule tied to the SPECIFIC construction in " +
+        "example_sentence (e.g. \"Akkusativ nach „einen“ – maskulin.\"), or null if nothing notable\n\n" +
         "Extract 15-30 items depending on lesson length. Do not invent words not in the source text. " +
         "Do not include function words unless the lesson explicitly teaches them.\n\n" +
         "Output ONLY valid JSON, no prose, no markdown fences.\n\n" +
@@ -71,7 +75,7 @@ private const val SYSTEM_PREFIX =
         "{\"items\": [{\"term\": string, \"meaning\": string, \"gender\": string|null, \"example_sentence\": string, " +
         "\"part_of_speech\": string, \"grammatical_case\": string|null, \"example_sentence_translation\": string, " +
         "\"meaning_ar\": string, \"ipa_pronunciation\": string, \"related_words\": [string], \"difficulty_rating\": string, " +
-        "\"frequency_rating\": string, \"memory_tip\": string}]}"
+        "\"frequency_rating\": string, \"memory_tip\": string, \"grammar_note\": string|null}]}"
 
 /** On-device vocabulary extraction (04_AI_PROMPTS.md §2), ported from `VocabularyExtractionWorker`.
  * Returns the parsed items; the repository writes them + dedups. A parse failure retries up to
@@ -106,5 +110,6 @@ class VocabularyExtractor(
         exampleSentenceTranslation = exampleSentenceTranslation, meaningAr = meaningAr,
         ipaPronunciation = ipaPronunciation, relatedWords = relatedWords,
         difficultyRating = difficultyRating, frequencyRating = frequencyRating, memoryTip = memoryTip,
+        grammarNote = grammarNote,
     )
 }
