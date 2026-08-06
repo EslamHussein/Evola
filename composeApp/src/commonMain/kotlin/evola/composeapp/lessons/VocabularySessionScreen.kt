@@ -4,6 +4,8 @@ package evola.composeapp.lessons
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,12 +15,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
@@ -34,7 +41,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,9 +53,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
@@ -165,7 +177,17 @@ private fun CenteredMessage(content: @Composable () -> Unit) {
 
 @Composable
 private fun CardBody(state: VocabularySessionUiState.InProgress, viewModel: VocabularySessionViewModel) {
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(EvolaSpacing.lg)) {
+    val focusManager = LocalFocusManager.current
+    Column(
+        modifier = Modifier.fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { focusManager.clearFocus() }
+            .verticalScroll(rememberScrollState())
+            .imePadding()
+            .padding(EvolaSpacing.lg),
+    ) {
         when (val card = state.session.card) {
             is VocabularyCard.Intro -> IntroCard(
                 card = card,
@@ -387,6 +409,8 @@ private fun WordBankCard(
 ) {
     var selected by remember(card.itemId, answered) { mutableStateOf<String?>(null) }
 
+    Text("Tap the missing word", style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text3)
+    Spacer(Modifier.height(EvolaSpacing.sm))
     Text(blankedSentence(card.sentenceWithBlank), style = MaterialTheme.typography.headlineSmall)
     Spacer(Modifier.height(EvolaSpacing.sm))
     card.sentenceTranslation?.let {
@@ -433,7 +457,9 @@ private fun WordBankCard(
     AdvanceButton(answered, onContinue)
 }
 
-/** Ladder step 3: typed recall, input pre-filled with the first half of the term. */
+/** Ladder step 3: typed recall, input pre-filled with the first half of the term, rendered inline
+ * within the sentence (not a separate boxed field) to match the design's "keep typing where the
+ * blank is" feel. */
 @Composable
 private fun HintCard(
     card: VocabularyCard.Hint,
@@ -442,8 +468,22 @@ private fun HintCard(
     onContinue: () -> Unit,
 ) {
     var typedAnswer by remember(card.itemId, answered) { mutableStateOf(card.hintPrefix) }
+    val focusManager = LocalFocusManager.current
+    val (prefix, suffix) = splitOnBlank(card.sentenceWithBlank)
 
-    Text(blankedSentence(card.sentenceWithBlank), style = MaterialTheme.typography.headlineSmall)
+    if (answered == null) {
+        Text("It's started for you — finish the word", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
+        Spacer(Modifier.height(EvolaSpacing.sm))
+        InlineFillSentence(
+            prefix = prefix,
+            suffix = suffix,
+            value = typedAnswer,
+            onValueChange = { typedAnswer = it },
+            onDone = { focusManager.clearFocus() },
+        )
+    } else {
+        RevealedInlineSentence(prefix = prefix, word = answered.correctAnswer ?: typedAnswer, suffix = suffix, correct = answered.correct == true)
+    }
     Spacer(Modifier.height(EvolaSpacing.sm))
     card.sentenceTranslation?.let {
         Text(it, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
@@ -452,19 +492,9 @@ private fun HintCard(
     card.grammarNote?.let {
         Text(it, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Accent)
     }
-    Spacer(Modifier.height(EvolaSpacing.sm))
-    Text("It's started for you — finish the word", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
     Spacer(Modifier.height(EvolaSpacing.lg))
 
     if (answered == null) {
-        OutlinedTextField(
-            value = typedAnswer,
-            onValueChange = { typedAnswer = it },
-            label = { Text("Finish the word") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(EvolaSpacing.md))
         Button(onClick = { onCheck(typedAnswer) }, modifier = Modifier.fillMaxWidth(), enabled = typedAnswer.isNotBlank()) {
             Text("Check")
         }
@@ -475,7 +505,7 @@ private fun HintCard(
 }
 
 /** Ladder step 4 (final) for new words, and the only step for due-for-review words: typed from
- * scratch, no scaffolding. */
+ * scratch, no scaffolding, rendered inline within the sentence like [HintCard]. */
 @Composable
 private fun BlindCard(
     card: VocabularyCard.Blind,
@@ -484,8 +514,20 @@ private fun BlindCard(
     onContinue: () -> Unit,
 ) {
     var typedAnswer by remember(card.itemId, answered) { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+    val (prefix, suffix) = splitOnBlank(card.sentenceWithBlank)
 
-    Text(blankedSentence(card.sentenceWithBlank), style = MaterialTheme.typography.headlineSmall)
+    if (answered == null) {
+        InlineFillSentence(
+            prefix = prefix,
+            suffix = suffix,
+            value = typedAnswer,
+            onValueChange = { typedAnswer = it },
+            onDone = { focusManager.clearFocus() },
+        )
+    } else {
+        RevealedInlineSentence(prefix = prefix, word = answered.correctAnswer ?: typedAnswer, suffix = suffix, correct = answered.correct == true)
+    }
     Spacer(Modifier.height(EvolaSpacing.sm))
     card.sentenceTranslation?.let {
         Text(it, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
@@ -497,13 +539,6 @@ private fun BlindCard(
     Spacer(Modifier.height(EvolaSpacing.lg))
 
     if (answered == null) {
-        OutlinedTextField(
-            value = typedAnswer,
-            onValueChange = { typedAnswer = it },
-            label = { Text("Type the missing word") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
         Spacer(Modifier.height(EvolaSpacing.md))
         Button(onClick = { onCheck(typedAnswer) }, modifier = Modifier.fillMaxWidth(), enabled = typedAnswer.isNotBlank()) {
             Text("Check")
@@ -551,4 +586,62 @@ private fun blankedSentence(sentence: String): AnnotatedString = buildAnnotatedS
     append(sentence.substring(0, idx))
     withStyle(SpanStyle(textDecoration = TextDecoration.Underline)) { append("_____") }
     append(sentence.substring(idx + 3))
+}
+
+private fun splitOnBlank(sentence: String): Pair<String, String> {
+    val idx = sentence.indexOf("___")
+    return if (idx < 0) sentence to "" else sentence.substring(0, idx) to sentence.substring(idx + 3)
+}
+
+/** Typed recall rendered inline within the sentence itself - the blank IS the text field, styled
+ * to match the surrounding headline text, rather than a separate boxed Material field below. */
+@Composable
+private fun InlineFillSentence(
+    prefix: String,
+    suffix: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    onDone: () -> Unit,
+) {
+    val style = MaterialTheme.typography.headlineSmall
+    FlowRow(verticalArrangement = Arrangement.Center) {
+        Text(prefix, style = style)
+        Box(
+            modifier = Modifier.widthIn(min = 56.dp).drawBehind {
+                drawLine(
+                    color = EvolaColors.Accent,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 2.dp.toPx(),
+                )
+            },
+        ) {
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                textStyle = style.copy(color = EvolaColors.Accent, fontWeight = FontWeight.Bold),
+                cursorBrush = SolidColor(EvolaColors.Accent),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { onDone() }),
+                modifier = Modifier.widthIn(min = 56.dp).padding(bottom = 2.dp),
+            )
+        }
+        Text(suffix, style = style)
+    }
+}
+
+/** Answer revealed inline (correct term highlighted within the sentence) once graded, matching
+ * [InlineFillSentence]'s layout so the sentence doesn't visually jump between typing and reveal. */
+@Composable
+private fun RevealedInlineSentence(prefix: String, word: String, suffix: String, correct: Boolean) {
+    val color = if (correct) EvolaColors.Gold else EvolaColors.Rust
+    Text(
+        buildAnnotatedString {
+            append(prefix)
+            withStyle(SpanStyle(color = color, fontWeight = FontWeight.Bold, textDecoration = TextDecoration.Underline)) { append(word) }
+            append(suffix)
+        },
+        style = MaterialTheme.typography.headlineSmall,
+    )
 }
