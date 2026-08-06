@@ -17,6 +17,9 @@ kotlin {
         target.binaries.framework {
             baseName = "ComposeApp"
             export(project(":shared"))
+            // SQLDelight's native driver (touchlab sqliter) calls into the system SQLite; the
+            // iOS framework must link libsqlite3 or the link fails with undefined _sqlite3_* symbols.
+            linkerOpts("-lsqlite3")
         }
     }
 
