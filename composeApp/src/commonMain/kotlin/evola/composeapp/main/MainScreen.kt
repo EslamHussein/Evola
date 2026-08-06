@@ -151,7 +151,6 @@ fun MainScreen(
                             selectedTab = MainTab.STUDY
                             studySubScreen = StudySubScreen.Home(lesson)
                         },
-                        onProfile = { selectedTab = MainTab.PROFILE },
                     )
                 }
 

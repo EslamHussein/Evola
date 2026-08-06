@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.Button
@@ -24,7 +23,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -62,21 +60,11 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onGoToMaterials: () -> Unit,
     onContinueLesson: (Lesson) -> Unit,
-    onProfile: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(goal.title ?: "Your journey") },
-                actions = {
-                    IconButton(onClick = onProfile) {
-                        Icon(Icons.Filled.AccountCircle, contentDescription = "Profile", tint = EvolaColors.Text2)
-                    }
-                },
-            )
-        },
+        topBar = { TopAppBar(title = { Text("Home") }) },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {

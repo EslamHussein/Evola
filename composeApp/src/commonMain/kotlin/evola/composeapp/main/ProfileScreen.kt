@@ -51,9 +51,6 @@ fun ProfileScreen(
     Scaffold(topBar = { TopAppBar(title = { Text("Profile") }) }) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-                Text("Profile", style = MaterialTheme.typography.titleLarge)
-
-                Spacer(Modifier.height(32.dp))
                 Text("Your goal", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
                 Spacer(Modifier.height(8.dp))
 
