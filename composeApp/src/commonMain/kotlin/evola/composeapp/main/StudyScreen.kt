@@ -88,7 +88,8 @@ private fun LoadedBody(lessons: List<Lesson>, onOpenLesson: (Lesson) -> Unit) {
     }
 
     // Current lesson = first lesson in sequence not yet at 100% (01_PRODUCT_SPEC.md §1.7).
-    val currentIndex = lessons.indexOfFirst { it.completionPct < 100f }
+    // completionPct is a 0..1 fraction, not a 0..100 percentage.
+    val currentIndex = lessons.indexOfFirst { it.completionPct < 1f }
     if (currentIndex == -1) {
         Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -129,7 +130,7 @@ private fun LessonRow(lesson: Lesson, isCurrent: Boolean, onClick: () -> Unit) {
                 Text("${lesson.number}. ${lesson.title}", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    if (lesson.isReady) "${lesson.completionPct.toInt()}% complete" else "Still preparing...",
+                    if (lesson.isReady) "${(lesson.completionPct * 100).toInt()}% complete" else "Still preparing...",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
