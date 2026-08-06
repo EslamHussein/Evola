@@ -230,6 +230,14 @@ private fun genderBadgeLabel(gender: String?): String? = when (gender?.lowercase
     else -> null
 }
 
+/** der = blue, die = red, das = green - a common learner mnemonic for the article. */
+private fun articleColor(gender: String?): androidx.compose.ui.graphics.Color? = when (gender?.lowercase()) {
+    "der" -> EvolaColors.GenderMasculine
+    "die" -> EvolaColors.GenderFeminine
+    "das" -> EvolaColors.GenderNeuter
+    else -> null
+}
+
 /** Circle (masculine) / diamond (feminine) / square (neuter) - shape carries the gender, never
  * color alone, per the design's explicit accessibility note. */
 @Composable
@@ -259,7 +267,17 @@ private fun IntroCard(
         GenderBadge(card.gender)
         Spacer(Modifier.width(EvolaSpacing.md))
         Column(modifier = Modifier.weight(1f)) {
-            Text(card.term, style = MaterialTheme.typography.headlineMedium)
+            Text(
+                buildAnnotatedString {
+                    card.gender?.let { gender ->
+                        articleColor(gender)?.let { color ->
+                            withStyle(SpanStyle(color = color)) { append("$gender ") }
+                        } ?: append("$gender ")
+                    }
+                    append(card.term)
+                },
+                style = MaterialTheme.typography.headlineMedium,
+            )
         }
         IconButton(onClick = onToggleBookmark) {
             Icon(

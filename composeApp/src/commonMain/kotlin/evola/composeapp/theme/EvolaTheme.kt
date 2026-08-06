@@ -49,6 +49,11 @@ object EvolaColors {
     val Text = Color(0xFFEEF1F8)       // primary text
     val Text2 = Color(0xFFAAB2C6)      // secondary text
     val Text3 = Color(0xFF6E7488)      // muted text
+
+    // German noun-gender article colors (der/die/das) - a common learner mnemonic.
+    val GenderMasculine = Color(0xFF6CA0F0) // der - blue
+    val GenderFeminine = Color(0xFFE0715C)  // die - red
+    val GenderNeuter = Color(0xFF4FB6A6)    // das - green
 }
 
 @Composable
