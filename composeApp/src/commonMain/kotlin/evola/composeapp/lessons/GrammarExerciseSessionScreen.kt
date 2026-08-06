@@ -2,6 +2,8 @@
 
 package evola.composeapp.lessons
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +11,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -30,9 +37,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
@@ -113,7 +122,17 @@ private fun CenteredMessage(content: @Composable () -> Unit) {
 
 @Composable
 private fun ExerciseBody(exercise: GrammarExercise, answeredCount: Int, onSubmit: (String, Boolean) -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+    val focusManager = LocalFocusManager.current
+    Column(
+        modifier = Modifier.fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { focusManager.clearFocus() }
+            .verticalScroll(rememberScrollState())
+            .imePadding()
+            .padding(24.dp),
+    ) {
         Text("Answered: $answeredCount", style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(24.dp))
 
@@ -148,11 +167,14 @@ private fun FillInBlankDrill(exercise: GrammarExercise, onSubmit: (String, Boole
     Spacer(Modifier.height(32.dp))
 
     var typedAnswer by remember(exercise.exerciseId) { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
     OutlinedTextField(
         value = typedAnswer,
         onValueChange = { typedAnswer = it },
         label = { Text("Type the missing word") },
         singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
         modifier = Modifier.fillMaxWidth(),
     )
     Spacer(Modifier.height(16.dp))
