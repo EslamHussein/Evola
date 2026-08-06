@@ -8,7 +8,9 @@ import evola.shared.goals.GoalProgress
 import evola.shared.goals.GoalsRepository
 import evola.shared.goals.Lesson
 import evola.shared.goals.UpdateGoalResult
+import evola.shared.goals.VocabularyBreakdown
 import evola.shared.srs.computeStreak
+import evola.shared.vocabulary.VocabularySrs
 import kotlinx.datetime.LocalDate
 
 /** Fully local goals/lessons/progress over SQLDelight — no server. Implements the same
@@ -67,8 +69,17 @@ class LocalGoalsRepository(private val db: EvolaDatabase) : GoalsRepository {
             .mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }.toSet()
         val streak = if (today != null) computeStreak(activityDates, today) else 0
         val todayCompleted = today != null && today in activityDates
+        val vocabulary = vocabularyBreakdown(goalId)
 
-        return ApiResult.Success(GoalProgress(overall, currentLessonId, streak, todayCompleted))
+        return ApiResult.Success(GoalProgress(overall, currentLessonId, streak, todayCompleted, vocabulary))
+    }
+
+    private fun vocabularyBreakdown(goalId: String): VocabularyBreakdown {
+        val statuses = db.vocabularyQueries.wordStatusesByGoal(LOCAL_USER, goalId).executeAsList().map { it.status }
+        val mastered = statuses.count { it == VocabularySrs.STATUSES.last() }
+        val notStarted = statuses.count { it == VocabularySrs.STATUSES.first() }
+        val inProgress = statuses.size - mastered - notStarted
+        return VocabularyBreakdown(notStarted, inProgress, mastered)
     }
 
     private fun autoTitle(goalText: String): String {

@@ -2,18 +2,18 @@ package evola.shared.local
 
 import evola.shared.db.EvolaDatabase
 import evola.shared.srs.MasterySrs
+import evola.shared.vocabulary.VocabularySrs
 
-private const val GRADABLE_STAGES = 5 // stages 2..6 (Reverse/Partial Recall, Sentence, Translation, Free Production)
-
-/** Per-lesson vocabulary progress = **partial credit**: each word contributes the fraction of its
- * 5 gradable stages ever answered correctly (so real practice moves the bar immediately, instead of
- * requiring a flawless all-5-stages pass for any credit). Averaged across every item in the lesson;
- * 0f when the lesson has no words. The [MasterySrs] mastery ladder still drives SRS scheduling — it
- * just no longer gates the visible progress. */
+/** Per-lesson vocabulary progress: each item's current SRS status mapped to a 0..1 position on the
+ * [VocabularySrs.STATUSES] ladder (unseen=0 .. mastered=1), averaged across every item in the
+ * lesson — the same shape [lessonGrammarProgress]/[averageStageRatio] already uses against
+ * [MasterySrs.STAGES]. 0f when the lesson has no words. */
 internal fun EvolaDatabase.lessonVocabProgress(lessonId: String): Float {
-    val rows = vocabularyQueries.gradedProgressByLesson(lessonId).executeAsList()
+    val rows = vocabularyQueries.statusByLesson(LOCAL_USER, lessonId).executeAsList()
     if (rows.isEmpty()) return 0f
-    return rows.map { (it.correct_stages.toFloat() / GRADABLE_STAGES).coerceIn(0f, 1f) }.average().toFloat()
+    return rows.map { VocabularySrs.STATUSES.indexOf(it.status).coerceAtLeast(0) }
+        .map { it / (VocabularySrs.STATUSES.size - 1f) }
+        .average().toFloat()
 }
 
 internal fun EvolaDatabase.lessonGrammarProgress(lessonId: String): Float {

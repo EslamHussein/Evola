@@ -479,6 +479,109 @@ migration to deploy — just the new jar.
 
 ---
 
+## Vocabulary Engine Replacement — Lingvist-style flat SRS queue ✅ done
+
+Full replacement of the M6.5 pack/7-stage vocabulary session (Discover → Recognition → Reverse
+Recall → Partial Recall → Sentence → Translation → Free Production, in packs of ~5 words) with a
+Lingvist-style flat, priority-ordered SRS queue: exactly two card types (a one-time Intro card, a
+Fill-in-the-Blank drill), repeats > due-review > new words in priority, and a 5-status word
+lifecycle (`unseen → introduced → learning → review → mastered`) on a fixed 1/3/7/14/30-day
+interval ladder. A real cost win alongside the redesign: the retired engine's Free Production stage
+needed one AI grading call per word per pack; the new engine grades Fill-Blank deterministically via
+the existing `isTolerantMatch` — **zero per-answer AI calls** anywhere in the vocabulary flow. The
+only AI cost is still the one-time-per-lesson extraction call, which gained one new field
+(`grammar_note`, a per-sentence grammar tip) at no extra call.
+
+- [x] `VocabularySrs.kt` — new pure scheduler (`shared/.../vocabulary/`), deliberately separate from
+      `MasterySrs` (Grammar's own 4-stage ladder, completely untouched by this change)
+- [x] `Vocabulary.sq` rewritten: `vocabulary_progress` moves to the 5-status model;
+      `vocabulary_packs`/`vocabulary_pack_words`/`vocabulary_stage_answers` dropped; new
+      `vocabulary_sessions` + `vocabulary_session_queue` (a persisted, ordered card queue — same
+      resumable-session guarantee every other session in this app already has)
+- [x] `LocalVocabularyRepository` rewritten: queue assembly (due-review this lesson first, then
+      elsewhere, then new words each paired with an Intro card immediately before their first
+      Fill-Blank), wrong answers splice a repeat card a few queue positions later (never
+      immediately next, reusing this project's own established resurfacing precedent)
+- [x] `VocabularyFreeProductionGrader`/`AiVocabularyFreeProductionGrader` deleted entirely — no
+      replacement needed, the new engine has no AI-graded card type
+- [x] Compose UI: `VocabularySessionScreen`/`VocabularySessionViewModel` (renamed from
+      `VocabularyPackSessionScreen`/`ViewModel`) render exactly the two new card types;
+      `SessionSummaryScreen` (renamed from `PackSummaryScreen`) keeps the same stat-card shape
+- [x] `LocalProgress.lessonVocabProgress` redesigned around the new 5-status ladder (same
+      status-index/(count-1) shape `lessonGrammarProgress` already uses against `MasterySrs`)
+
+Verified: `VocabularySrsTest` (new, ladder transitions incl. the introduced→learning floor) +
+`LocalVocabularyRepositoryTest` (rewritten — intro-before-fill-blank pairing, correct-answer
+advancement, incorrect-answer floor-at-learning, repeat-card requeue timing, session completion) +
+`LocalGoalsRepositoryTest`'s progress cases, all green. `:shared` and `:composeApp` compile clean on
+both Android and iOS (`compileKotlinIosSimulatorArm64`). Fresh install boots cleanly on the rewritten
+schema on the Android emulator (confirms the new `CREATE TABLE` set is valid at runtime, not just at
+compile time) — a full live session walkthrough with real extracted vocabulary is a user follow-up,
+since it requires the user's own Anthropic key entered in Profile.
+
+---
+
+## Home dashboard: vocabulary breakdown (Not started / Learning / Mastered) ✅ done
+
+Small follow-up to the vocabulary engine replacement: the Home dashboard's readiness ring gained a
+row of three stat tiles underneath it, bucketing every word in the goal by its current SRS status
+(`VocabularySrs.STATUSES`) - `unseen` → Not started, `mastered` → Mastered, everything between
+(`introduced`/`learning`/`review`) → Learning. The ring stays the headline "how close am I" number;
+the tiles are "what it's made of," not a replacement.
+
+- [x] `GoalProgress` gains a `VocabularyBreakdown(notStarted, inProgress, mastered)` field
+- [x] New `wordStatusesByGoal` query (items → lessons → progress, scoped to the whole goal)
+- [x] `HomeScreen`'s new `VocabularyBreakdownRow` composable, reusing the same stat-card shape as
+      the session summary screen
+
+Verified live on the Android emulator with real extracted vocabulary from earlier in the same
+session: a goal at 15% readiness correctly showed 7 Not started / 3 Learning / 0 Mastered for its
+10-word lesson.
+
+---
+
+## Per-word difficulty ladder for new words (Intro→Recognition→WordBank→Hint→Blind) ✅ done
+
+Extends the flat SRS queue engine: a **new** word now walks its own 5-step difficulty ladder instead
+of a single Intro→Fill-Blank pairing - `intro → recognition (multiple-choice) → wordbank (tap the
+term from a word bank) → hint (typed, pre-filled with the first half of the term) → blind (typed,
+no scaffolding)`. Correct answers advance the word to the next harder step, spliced in as the very
+next card; wrong answers re-queue the same step, appended past every existing row so it resurfaces
+later without disrupting anything already queued. Due-for-review words (and the mastered-fallback
+pool) skip the ladder entirely and open straight on `blind`, exactly as before this change - no code
+path needed updating there.
+
+A genuine simplification came out of this pass: the original flat-queue engine's wrong-answer
+placement logic (`queuePositionAtOffset` + `shiftQueuePositionsFrom`, "a few positions later, never
+immediately next") was more complex than needed. It's replaced uniformly by "append past every
+existing row" - trivially satisfies "not immediately next," needs no position-shifting, and the two
+old queries are deleted as dead code.
+
+- [x] `vocabulary_session_queue` gains a `choices` column (JSON-encoded, persisted so a resumed
+      session doesn't reshuffle recognition/wordbank options)
+- [x] `VocabularyCard` sealed type grows from 2 to 5 variants (`Intro`, `Recognition`, `WordBank`,
+      `Hint`, `Blind`); `VocabularyRepository.submitFillBlank` splits into `submitChoice`
+      (Recognition/WordBank) and `submitTyped` (Hint/Blind)
+  - [x] `LocalVocabularyRepository`: a word only ever has one queued card at a time - the next rung
+      is spliced in dynamically (`answeredPosition + 1`) rather than the whole ladder being
+      pre-inserted, so a wrong answer genuinely can't skip ahead
+- [x] Every graded step (not just the final one) still drives the word's cross-session SRS status
+      and next-review date, exactly like the single Fill-Blank answer always did - confirmed as the
+      intended design with the user rather than assumed
+- [x] Recognition/WordBank distractors reuse the existing `allUserVocab` query - no new AI call, no
+      `VocabularyExtractor` changes
+
+Verified: `LocalVocabularyRepositoryTest` covers a full correct ladder walk (confirms mastery climbs
+learning→review→mastered one rung at a time), a wrong answer at any rung (confirms no premature
+advancement, confirms the repeat doesn't appear immediately next but does resurface), and a
+due-for-review word opening straight on `blind`. `:shared` + `:composeApp` compile clean on Android
+and iOS. Fresh install boots cleanly on the schema change (required a wipe - no versioned migrations
+exist in this local-only DB, and the old `card_type`/missing `choices` column would otherwise crash
+at runtime). A full live ladder walkthrough with real vocabulary is a user follow-up, since it needs
+the Anthropic key re-entered in Profile after the wipe.
+
+---
+
 ## M9 — Hardening
 
 - [ ] Real email provider for password reset + verification (currently server-logged only)

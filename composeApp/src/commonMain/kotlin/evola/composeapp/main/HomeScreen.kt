@@ -2,6 +2,8 @@
 
 package evola.composeapp.main
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,14 +13,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,17 +35,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.components.CircularProgressRing
 import evola.composeapp.theme.components.StatusTag
 import evola.composeapp.theme.components.StatusTagStyle
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.Lesson
+import evola.shared.goals.VocabularyBreakdown
 import kotlin.math.roundToInt
 
 /** Home tab / Progress Dashboard (01_PRODUCT_SPEC.md §1.10). Three honest states: the encouraging
@@ -50,15 +62,27 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onGoToMaterials: () -> Unit,
     onContinueLesson: (Lesson) -> Unit,
+    onProfile: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    Scaffold(topBar = { TopAppBar(title = { Text(goal.title ?: "Your journey") }) }) { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(goal.title ?: "Your journey") },
+                actions = {
+                    IconButton(onClick = onProfile) {
+                        Icon(Icons.Filled.AccountCircle, contentDescription = "Profile", tint = EvolaColors.Text2)
+                    }
+                },
+            )
+        },
+    ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {
-                Text("Your goal", style = MaterialTheme.typography.labelLarge, color = EvolaColors.Teal)
+                Text("Your goal", style = MaterialTheme.typography.labelLarge, color = EvolaColors.Accent)
                 Spacer(Modifier.height(4.dp))
-                Text(goal.goalText, style = MaterialTheme.typography.headlineSmall)
+                Text(goal.goalText, style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(EvolaSpacing.xl))
 
                 when (val current = state) {
@@ -74,7 +98,12 @@ fun HomeScreen(
                         if (!current.hasLessons) {
                             EmptyState(onGoToMaterials)
                         } else {
-                            DashboardBody(current.progress, current.currentLesson, onContinueLesson)
+                            DashboardBody(
+                                progress = current.progress,
+                                currentLesson = current.currentLesson,
+                                onContinueLesson = onContinueLesson,
+                                modifier = Modifier.weight(1f).fillMaxWidth(),
+                            )
                         }
                 }
             }
@@ -108,47 +137,137 @@ private fun EmptyState(onGoToMaterials: () -> Unit) {
 }
 
 @Composable
-private fun DashboardBody(progress: GoalProgress, currentLesson: Lesson?, onContinueLesson: (Lesson) -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(EvolaSpacing.lg),
-    ) {
+private fun DashboardBody(
+    progress: GoalProgress,
+    currentLesson: Lesson?,
+    onContinueLesson: (Lesson) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Goal readiness", style = MaterialTheme.typography.labelLarge, color = EvolaColors.Text2)
-        CircularProgressRing(percent = (progress.overallPct * 100).roundToInt(), size = 160.dp)
+        Spacer(Modifier.height(EvolaSpacing.lg))
+        GoalReadinessRing(percent = (progress.overallPct * 100).roundToInt())
+        Spacer(Modifier.height(EvolaSpacing.xl))
+        VocabularyBreakdownRow(progress.vocabulary)
+        Spacer(Modifier.height(EvolaSpacing.lg))
+        StreakCard(progress)
 
-        StreakRow(progress)
+        // Push the primary action to the bottom of the dashboard, as in the design.
+        Spacer(Modifier.weight(1f))
 
         if (currentLesson != null) {
-            Button(onClick = { onContinueLesson(currentLesson) }, modifier = Modifier.fillMaxWidth()) {
-                Text("Continue Lesson ${currentLesson.number}: ${currentLesson.title}")
+            OutlinedButton(
+                onClick = { onContinueLesson(currentLesson) },
+                modifier = Modifier.fillMaxWidth(),
+                border = BorderStroke(1.dp, EvolaColors.Accent),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = EvolaColors.Accent),
+            ) {
+                Text(
+                    "Continue Lesson ${currentLesson.number}: ${currentLesson.title}",
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Spacer(Modifier.size(EvolaSpacing.sm))
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
             }
         } else {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-                Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = EvolaColors.Gold)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm),
+            ) {
+                Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = EvolaColors.Accent)
                 Text("You've completed every lesson!", style = MaterialTheme.typography.titleMedium)
             }
         }
     }
 }
 
+/** Hero readiness dial: a thin, round-capped accent arc over a track ring, with the large percentage
+ * and "ready" caption centered — the signature gauge from the dashboard design (larger and more
+ * prominent than the small shared [evola.composeapp.theme.components.CircularProgressRing] used on
+ * the resource/lesson list rows). */
 @Composable
-private fun StreakRow(progress: GoalProgress) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.md),
-    ) {
-        Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = EvolaColors.Gold)
-        Text(
-            if (progress.streakDays == 1) "1 day streak" else "${progress.streakDays} day streak",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.weight(1f),
-        )
-        if (progress.todayCompleted) {
-            StatusTag("Done today", StatusTagStyle.FILLED)
-        } else {
-            StatusTag("Not done yet", StatusTagStyle.NEUTRAL)
+private fun GoalReadinessRing(percent: Int, modifier: Modifier = Modifier) {
+    val clamped = percent.coerceIn(0, 100)
+    val trackColor = EvolaColors.Border
+    val arcColor = EvolaColors.Accent
+    Box(modifier = modifier.size(220.dp), contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val stroke = 12.dp.toPx()
+            val inset = stroke / 2f
+            val arcSize = Size(size.width - stroke, size.height - stroke)
+            val topLeft = Offset(inset, inset)
+            drawArc(
+                color = trackColor,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = stroke, cap = StrokeCap.Round),
+            )
+            if (clamped > 0) {
+                drawArc(
+                    color = arcColor,
+                    startAngle = -90f,
+                    sweepAngle = clamped / 100f * 360f,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = stroke, cap = StrokeCap.Round),
+                )
+            }
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("$clamped%", style = MaterialTheme.typography.displayMedium, color = EvolaColors.Accent)
+            Text("ready", style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
+        }
+    }
+}
+
+/** Word-count breakdown across the goal's whole vocabulary, bucketed from the 5-status SRS ladder
+ * (unseen -> Not started, mastered -> Mastered, everything between -> Learning). Sits under the
+ * readiness ring as "what the percentage is made of," not a replacement for it. */
+@Composable
+private fun VocabularyBreakdownRow(vocabulary: VocabularyBreakdown) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
+        BreakdownStat("${vocabulary.notStarted}", "Not started", Modifier.weight(1f))
+        BreakdownStat("${vocabulary.inProgress}", "Learning", Modifier.weight(1f))
+        BreakdownStat("${vocabulary.mastered}", "Mastered", Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun BreakdownStat(value: String, label: String, modifier: Modifier = Modifier) {
+    Surface(modifier = modifier, color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.small) {
+        Column(
+            modifier = Modifier.padding(vertical = EvolaSpacing.md),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(value, style = MaterialTheme.typography.titleLarge)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text3)
+        }
+    }
+}
+
+@Composable
+private fun StreakCard(progress: GoalProgress) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.md),
+        ) {
+            Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = EvolaColors.Accent)
+            Text(
+                if (progress.streakDays == 1) "1 day streak" else "${progress.streakDays} day streak",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            if (progress.todayCompleted) {
+                StatusTag("Done today", StatusTagStyle.FILLED)
+            } else {
+                StatusTag("Not done yet", StatusTagStyle.NEUTRAL)
+            }
         }
     }
 }

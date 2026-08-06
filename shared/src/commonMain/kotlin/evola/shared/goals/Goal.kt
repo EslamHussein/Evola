@@ -52,6 +52,16 @@ data class GoalProgress(
     val currentLessonId: String?,
     val streakDays: Int,
     val todayCompleted: Boolean,
+    val vocabulary: VocabularyBreakdown,
+)
+
+/** Word counts across every lesson in the goal, bucketed from the 5-status vocabulary SRS ladder
+ * (evola.shared.vocabulary.VocabularySrs.STATUSES): "unseen" -> [notStarted], "mastered" ->
+ * [mastered], anything in between (introduced/learning/review) -> [inProgress]. */
+data class VocabularyBreakdown(
+    val notStarted: Int,
+    val inProgress: Int,
+    val mastered: Int,
 )
 
 interface GoalsRepository {
