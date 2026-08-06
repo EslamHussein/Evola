@@ -1,12 +1,17 @@
 package evola.composeapp.onboarding
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -19,6 +24,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import evola.shared.goals.Goal
@@ -33,10 +44,20 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, onGoalCreated: (Goal) -> Unit
     var goalText by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var wasTruncated by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
-    Surface(modifier = Modifier.fillMaxSize()) {
+    Surface(
+        modifier = Modifier.fillMaxSize()
+            // Tapping anywhere outside a text field dismisses the keyboard - without this, on a
+            // screen with no other focusable target, there was no way to get the keyboard out of
+            // the way to reach "Start learning" underneath it.
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { focusManager.clearFocus() },
+    ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -62,6 +83,8 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, onGoalCreated: (Goal) -> Unit
                 placeholder = { Text("e.g. Pass the German B1 exam") },
                 enabled = !isSubmitting,
                 minLines = 3,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 modifier = Modifier.fillMaxWidth(),
             )
             if (wasTruncated) {
@@ -79,6 +102,8 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, onGoalCreated: (Goal) -> Unit
                 label = { Text("Name your journey (optional)") },
                 placeholder = { Text("Leave blank to auto-generate") },
                 enabled = !isSubmitting,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                 modifier = Modifier.fillMaxWidth(),
             )
             errorMessage?.let {
