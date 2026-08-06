@@ -88,6 +88,9 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 itemById:
 SELECT * FROM vocabulary_items WHERE id = ?;
 
+updateItemContent:
+UPDATE vocabulary_items SET term = ?, meaning = ?, meaning_ar = ? WHERE id = ?;
+
 -- progress ----------------------------------------------------------------
 
 progressForItem:

@@ -15,17 +15,23 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -39,6 +45,18 @@ import evola.shared.vocabulary.VocabularyItem
 @Composable
 fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var editingItem by remember { mutableStateOf<VocabularyItem?>(null) }
+
+    editingItem?.let { item ->
+        EditVocabularyDialog(
+            item = item,
+            onDismiss = { editingItem = null },
+            onSave = { term, meaning, meaningAr ->
+                viewModel.updateItem(item.itemId, term, meaning, meaningAr)
+                editingItem = null
+            },
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -76,7 +94,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                             modifier = Modifier.fillMaxSize().padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(current.items) { item -> VocabularyRow(item) }
+                            items(current.items) { item -> VocabularyRow(item, onClick = { editingItem = item }) }
                         }
                     }
                 }
@@ -86,8 +104,8 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
 }
 
 @Composable
-private fun VocabularyRow(item: VocabularyItem) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun VocabularyRow(item: VocabularyItem, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -142,4 +160,52 @@ private fun Tag(label: String) {
             color = EvolaColors.Text2,
         )
     }
+}
+
+@Composable
+private fun EditVocabularyDialog(
+    item: VocabularyItem,
+    onDismiss: () -> Unit,
+    onSave: (term: String, meaning: String, meaningAr: String?) -> Unit,
+) {
+    var term by remember(item.itemId) { mutableStateOf(item.term) }
+    var meaning by remember(item.itemId) { mutableStateOf(item.meaning) }
+    var meaningAr by remember(item.itemId) { mutableStateOf(item.meaningAr ?: "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit word") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
+                OutlinedTextField(
+                    value = term,
+                    onValueChange = { term = it },
+                    label = { Text("Term") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = meaning,
+                    onValueChange = { meaning = it },
+                    label = { Text("Meaning") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = meaningAr,
+                    onValueChange = { meaningAr = it },
+                    label = { Text("Arabic meaning (optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(term.trim(), meaning.trim(), meaningAr.trim().ifBlank { null }) },
+                enabled = term.isNotBlank() && meaning.isNotBlank(),
+            ) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }

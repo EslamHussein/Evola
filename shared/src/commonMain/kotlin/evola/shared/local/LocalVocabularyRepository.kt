@@ -157,25 +157,33 @@ class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepos
             ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
         isBookmarked?.let { db.vocabularyQueries.setBookmarked(if (it) 1L else 0L, LOCAL_USER, itemId) }
         markedDifficult?.let { db.vocabularyQueries.setMarkedDifficult(if (it) 1L else 0L, LOCAL_USER, itemId) }
+        return ApiResult.Success(loadItemWithProgress(itemId))
+    }
 
+    override suspend fun updateItem(itemId: String, term: String, meaning: String, meaningAr: String?): ApiResult<VocabularyItem> {
+        db.vocabularyQueries.progressForItem(LOCAL_USER, itemId).executeAsOneOrNull()
+            ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
+        db.vocabularyQueries.updateItemContent(term, meaning, meaningAr, itemId)
+        return ApiResult.Success(loadItemWithProgress(itemId))
+    }
+
+    private fun loadItemWithProgress(itemId: String): VocabularyItem {
         val row = db.vocabularyQueries.itemWithProgress(itemId, LOCAL_USER).executeAsOne()
-        return ApiResult.Success(
-            VocabularyItem(
-                itemId = row.id,
-                term = row.term,
-                meaning = row.meaning,
-                gender = row.gender,
-                exampleSentence = row.example_sentence,
-                status = row.p_status,
-                meaningAr = row.meaning_ar,
-                ipaPronunciation = row.ipa_pronunciation,
-                relatedWords = decodeStringList(row.related_words),
-                difficultyRating = row.difficulty_rating,
-                frequencyRating = row.frequency_rating,
-                memoryTip = row.memory_tip,
-                isBookmarked = row.p_is_bookmarked == 1L,
-                markedDifficult = row.p_marked_difficult == 1L,
-            ),
+        return VocabularyItem(
+            itemId = row.id,
+            term = row.term,
+            meaning = row.meaning,
+            gender = row.gender,
+            exampleSentence = row.example_sentence,
+            status = row.p_status,
+            meaningAr = row.meaning_ar,
+            ipaPronunciation = row.ipa_pronunciation,
+            relatedWords = decodeStringList(row.related_words),
+            difficultyRating = row.difficulty_rating,
+            frequencyRating = row.frequency_rating,
+            memoryTip = row.memory_tip,
+            isBookmarked = row.p_is_bookmarked == 1L,
+            markedDifficult = row.p_marked_difficult == 1L,
         )
     }
 

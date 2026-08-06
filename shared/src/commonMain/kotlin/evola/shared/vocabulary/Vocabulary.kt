@@ -144,4 +144,7 @@ interface VocabularyRepository {
     suspend fun submitTyped(sessionId: String, itemId: String, response: String): ApiResult<VocabularyAnswerResult>
     suspend fun complete(sessionId: String, localDate: String): ApiResult<VocabularySessionSummary>
     suspend fun updateFlags(itemId: String, isBookmarked: Boolean? = null, markedDifficult: Boolean? = null): ApiResult<VocabularyItem>
+
+    /** Edits the extracted term/meaning directly - lets the learner fix an AI extraction mistake. */
+    suspend fun updateItem(itemId: String, term: String, meaning: String, meaningAr: String?): ApiResult<VocabularyItem>
 }
