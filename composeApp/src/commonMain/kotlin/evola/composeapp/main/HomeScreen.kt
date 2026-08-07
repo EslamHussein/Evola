@@ -139,7 +139,9 @@ private fun DashboardBody(
         Text("Goal readiness", style = MaterialTheme.typography.labelLarge, color = EvolaColors.Text2)
         Spacer(Modifier.height(EvolaSpacing.lg))
         GoalReadinessRing(percent = (progress.overallPct * 100).roundToInt(), vocabulary = progress.vocabulary)
-        Spacer(Modifier.height(EvolaSpacing.xl))
+        Spacer(Modifier.height(EvolaSpacing.md))
+        RingLegend()
+        Spacer(Modifier.height(EvolaSpacing.lg))
         VocabularyBreakdownRow(progress.vocabulary)
         Spacer(Modifier.height(EvolaSpacing.lg))
         StreakCard(progress)
@@ -227,6 +229,25 @@ private fun GoalReadinessRing(percent: Int, vocabulary: VocabularyBreakdown, mod
                 )
             }
         }
+    }
+}
+
+/** Explicit color key for the ring's segments, directly under it so it's unambiguous what each
+ * color means before the reader even reaches the count tiles below. */
+@Composable
+private fun RingLegend() {
+    Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.lg)) {
+        LegendItem(MasteredColor, "Mastered")
+        LegendItem(LearningColor, "Learning")
+        LegendItem(NotStartedColor, "Not started")
+    }
+}
+
+@Composable
+private fun LegendItem(color: Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text2)
     }
 }
 
