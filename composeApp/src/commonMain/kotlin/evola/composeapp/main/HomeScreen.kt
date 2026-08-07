@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -186,11 +188,15 @@ private val NotStartedColor = EvolaColors.Text3
  * old single full-width ring + separate streak card with a denser, glanceable pairing. */
 @Composable
 private fun TopTilesRow(percent: Int, vocabulary: VocabularyBreakdown, progress: GoalProgress) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-        Card(modifier = Modifier.weight(1f)) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm),
+    ) {
+        Card(modifier = Modifier.weight(1f).fillMaxHeight()) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.md),
+                modifier = Modifier.fillMaxSize().padding(EvolaSpacing.md),
                 horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
                 ReadinessRing(percent = percent, vocabulary = vocabulary)
                 Spacer(Modifier.height(EvolaSpacing.sm))
@@ -198,10 +204,13 @@ private fun TopTilesRow(percent: Int, vocabulary: VocabularyBreakdown, progress:
             }
         }
         Card(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).fillMaxHeight(),
             colors = CardDefaults.cardColors(containerColor = EvolaColors.AccentSoft),
         ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.md)) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(EvolaSpacing.md),
+                verticalArrangement = Arrangement.Center,
+            ) {
                 Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = EvolaColors.Accent)
                 Spacer(Modifier.height(EvolaSpacing.sm))
                 Text(
