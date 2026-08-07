@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -187,5 +190,38 @@ fun LockedRow(
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
         }
         Icon(lockIcon, contentDescription = "Locked - coming soon", tint = EvolaColors.Text3)
+    }
+}
+
+/** A floating, frosted-glass-style bottom navigation bar - approximates iOS 26's "Liquid Glass"
+ * material (translucent, softly bordered, a subtle top sheen) using plain Compose so it renders
+ * identically on Android and iOS. True Liquid Glass is a native UIKit/SwiftUI-only API and isn't
+ * reachable from shared Compose UI without a much bigger native rewrite; this is the closest
+ * cross-platform approximation - translucency + a hairline highlight border + elevation, rather
+ * than literal real-time backdrop blur of the content scrolling behind it. */
+@Composable
+fun GlassNavigationBar(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+    val shape = RoundedCornerShape(28.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = EvolaSpacing.lg, vertical = EvolaSpacing.sm)
+            .shadow(elevation = 20.dp, shape = shape, ambientColor = Color.Black.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.35f))
+            .clip(shape)
+            .background(EvolaColors.Surface.copy(alpha = 0.78f))
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color.White.copy(alpha = 0.10f), Color.Transparent, Color.White.copy(alpha = 0.02f)),
+                ),
+            )
+            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)), shape),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = EvolaSpacing.xs),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically,
+            content = content,
+        )
     }
 }
