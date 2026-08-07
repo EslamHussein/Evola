@@ -174,10 +174,12 @@ private fun DashboardBody(
 }
 
 /** Colors shared between the readiness ring's segments and the breakdown tiles' dots below it, so
- * the two visuals read as one system rather than two independent widgets. */
-private val MasteredColor = EvolaColors.Accent
-private val LearningColor = EvolaColors.Ink2
-private val NotStartedColor = EvolaColors.Border
+ * the two visuals read as one system rather than two independent widgets. Deliberately three
+ * distinct hues (teal / purple / muted grey) rather than shades of the same accent, since two
+ * near-identical purples were hard to tell apart at a glance on the ring. */
+private val MasteredColor = EvolaColors.Teal
+private val LearningColor = EvolaColors.Accent
+private val NotStartedColor = EvolaColors.Text3
 
 /** Hero readiness dial: instead of a single flat accent arc, the ring is *composed* of the goal's
  * actual word-status mix - a mastered segment, then a learning segment, with whatever's left as
