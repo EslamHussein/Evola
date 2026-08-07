@@ -1,7 +1,11 @@
 package evola.composeapp.main
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Flag
@@ -96,6 +100,11 @@ fun MainScreen(
         (selectedTab != MainTab.STUDY || studySubScreen is StudySubScreen.List)
 
     Scaffold(
+        // Top inset is deliberately excluded: each tab screen owns its own Scaffold+TopAppBar,
+        // which already applies WindowInsets.statusBars itself. Scaffold's default
+        // contentWindowInsets (safeDrawing) includes the top inset too, so leaving it in here
+        // doubled the status-bar gap above every tab's title. Bottom stays, for the nav bar.
+        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom),
         bottomBar = {
             if (showTabBar) {
                 NavigationBar {
