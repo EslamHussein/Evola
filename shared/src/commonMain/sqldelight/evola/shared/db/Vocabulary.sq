@@ -143,6 +143,16 @@ JOIN lessons l ON l.id = vi.lesson_id
 LEFT JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
 WHERE l.goal_id = ?;
 
+-- Words already in progress (learning/review, not yet mastered) across a goal, for the Home
+-- dashboard's "N review(s) from mastering <word>" nudge - the client picks the one closest to
+-- mastered (highest VocabularySrs.STATUSES index).
+inProgressWordsByGoal:
+SELECT vi.term AS term, vp.status AS status
+FROM vocabulary_items vi
+JOIN lessons l ON l.id = vi.lesson_id
+JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
+WHERE l.goal_id = ? AND vp.status IN ('introduced', 'learning', 'review');
+
 -- Session queue assembly draws --------------------------------------------
 
 newItemsForLesson:

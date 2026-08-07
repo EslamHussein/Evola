@@ -53,7 +53,12 @@ data class GoalProgress(
     val streakDays: Int,
     val todayCompleted: Boolean,
     val vocabulary: VocabularyBreakdown,
+    val nudgeWord: NudgeWord? = null,
 )
+
+/** The in-progress word closest to "mastered" on the vocabulary SRS ladder, for Home's "N
+ * review(s) from mastering <term>" nudge. [reviewsRemaining] = correct answers still needed. */
+data class NudgeWord(val term: String, val reviewsRemaining: Int)
 
 /** Word counts across every lesson in the goal, bucketed from the 5-status vocabulary SRS ladder
  * (evola.shared.vocabulary.VocabularySrs.STATUSES): "unseen" -> [notStarted], "mastered" ->

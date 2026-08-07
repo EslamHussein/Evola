@@ -4,6 +4,7 @@ package evola.composeapp.main
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,13 +15,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,18 +43,15 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.components.StatusTag
-import evola.composeapp.theme.components.StatusTagStyle
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.Lesson
+import evola.shared.goals.NudgeWord
 import evola.shared.goals.VocabularyBreakdown
 import kotlin.math.roundToInt
 
@@ -135,19 +136,19 @@ private fun DashboardBody(
     onContinueLesson: (Lesson) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Goal readiness", style = MaterialTheme.typography.labelLarge, color = EvolaColors.Text2)
+    Column(modifier = modifier) {
+        TopTilesRow(percent = (progress.overallPct * 100).roundToInt(), vocabulary = progress.vocabulary, progress = progress)
         Spacer(Modifier.height(EvolaSpacing.lg))
-        GoalReadinessRing(percent = (progress.overallPct * 100).roundToInt(), vocabulary = progress.vocabulary)
-        Spacer(Modifier.height(EvolaSpacing.md))
-        RingLegend()
-        Spacer(Modifier.height(EvolaSpacing.lg))
-        VocabularyBreakdownRow(progress.vocabulary)
-        Spacer(Modifier.height(EvolaSpacing.lg))
-        StreakCard(progress)
+        WordBreakdownSection(progress.vocabulary)
+
+        progress.nudgeWord?.let { nudge ->
+            Spacer(Modifier.height(EvolaSpacing.lg))
+            NudgeCard(nudge, onClick = { currentLesson?.let(onContinueLesson) })
+        }
 
         // Push the primary action to the bottom of the dashboard, as in the design.
         Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(EvolaSpacing.lg))
 
         if (currentLesson != null) {
             OutlinedButton(
@@ -175,25 +176,54 @@ private fun DashboardBody(
     }
 }
 
-/** Colors shared between the readiness ring's segments and the breakdown tiles' dots below it, so
- * the two visuals read as one system rather than two independent widgets. Deliberately three
- * distinct hues (teal / purple / muted grey) rather than shades of the same accent, since two
- * near-identical purples were hard to tell apart at a glance on the ring. */
-private val MasteredColor = EvolaColors.Teal
-private val LearningColor = EvolaColors.Accent
+/** Colors shared across the mini ring, the word-breakdown tiles, and the nudge chip, so every
+ * "mastered/learning/not started" signal on the dashboard reads as one system. */
+private val MasteredColor = EvolaColors.Accent
+private val LearningColor = EvolaColors.Ink2
 private val NotStartedColor = EvolaColors.Text3
 
-/** Hero readiness dial: instead of a single flat accent arc, the ring is *composed* of the goal's
- * actual word-status mix - a mastered segment, then a learning segment, with whatever's left as
- * unfilled track - so the ring itself shows what the percentage is made of, not just the number.
- * Center shows the overall % plus the raw "mastered/total words" count. */
+/** Two side-by-side tiles: a compact readiness ring (left) and the streak (right) - replaces the
+ * old single full-width ring + separate streak card with a denser, glanceable pairing. */
 @Composable
-private fun GoalReadinessRing(percent: Int, vocabulary: VocabularyBreakdown, modifier: Modifier = Modifier) {
+private fun TopTilesRow(percent: Int, vocabulary: VocabularyBreakdown, progress: GoalProgress) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
+        Card(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.md),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                ReadinessRing(percent = percent, vocabulary = vocabulary)
+                Spacer(Modifier.height(EvolaSpacing.sm))
+                Text("exam readiness", style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text3)
+            }
+        }
+        Card(
+            modifier = Modifier.weight(1f),
+            colors = CardDefaults.cardColors(containerColor = EvolaColors.AccentSoft),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.md)) {
+                Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = EvolaColors.Accent)
+                Spacer(Modifier.height(EvolaSpacing.sm))
+                Text(
+                    if (progress.streakDays == 1) "1 day" else "${progress.streakDays} days",
+                    style = MaterialTheme.typography.headlineSmall,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text("streak · study today", style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text2)
+            }
+        }
+    }
+}
+
+/** Compact readiness dial (80dp): a 3-segment ring - mastered, then learning, remainder unfilled -
+ * so the ring itself shows what the % is made of, with the number centered inside it. */
+@Composable
+private fun ReadinessRing(percent: Int, vocabulary: VocabularyBreakdown, modifier: Modifier = Modifier) {
     val clamped = percent.coerceIn(0, 100)
     val total = vocabulary.notStarted + vocabulary.inProgress + vocabulary.mastered
-    Box(modifier = modifier.size(220.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.size(80.dp), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val stroke = 12.dp.toPx()
+            val stroke = 7.dp.toPx()
             val inset = stroke / 2f
             val arcSize = Size(size.width - stroke, size.height - stroke)
             val topLeft = Offset(inset, inset)
@@ -217,88 +247,65 @@ private fun GoalReadinessRing(percent: Int, vocabulary: VocabularyBreakdown, mod
                 arc(LearningColor, -90f + masteredSweep, learningSweep)
             }
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("$clamped%", style = MaterialTheme.typography.displayMedium, color = EvolaColors.Accent)
-            Text("ready", style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
-            if (total > 0) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "${vocabulary.mastered}/$total words",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = EvolaColors.Text3,
-                )
-            }
-        }
+        Text("$clamped%", style = MaterialTheme.typography.titleLarge)
     }
 }
 
-/** Explicit color key for the ring's segments, directly under it so it's unambiguous what each
- * color means before the reader even reaches the count tiles below. */
+/** "Word breakdown" header (with the goal's total word count) plus the three status tiles, each
+ * colored to match [ReadinessRing]'s segments - the color mapping doubles as its own legend. */
 @Composable
-private fun RingLegend() {
-    Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.lg)) {
-        LegendItem(MasteredColor, "Mastered")
-        LegendItem(LearningColor, "Learning")
-        LegendItem(NotStartedColor, "Not started")
+private fun WordBreakdownSection(vocabulary: VocabularyBreakdown) {
+    val total = vocabulary.notStarted + vocabulary.inProgress + vocabulary.mastered
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text("Word breakdown", style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text2)
+        Text("$total words total", style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text3)
     }
-}
-
-@Composable
-private fun LegendItem(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
-        Text(label, style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text2)
-    }
-}
-
-/** Word-count breakdown across the goal's whole vocabulary, bucketed from the 5-status SRS ladder
- * (unseen -> Not started, mastered -> Mastered, everything between -> Learning). Each tile's dot
- * matches its segment's color in [GoalReadinessRing] above, tying the two visuals together. */
-@Composable
-private fun VocabularyBreakdownRow(vocabulary: VocabularyBreakdown) {
+    Spacer(Modifier.height(EvolaSpacing.sm))
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-        BreakdownStat("${vocabulary.notStarted}", "Not started", NotStartedColor, Modifier.weight(1f))
-        BreakdownStat("${vocabulary.inProgress}", "Learning", LearningColor, Modifier.weight(1f))
         BreakdownStat("${vocabulary.mastered}", "Mastered", MasteredColor, Modifier.weight(1f))
+        BreakdownStat("${vocabulary.inProgress}", "Learning", LearningColor, Modifier.weight(1f))
+        BreakdownStat("${vocabulary.notStarted}", "Not started", NotStartedColor, Modifier.weight(1f))
     }
 }
 
 @Composable
-private fun BreakdownStat(value: String, label: String, dotColor: Color, modifier: Modifier = Modifier) {
+private fun BreakdownStat(value: String, label: String, valueColor: Color, modifier: Modifier = Modifier) {
     Surface(modifier = modifier, color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.small) {
         Column(
             modifier = Modifier.padding(vertical = EvolaSpacing.md),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(value, style = MaterialTheme.typography.titleLarge)
-            Spacer(Modifier.height(2.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(dotColor))
-                Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text3)
-            }
+            Text(value, style = MaterialTheme.typography.titleLarge, color = valueColor)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text3)
         }
     }
 }
 
+/** Tappable nudge toward the single word closest to mastered - a concrete, low-effort next step
+ * rather than the abstract percentage alone. Routes into the current lesson's vocabulary session,
+ * same destination as the main CTA, since the session engine doesn't target a single word. */
 @Composable
-private fun StreakCard(progress: GoalProgress) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
+private fun NudgeCard(nudge: NudgeWord, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
+        Column(
             modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.md),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = EvolaColors.Accent)
-            Text(
-                if (progress.streakDays == 1) "1 day streak" else "${progress.streakDays} day streak",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-            )
-            if (progress.todayCompleted) {
-                StatusTag("Done today", StatusTagStyle.FILLED)
-            } else {
-                StatusTag("Not done yet", StatusTagStyle.NEUTRAL)
+            Box(
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(EvolaColors.AccentSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.TrackChanges, contentDescription = null, tint = EvolaColors.Ink2)
             }
+            Spacer(Modifier.height(EvolaSpacing.sm))
+            val reviewWord = if (nudge.reviewsRemaining == 1) "review" else "reviews"
+            Text(
+                "${nudge.reviewsRemaining} $reviewWord from mastering \"${nudge.term}\"",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(EvolaSpacing.xs))
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = EvolaColors.Accent)
         }
     }
 }

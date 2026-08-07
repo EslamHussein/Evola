@@ -7,6 +7,7 @@ import evola.shared.goals.Goal
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.GoalsRepository
 import evola.shared.goals.Lesson
+import evola.shared.goals.NudgeWord
 import evola.shared.goals.UpdateGoalResult
 import evola.shared.goals.VocabularyBreakdown
 import evola.shared.srs.computeStreak
@@ -70,8 +71,9 @@ class LocalGoalsRepository(private val db: EvolaDatabase) : GoalsRepository {
         val streak = if (today != null) computeStreak(activityDates, today) else 0
         val todayCompleted = today != null && today in activityDates
         val vocabulary = vocabularyBreakdown(goalId)
+        val nudgeWord = nudgeWord(goalId)
 
-        return ApiResult.Success(GoalProgress(overall, currentLessonId, streak, todayCompleted, vocabulary))
+        return ApiResult.Success(GoalProgress(overall, currentLessonId, streak, todayCompleted, vocabulary, nudgeWord))
     }
 
     private fun vocabularyBreakdown(goalId: String): VocabularyBreakdown {
@@ -80,6 +82,15 @@ class LocalGoalsRepository(private val db: EvolaDatabase) : GoalsRepository {
         val notStarted = statuses.count { it == VocabularySrs.STATUSES.first() }
         val inProgress = statuses.size - mastered - notStarted
         return VocabularyBreakdown(notStarted, inProgress, mastered)
+    }
+
+    /** The in-progress word closest to "mastered" (highest STATUSES index) - ties broken by
+     * whichever the query returns first, since exact tie-breaking isn't meaningful here. */
+    private fun nudgeWord(goalId: String): NudgeWord? {
+        val candidates = db.vocabularyQueries.inProgressWordsByGoal(LOCAL_USER, goalId).executeAsList()
+        val closest = candidates.maxByOrNull { VocabularySrs.STATUSES.indexOf(it.status) } ?: return null
+        val reviewsRemaining = VocabularySrs.STATUSES.lastIndex - VocabularySrs.STATUSES.indexOf(closest.status)
+        return NudgeWord(closest.term, reviewsRemaining)
     }
 
     private fun autoTitle(goalText: String): String {
