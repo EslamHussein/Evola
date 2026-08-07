@@ -21,6 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import evola.composeapp.BackHandler
 import evola.composeapp.theme.components.GlassNavigationBar
 import evola.composeapp.lessons.GrammarExerciseSessionScreen
@@ -100,6 +102,7 @@ fun MainScreen(
 
     val glassIndicatorColor = Color.White.copy(alpha = 0.16f)
     val glassItemColors = NavigationBarItemDefaults.colors(indicatorColor = glassIndicatorColor)
+    val hazeState = rememberHazeState()
 
     Scaffold(
         // Both insets are deliberately excluded here: each tab screen owns its own top inset via
@@ -110,7 +113,7 @@ fun MainScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showTabBar) {
-                GlassNavigationBar {
+                GlassNavigationBar(hazeState = hazeState) {
                     NavigationBarItem(
                         selected = selectedTab == MainTab.HOME,
                         onClick = { selectedTab = MainTab.HOME },
@@ -156,7 +159,7 @@ fun MainScreen(
             }
         },
     ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
+        Box(modifier = Modifier.padding(padding).hazeSource(state = hazeState)) {
             when (selectedTab) {
                 MainTab.HOME -> {
                     val homeViewModel = remember(goal.id) { HomeViewModel(goal.id, goalsRepository) }

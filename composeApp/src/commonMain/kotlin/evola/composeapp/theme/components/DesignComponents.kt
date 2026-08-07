@@ -30,6 +30,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import kotlin.math.min
@@ -194,13 +198,14 @@ fun LockedRow(
 }
 
 /** A floating, frosted-glass-style bottom navigation bar - approximates iOS 26's "Liquid Glass"
- * material (translucent, softly bordered, a subtle top sheen) using plain Compose so it renders
- * identically on Android and iOS. True Liquid Glass is a native UIKit/SwiftUI-only API and isn't
- * reachable from shared Compose UI without a much bigger native rewrite; this is the closest
- * cross-platform approximation - translucency + a hairline highlight border + elevation, rather
- * than literal real-time backdrop blur of the content scrolling behind it. */
+ * material using [Haze](https://github.com/chrisbanes/haze) for genuine real-time backdrop blur
+ * of whatever scrolls behind it (the same technique Slack/Instagram-style blurred bars use),
+ * rather than flat translucency. True Liquid Glass is still a native UIKit/SwiftUI-only API and
+ * isn't reachable from shared Compose UI without a much bigger native rewrite, but real backdrop
+ * blur gets far closer than a translucent color ever could. [hazeState] must be the same instance
+ * passed to [Modifier.hazeSource] on the scrollable content behind this bar. */
 @Composable
-fun GlassNavigationBar(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+fun GlassNavigationBar(hazeState: HazeState, modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
     val shape = RoundedCornerShape(28.dp)
     Box(
         modifier = modifier
@@ -209,13 +214,16 @@ fun GlassNavigationBar(modifier: Modifier = Modifier, content: @Composable RowSc
             .padding(horizontal = EvolaSpacing.lg, vertical = EvolaSpacing.sm)
             .shadow(elevation = 20.dp, shape = shape, ambientColor = Color.Black.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.35f))
             .clip(shape)
-            .background(EvolaColors.Surface.copy(alpha = 0.78f))
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color.White.copy(alpha = 0.10f), Color.Transparent, Color.White.copy(alpha = 0.02f)),
+            .hazeEffect(
+                state = hazeState,
+                style = HazeStyle(
+                    backgroundColor = EvolaColors.Surface,
+                    tint = HazeTint(EvolaColors.Surface.copy(alpha = 0.45f)),
+                    blurRadius = 24.dp,
+                    noiseFactor = 0.08f,
                 ),
             )
-            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)), shape),
+            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)), shape),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = EvolaSpacing.xs),
