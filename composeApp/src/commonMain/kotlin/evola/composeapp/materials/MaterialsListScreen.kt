@@ -13,9 +13,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import evola.composeapp.loading.ChaseLoadingIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -39,7 +43,12 @@ fun MaterialsListScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { TopAppBar(title = { RootTopBarTitle("Your materials") }) },
+        topBar = { TopAppBar(title = { RootTopBarTitle("Materials") }) },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddMaterial) {
+                Icon(Icons.Filled.Add, contentDescription = "Add material")
+            }
+        },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
@@ -47,7 +56,6 @@ fun MaterialsListScreen(
                 is MaterialsListState.Error -> ErrorBody(current.message, onRetry = viewModel::refresh)
                 is MaterialsListState.Loaded -> MaterialsListBody(
                     materials = current.materials,
-                    onAddMaterial = onAddMaterial,
                     onOpenMaterial = onOpenMaterial,
                 )
             }
@@ -82,14 +90,9 @@ private fun ErrorBody(message: String, onRetry: () -> Unit) {
 @Composable
 private fun MaterialsListBody(
     materials: List<Material>,
-    onAddMaterial: () -> Unit,
     onOpenMaterial: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Button(onClick = onAddMaterial, modifier = Modifier.fillMaxWidth()) {
-            Text("Add material")
-        }
-        Spacer(Modifier.height(16.dp))
         if (materials.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("No materials yet. Add one to get started.", style = MaterialTheme.typography.bodyLarge)
