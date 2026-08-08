@@ -15,7 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
+import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import evola.composeapp.theme.components.RootTopBarTitle
 import evola.shared.goals.Lesson
 
 /** Study tab per 06_SCREENS_REFERENCE.md screen #11 (Lesson Selection List, 01_PRODUCT_SPEC.md
@@ -39,7 +40,7 @@ import evola.shared.goals.Lesson
 fun StudyScreen(viewModel: LessonSelectionViewModel, onOpenLesson: (Lesson) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Study") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { RootTopBarTitle("Study") }) }) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
                 is LessonSelectionState.Loading -> ProgressMessage("Loading lessons...")
@@ -54,7 +55,7 @@ fun StudyScreen(viewModel: LessonSelectionViewModel, onOpenLesson: (Lesson) -> U
 private fun ProgressMessage(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator()
+            ChaseLoadingIndicator()
             Spacer(Modifier.height(16.dp))
             Text(message, style = MaterialTheme.typography.bodyLarge)
         }

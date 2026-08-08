@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -15,6 +14,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import evola.composeapp.BackHandler
+import evola.composeapp.language.LocalNativeLanguage
 import evola.composeapp.theme.components.GlassNavigationBar
 import evola.composeapp.lessons.GrammarExerciseSessionScreen
 import evola.composeapp.lessons.GrammarExerciseSessionViewModel
@@ -54,7 +55,7 @@ import evola.shared.lessons.LessonsRepository
 import evola.shared.materials.MaterialsRepository
 import evola.shared.vocabulary.VocabularyRepository
 
-private enum class MainTab { HOME, GOALS, STUDY, MATERIALS, PROFILE }
+private enum class MainTab { HOME, STUDY, MATERIALS, PROFILE }
 
 private sealed interface MaterialsSubScreen {
     data object List : MaterialsSubScreen
@@ -79,9 +80,11 @@ private sealed interface StudySubScreen {
 }
 
 /**
- * The 5-tab navigation shell per 06_SCREENS_REFERENCE.md: Home / Goals / Study / Materials /
- * Profile. Modal flows within a tab (add material, material detail) hide the bar, matching the
- * spec's "modal/full-screen flows hide the tab bar" note.
+ * The 4-tab navigation shell: Home / Study / Materials / Profile. The former standalone Goals tab
+ * was removed - Home's progress dashboard (readiness ring, streak, word breakdown) already covers
+ * everything it showed, and this app supports exactly one goal per user so a dedicated goals list
+ * has nowhere to grow. Modal flows within a tab (add material, material detail) hide the bar,
+ * matching the spec's "modal/full-screen flows hide the tab bar" note.
  */
 @Composable
 fun MainScreen(
@@ -104,6 +107,7 @@ fun MainScreen(
     val glassItemColors = NavigationBarItemDefaults.colors(indicatorColor = glassIndicatorColor)
     val hazeState = rememberHazeState()
 
+    CompositionLocalProvider(LocalNativeLanguage provides goal.nativeLanguage) {
     Scaffold(
         // Both insets are deliberately excluded here: each tab screen owns its own top inset via
         // its own Scaffold+TopAppBar (WindowInsets.statusBars), and GlassNavigationBar below owns
@@ -119,13 +123,6 @@ fun MainScreen(
                         onClick = { selectedTab = MainTab.HOME },
                         icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
                         label = { Text("Home") },
-                        colors = glassItemColors,
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == MainTab.GOALS,
-                        onClick = { selectedTab = MainTab.GOALS },
-                        icon = { Icon(Icons.Filled.Flag, contentDescription = "Goals") },
-                        label = { Text("Goals") },
                         colors = glassItemColors,
                     )
                     NavigationBarItem(
@@ -173,8 +170,6 @@ fun MainScreen(
                         },
                     )
                 }
-
-                MainTab.GOALS -> GoalsScreen(goal = goal)
 
                 MainTab.STUDY -> when (val sub = studySubScreen) {
                     StudySubScreen.List -> {
@@ -368,5 +363,6 @@ fun MainScreen(
                 }
             }
         }
+    }
     }
 }

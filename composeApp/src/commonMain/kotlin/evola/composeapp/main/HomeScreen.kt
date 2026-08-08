@@ -27,7 +27,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.components.RootTopBarTitle
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.Lesson
@@ -71,7 +72,7 @@ fun HomeScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Home") }) },
+        topBar = { TopAppBar(title = { RootTopBarTitle("Home") }) },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {
@@ -81,7 +82,7 @@ fun HomeScreen(
                 Spacer(Modifier.height(EvolaSpacing.xl))
 
                 when (val current = state) {
-                    is HomeState.Loading -> CenteredBox { CircularProgressIndicator() }
+                    is HomeState.Loading -> CenteredBox { ChaseLoadingIndicator() }
 
                     is HomeState.Error -> CenteredBox {
                         Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
