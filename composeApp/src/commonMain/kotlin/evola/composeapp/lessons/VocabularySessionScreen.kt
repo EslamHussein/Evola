@@ -42,6 +42,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -51,6 +52,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -94,8 +96,10 @@ private fun ladderStepIndex(card: VocabularyCard): Int = when (card) {
 fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     BackHandler(onBack = onDone)
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             Column {
                 TopAppBar(
@@ -115,6 +119,7 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
                             Text(tag, style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text2, modifier = Modifier.padding(end = EvolaSpacing.md))
                         }
                     },
+                    scrollBehavior = scrollBehavior,
                 )
                 (state as? VocabularySessionUiState.InProgress)?.let { inProgress ->
                     val session = inProgress.session
