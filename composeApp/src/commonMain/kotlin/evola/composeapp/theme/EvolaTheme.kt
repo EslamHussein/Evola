@@ -114,6 +114,19 @@ private fun evolaColorScheme() = darkColorScheme(
     onSurface = EvolaColors.Text,
     surfaceVariant = EvolaColors.Surface,
     onSurfaceVariant = EvolaColors.Text2,
+    // Left unset, these auto-derive from a generic Material neutral-gray algorithm - disconnected
+    // from this navy palette (confirmed via decompiling CardDefaults: plain Card() reads
+    // surfaceContainerHighest, which is exactly what was rendering as an off-brand gray). Pinning
+    // the whole tonal ladder to the two designed elevated tones makes every M3 component that
+    // reads a surfaceContainer* role (Card, BottomSheet, Menu, scrolled TopAppBar, ...) inherit
+    // the correct Nocturne navy instead, with no per-call-site overrides needed.
+    surfaceDim = EvolaColors.Paper,
+    surfaceBright = EvolaColors.SurfaceAlt,
+    surfaceContainerLowest = EvolaColors.Paper,
+    surfaceContainerLow = EvolaColors.Paper,
+    surfaceContainer = EvolaColors.Surface,
+    surfaceContainerHigh = EvolaColors.Surface,
+    surfaceContainerHighest = EvolaColors.Surface,
     error = EvolaColors.Rust,
     onError = Color(0xFF2A0F0A),
     errorContainer = EvolaColors.RustSoft,
