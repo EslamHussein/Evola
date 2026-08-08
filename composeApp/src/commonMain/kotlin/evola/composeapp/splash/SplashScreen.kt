@@ -35,6 +35,10 @@ import evola.composeapp.theme.EvolaColors
 import kotlin.math.sin
 
 // Timeline cues (seconds), from SPLASH_SCREEN_HANDOFF.md - Build[0,2.2) Beat[2.2,2.6) Reveal[2.6,3.6) Hold[3.6,...).
+// The Build phase itself is never replayed here - the OS-level system splash (ic_splash_mark)
+// already shows the fully-built mark before this screen's first frame, so this timeline starts
+// at CUE_BEAT instead of 0 to pick up exactly where that hand-off left off, rather than resetting
+// the mark back to tiny/invisible and re-animating it in a second time.
 private const val CUE_BEAT = 2.2f
 private const val CUE_REVEAL = 2.6f
 private const val CUE_HOLD = 3.6f
@@ -71,11 +75,12 @@ private object EaseOutBack : Easing {
 private data class SquareSpec(val delay: Float, val size: Dp, val dx: Dp, val dy: Dp, val maxOpacity: Float, val calm: Boolean)
 
 /** The app's icon mark: 3 squares popping in ascending/offset, per SPLASH_SCREEN_HANDOFF.md's exact
- * geometry table (base unit = 30dp). Square 3 (largest, last) settles calmly (easeOutQuart); 1-2
- * bounce in (easeOutBack). */
+ * geometry table (base unit = 42dp - scaled up 1.4x from the original 30dp spec to match the size
+ * the OS-level system splash actually renders ic_splash_mark.xml at, measured on-device). Square 3
+ * (largest, last) settles calmly (easeOutQuart); 1-2 bounce in (easeOutBack). */
 @Composable
 private fun Mark(t: Float, breathe: Float, fadeAlpha: Float) {
-    val unit = 30.dp
+    val unit = 42.dp
     val squares = remember(unit) {
         listOf(
             SquareSpec(0.00f, unit * 0.7f, unit * -1.625f, unit * 0.25f, 0.45f, calm = false),
@@ -118,7 +123,7 @@ private fun Wordmark(t: Float, fadeAlpha: Float) {
     Text(
         "Evola",
         modifier = Modifier.offset(y = rise).alpha(p * fadeAlpha),
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 32.sp, letterSpacing = 0.32.sp),
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 36.sp, letterSpacing = 0.36.sp),
         color = EvolaColors.Text,
     )
 }
@@ -130,7 +135,7 @@ private fun Tagline(t: Float, fadeAlpha: Float) {
     Text(
         "Let's get things done.",
         modifier = Modifier.offset(y = rise).alpha(p * fadeAlpha),
-        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium, fontSize = 14.sp, letterSpacing = 0.28.sp),
+        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium, fontSize = 15.sp, letterSpacing = 0.3.sp),
         color = EvolaColors.Text2,
     )
 }
@@ -140,7 +145,7 @@ private fun Tagline(t: Float, fadeAlpha: Float) {
  * both the animation's minimum reveal time and real data-loading have both completed. */
 @Composable
 fun SplashScreen(dataReady: Boolean, onFinished: () -> Unit) {
-    var t by remember { mutableFloatStateOf(0f) }
+    var t by remember { mutableFloatStateOf(CUE_BEAT) }
     var fading by remember { mutableStateOf(false) }
     var fadeAlpha by remember { mutableFloatStateOf(1f) }
     val currentDataReady by rememberUpdatedState(dataReady)
@@ -153,8 +158,8 @@ fun SplashScreen(dataReady: Boolean, onFinished: () -> Unit) {
             if (startNanos < 0) startNanos = nowNanos
             val elapsed = (nowNanos - startNanos) / 1_000_000_000f
             if (!fading) {
-                t = elapsed
-                if (currentDataReady && elapsed >= CUE_HOLD + MIN_HOLD_SECONDS) {
+                t = elapsed + CUE_BEAT
+                if (currentDataReady && t >= CUE_HOLD + MIN_HOLD_SECONDS) {
                     fading = true
                     fadeStartElapsed = elapsed
                 }
@@ -176,12 +181,18 @@ fun SplashScreen(dataReady: Boolean, onFinished: () -> Unit) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize().background(EvolaColors.Paper)) {
         // Lockup center at 46% of screen height (per handoff) - 4% above true center.
         val markCenterY = maxHeight * 0.46f
+        // The mark itself (not the wordmark/glow) is nudged from that lockup baseline to land
+        // exactly where the OS-level system splash renders ic_splash_mark.xml - measured on-device
+        // since the vector's viewport-center placement doesn't line up with this composable's
+        // naive center otherwise, which showed up as the mark visibly jumping at the handoff.
+        val markOffsetX = maxWidth * 0.054f
+        val markOffsetY = maxHeight * 0.032f
         val glowSize = 280.dp
 
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = markCenterY - glowSize / 2)
+                .offset(x = markOffsetX, y = markCenterY + markOffsetY - glowSize / 2)
                 .size(glowSize)
                 .graphicsLayer { alpha = glowAlpha }
                 .background(
@@ -190,12 +201,12 @@ fun SplashScreen(dataReady: Boolean, onFinished: () -> Unit) {
                 ),
         )
 
-        Box(modifier = Modifier.align(Alignment.TopCenter).offset(y = markCenterY)) {
+        Box(modifier = Modifier.align(Alignment.TopCenter).offset(x = markOffsetX, y = markCenterY + markOffsetY)) {
             Mark(t = t, breathe = breathe, fadeAlpha = fadeAlpha)
         }
 
         Column(
-            modifier = Modifier.align(Alignment.TopCenter).offset(y = markCenterY + 60.dp),
+            modifier = Modifier.align(Alignment.TopCenter).offset(y = markCenterY + markOffsetY + 84.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Wordmark(t = t, fadeAlpha = fadeAlpha)
