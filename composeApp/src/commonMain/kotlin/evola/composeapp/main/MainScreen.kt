@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -49,42 +48,45 @@ import evola.composeapp.wizard.ProcessingScreen
 import evola.composeapp.wizard.ProcessingViewModel
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalsRepository
-import evola.shared.goals.Lesson
 import evola.shared.grammar.GrammarRepository
 import evola.shared.lessons.LessonsRepository
 import evola.shared.materials.MaterialsRepository
 import evola.shared.vocabulary.VocabularyRepository
 
-private enum class MainTab { HOME, STUDY, MATERIALS, PROFILE }
+private enum class MainTab { HOME, MATERIALS, PROFILE }
 
+/** [materialId] is null when this destination was reached from Home's "Continue lesson" CTA
+ * rather than by drilling into a specific material - [LessonDetail] and everything below it fetch
+ * purely by lessonId either way (see [evola.shared.lessons.LessonsRepository]), so the only thing
+ * a null materialId changes is where the back button lands: [MaterialsSubScreen.List] instead of
+ * a specific [MaterialsSubScreen.Detail]. */
 private sealed interface MaterialsSubScreen {
     data object List : MaterialsSubScreen
     data object Add : MaterialsSubScreen
     data class Wizard(val staged: StagedResource) : MaterialsSubScreen
     data class Processing(val materialId: String) : MaterialsSubScreen
     data class Detail(val materialId: String) : MaterialsSubScreen
-    data class LessonDetail(val lessonId: String, val materialId: String) : MaterialsSubScreen
-    data class Session(val lessonId: String, val materialId: String) : MaterialsSubScreen
-    data class VocabularyList(val lessonId: String, val materialId: String) : MaterialsSubScreen
-    data class GrammarTopics(val lessonId: String, val materialId: String) : MaterialsSubScreen
-    data class GrammarSession(val lessonId: String, val topicId: String, val materialId: String) : MaterialsSubScreen
+    data class LessonDetail(val lessonId: String, val materialId: String?) : MaterialsSubScreen
+    data class Session(val lessonId: String, val materialId: String?) : MaterialsSubScreen
+    data class VocabularyList(val lessonId: String, val materialId: String?) : MaterialsSubScreen
+    data class GrammarTopics(val lessonId: String, val materialId: String?) : MaterialsSubScreen
+    data class GrammarSession(val lessonId: String, val topicId: String, val materialId: String?) : MaterialsSubScreen
 }
 
-private sealed interface StudySubScreen {
-    data object List : StudySubScreen
-    data class Home(val lesson: Lesson) : StudySubScreen
-    data class Session(val lesson: Lesson) : StudySubScreen
-    data class VocabularyList(val lesson: Lesson) : StudySubScreen
-    data class GrammarTopics(val lesson: Lesson) : StudySubScreen
-    data class GrammarSession(val lesson: Lesson, val topicId: String) : StudySubScreen
-}
+private fun MaterialsSubScreen.LessonDetail.backTarget(): MaterialsSubScreen =
+    materialId?.let { MaterialsSubScreen.Detail(it) } ?: MaterialsSubScreen.List
 
 /**
- * The 4-tab navigation shell: Home / Study / Materials / Profile. The former standalone Goals tab
- * was removed - Home's progress dashboard (readiness ring, streak, word breakdown) already covers
- * everything it showed, and this app supports exactly one goal per user so a dedicated goals list
- * has nowhere to grow. Modal flows within a tab (add material, material detail) hide the bar,
- * matching the spec's "modal/full-screen flows hide the tab bar" note.
+ * The 3-tab navigation shell: Home / Materials / Profile. Materials doubles as the lesson browser
+ * (Material Detail already lists a book's lessons with richer progress stats than a flat list
+ * ever could) - the former standalone Study tab was a redundant second way to reach the same
+ * [evola.composeapp.lessons.LessonDetailScreen], so it was folded in here; Home's "Continue
+ * lesson" CTA and Materials' own continue card now both just jump straight into
+ * [MaterialsSubScreen.LessonDetail]. The former standalone Goals tab was removed earlier - Home's
+ * progress dashboard (readiness ring, streak, word breakdown) already covers everything it
+ * showed, and this app supports exactly one goal per user so a dedicated goals list has nowhere
+ * to grow. Modal flows within a tab (add material, material detail) hide the bar, matching the
+ * spec's "modal/full-screen flows hide the tab bar" note.
  */
 @Composable
 fun MainScreen(
@@ -98,10 +100,8 @@ fun MainScreen(
     var goal by remember { mutableStateOf(initialGoal) }
     var selectedTab by remember { mutableStateOf(MainTab.HOME) }
     var materialsSubScreen by remember { mutableStateOf<MaterialsSubScreen>(MaterialsSubScreen.List) }
-    var studySubScreen by remember { mutableStateOf<StudySubScreen>(StudySubScreen.List) }
 
-    val showTabBar = (selectedTab != MainTab.MATERIALS || materialsSubScreen is MaterialsSubScreen.List) &&
-        (selectedTab != MainTab.STUDY || studySubScreen is StudySubScreen.List)
+    val showTabBar = selectedTab != MainTab.MATERIALS || materialsSubScreen is MaterialsSubScreen.List
 
     val glassIndicatorColor = Color.White.copy(alpha = 0.16f)
     val glassItemColors = NavigationBarItemDefaults.colors(indicatorColor = glassIndicatorColor)
@@ -123,16 +123,6 @@ fun MainScreen(
                         onClick = { selectedTab = MainTab.HOME },
                         icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
                         label = { Text("Home") },
-                        colors = glassItemColors,
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == MainTab.STUDY,
-                        onClick = {
-                            selectedTab = MainTab.STUDY
-                            studySubScreen = StudySubScreen.List
-                        },
-                        icon = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = "Study") },
-                        label = { Text("Study") },
                         colors = glassItemColors,
                     )
                     NavigationBarItem(
@@ -165,83 +155,20 @@ fun MainScreen(
                         viewModel = homeViewModel,
                         onGoToMaterials = { selectedTab = MainTab.MATERIALS },
                         onContinueLesson = { lesson ->
-                            selectedTab = MainTab.STUDY
-                            studySubScreen = StudySubScreen.Home(lesson)
+                            selectedTab = MainTab.MATERIALS
+                            materialsSubScreen = MaterialsSubScreen.LessonDetail(lesson.id, materialId = null)
                         },
                     )
                 }
 
-                MainTab.STUDY -> when (val sub = studySubScreen) {
-                    StudySubScreen.List -> {
-                        val viewModel = remember(goal.id) {
-                            LessonSelectionViewModel(goal.id, goalsRepository)
-                        }
-                        StudyScreen(viewModel = viewModel, onOpenLesson = { lesson -> studySubScreen = StudySubScreen.Home(lesson) })
-                    }
-
-                    is StudySubScreen.Home -> {
-                        BackHandler(onBack = { studySubScreen = StudySubScreen.List })
-                        val viewModel = remember(sub.lesson.id) {
-                            LessonDetailViewModel(sub.lesson.id, lessonsRepository)
-                        }
-                        LessonDetailScreen(
-                            viewModel = viewModel,
-                            onBack = { studySubScreen = StudySubScreen.List },
-                            onOpenSection = { key ->
-                                when (key) {
-                                    "vocabulary" -> studySubScreen = StudySubScreen.Session(sub.lesson)
-                                    "grammar" -> studySubScreen = StudySubScreen.GrammarTopics(sub.lesson)
-                                }
-                            },
-                            onViewVocabularyList = { studySubScreen = StudySubScreen.VocabularyList(sub.lesson) },
-                        )
-                    }
-
-                    is StudySubScreen.Session -> {
-                        val viewModel = remember(sub.lesson.id) {
-                            VocabularySessionViewModel(sub.lesson.id, vocabularyRepository)
-                        }
-                        VocabularySessionScreen(viewModel = viewModel, onDone = { studySubScreen = StudySubScreen.Home(sub.lesson) })
-                    }
-
-                    is StudySubScreen.VocabularyList -> {
-                        BackHandler(onBack = { studySubScreen = StudySubScreen.Home(sub.lesson) })
-                        val viewModel = remember(sub.lesson.id) {
-                            VocabularyListViewModel(sub.lesson.id, vocabularyRepository)
-                        }
-                        VocabularyListScreen(viewModel = viewModel, onBack = { studySubScreen = StudySubScreen.Home(sub.lesson) })
-                    }
-
-                    is StudySubScreen.GrammarTopics -> {
-                        BackHandler(onBack = { studySubScreen = StudySubScreen.Home(sub.lesson) })
-                        val viewModel = remember(sub.lesson.id) {
-                            GrammarTopicListViewModel(sub.lesson.id, grammarRepository)
-                        }
-                        GrammarTopicListScreen(
-                            viewModel = viewModel,
-                            onOpenTopic = { topicId -> studySubScreen = StudySubScreen.GrammarSession(sub.lesson, topicId) },
-                            onBack = { studySubScreen = StudySubScreen.Home(sub.lesson) },
-                        )
-                    }
-
-                    is StudySubScreen.GrammarSession -> {
-                        val viewModel = remember(sub.topicId) {
-                            GrammarExerciseSessionViewModel(sub.topicId, grammarRepository)
-                        }
-                        GrammarExerciseSessionScreen(
-                            viewModel = viewModel,
-                            onDone = { studySubScreen = StudySubScreen.GrammarTopics(sub.lesson) },
-                        )
-                    }
-                }
-
                 MainTab.MATERIALS -> when (val sub = materialsSubScreen) {
                     MaterialsSubScreen.List -> {
-                        val viewModel = remember { MaterialsListViewModel(materialsRepository) }
+                        val viewModel = remember(goal.id) { MaterialsListViewModel(goal.id, goalsRepository, materialsRepository) }
                         MaterialsListScreen(
                             viewModel = viewModel,
                             onAddMaterial = { materialsSubScreen = MaterialsSubScreen.Add },
                             onOpenMaterial = { materialId -> materialsSubScreen = MaterialsSubScreen.Detail(materialId) },
+                            onContinueLesson = { lesson -> materialsSubScreen = MaterialsSubScreen.LessonDetail(lesson.id, materialId = null) },
                         )
                     }
 
@@ -290,13 +217,13 @@ fun MainScreen(
                     }
 
                     is MaterialsSubScreen.LessonDetail -> {
-                        BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.Detail(sub.materialId) })
+                        BackHandler(onBack = { materialsSubScreen = sub.backTarget() })
                         val viewModel = remember(sub.lessonId) {
                             LessonDetailViewModel(sub.lessonId, lessonsRepository)
                         }
                         LessonDetailScreen(
                             viewModel = viewModel,
-                            onBack = { materialsSubScreen = MaterialsSubScreen.Detail(sub.materialId) },
+                            onBack = { materialsSubScreen = sub.backTarget() },
                             onOpenSection = { key ->
                                 when (key) {
                                     "vocabulary" -> materialsSubScreen = MaterialsSubScreen.Session(sub.lessonId, sub.materialId)

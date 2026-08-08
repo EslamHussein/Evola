@@ -33,7 +33,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import evola.composeapp.theme.EvolaColors
+import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.RootTopBarTitle
+import evola.shared.goals.Lesson
 import evola.shared.materials.Material
 
 @Composable
@@ -41,6 +44,7 @@ fun MaterialsListScreen(
     viewModel: MaterialsListViewModel,
     onAddMaterial: () -> Unit,
     onOpenMaterial: (String) -> Unit,
+    onContinueLesson: (Lesson) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -60,7 +64,9 @@ fun MaterialsListScreen(
                 is MaterialsListState.Error -> ErrorBody(current.message, onRetry = viewModel::refresh)
                 is MaterialsListState.Loaded -> MaterialsListBody(
                     materials = current.materials,
+                    currentLesson = current.currentLesson,
                     onOpenMaterial = onOpenMaterial,
+                    onContinueLesson = onContinueLesson,
                 )
             }
         }
@@ -94,7 +100,9 @@ private fun ErrorBody(message: String, onRetry: () -> Unit) {
 @Composable
 private fun MaterialsListBody(
     materials: List<Material>,
+    currentLesson: Lesson?,
     onOpenMaterial: (String) -> Unit,
+    onContinueLesson: (Lesson) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         if (materials.isEmpty()) {
@@ -106,11 +114,31 @@ private fun MaterialsListBody(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(vertical = 4.dp),
             ) {
+                currentLesson?.let { lesson ->
+                    item {
+                        ContinueLessonCard(lesson = lesson, onClick = { onContinueLesson(lesson) })
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
                 items(materials) { material ->
                     MaterialRow(material = material, onClick = { onOpenMaterial(material.id) })
                     Spacer(Modifier.height(8.dp))
                 }
             }
+        }
+    }
+}
+
+/** Same "what's next" job the old Study tab's flat list used to own, now surfaced as a single card
+ * above the book list - Materials is the one lesson browser now, so this is the one place that
+ * job needs to live. */
+@Composable
+private fun ContinueLessonCard(lesson: Lesson, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
+        Column(modifier = Modifier.padding(EvolaSpacing.md)) {
+            Text("Continue", style = MaterialTheme.typography.labelMedium, color = EvolaColors.Accent)
+            Spacer(Modifier.height(4.dp))
+            Text("${lesson.number}. ${lesson.title}", style = MaterialTheme.typography.titleMedium)
         }
     }
 }
