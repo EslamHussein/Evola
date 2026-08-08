@@ -587,7 +587,7 @@ private fun FeedbackNote(answered: VocabularyAnswerResult) {
     val (bg, text) = if (correct) {
         EvolaColors.GoldSoft to "Correct!"
     } else {
-        EvolaColors.RustSoft to "Not quite — the answer was \"${answered.correctAnswer}\". You'll see this again."
+        EvolaColors.RustSoft to "Not quite — the answer was \"${answered.correctAnswer}\". This step repeats later, so you'll get another shot."
     }
     Surface(color = bg, shape = MaterialTheme.shapes.small, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(EvolaSpacing.md)) {

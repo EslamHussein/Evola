@@ -11,10 +11,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.HourglassBottom
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import evola.composeapp.loading.ChaseLoadingIndicator
@@ -125,11 +131,7 @@ private fun VocabularyRow(item: VocabularyItem, onClick: () -> Unit) {
                     Spacer(Modifier.height(2.dp))
                     Text(item.meaning, style = MaterialTheme.typography.bodyMedium)
                 }
-                Text(
-                    item.status.replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.tertiary,
-                )
+                VocabularyStatusBadge(item.status)
             }
 
             // The learner's chosen native-language translation - falls back to nothing (the
@@ -154,6 +156,26 @@ private fun VocabularyRow(item: VocabularyItem, onClick: () -> Unit) {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
             }
         }
+    }
+}
+
+/** Maps the raw SRS status (unseen/introduced/learning/review/mastered - see VocabularySrs.STATUSES)
+ * onto the same ascending icon+color scale as the session's ladder progress, so a learner can
+ * connect "which step am I doing" (in the session) to "where does this word actually stand" (here)
+ * instead of the two screens using two unrelated vocabularies for one journey. */
+@Composable
+private fun VocabularyStatusBadge(status: String) {
+    val (icon, color, label) = when (status) {
+        "unseen" -> Triple(Icons.Filled.RadioButtonUnchecked, EvolaColors.Text3, "New")
+        "introduced" -> Triple(Icons.Filled.Circle, EvolaColors.Text2, "Introduced")
+        "learning" -> Triple(Icons.Filled.HourglassBottom, EvolaColors.Ink2, "Learning")
+        "review" -> Triple(Icons.Filled.Replay, EvolaColors.Ink2, "Review")
+        "mastered" -> Triple(Icons.Filled.CheckCircle, EvolaColors.Accent, "Mastered")
+        else -> Triple(Icons.Filled.RadioButtonUnchecked, EvolaColors.Text3, status.replaceFirstChar { it.uppercase() })
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = color)
     }
 }
 
