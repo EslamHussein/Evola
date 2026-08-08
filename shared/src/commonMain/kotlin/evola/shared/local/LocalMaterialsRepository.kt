@@ -213,7 +213,7 @@ class LocalMaterialsRepository(
             val itemId = newId()
             db.vocabularyQueries.insertItem(
                 itemId, lessonId, item.term, item.meaning, item.gender, item.exampleSentence,
-                item.partOfSpeech, item.grammaticalCase, item.exampleSentenceTranslation, item.nativeMeaning,
+                item.partOfSpeech, item.plural, item.grammaticalCase, item.exampleSentenceTranslation, item.nativeMeaning,
                 item.ipaPronunciation, encodeStringList(item.relatedWords), item.difficultyRating,
                 item.frequencyRating, item.memoryTip, item.grammarNote, now,
             )

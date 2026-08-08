@@ -21,6 +21,7 @@ sealed interface VocabularySessionUiState {
     data class InProgress(
         val session: VocabularySessionState,
         val answered: VocabularyAnswerResult? = null,
+        val explainLoading: Boolean = false,
     ) : VocabularySessionUiState
     data class Summary(val summary: VocabularySessionSummary) : VocabularySessionUiState
     data object Empty : VocabularySessionUiState
@@ -125,6 +126,25 @@ class VocabularySessionViewModel(
             val latest = state.value as? VocabularySessionUiState.InProgress ?: return@launch
             if (latest.session.card.itemId == card.itemId) {
                 _state.value = latest.copy(session = latest.session.copy(card = withDifficult(latest.session.card, updated.markedDifficult)))
+            }
+        }
+    }
+
+    /** Intro card's "AI explain" toggle - fetches (and caches server-side) a short note on the
+     * word. No-op if already loading or already have a note for this card. */
+    fun explainWord() {
+        val current = state.value as? VocabularySessionUiState.InProgress ?: return
+        val card = current.session.card as? VocabularyCard.Intro ?: return
+        if (current.explainLoading || card.aiExplanation != null) return
+        viewModelScope.launch {
+            _state.value = current.copy(explainLoading = true)
+            val note = repository.explainItem(card.itemId).getOrNull()
+            val latest = state.value as? VocabularySessionUiState.InProgress ?: return@launch
+            val latestCard = latest.session.card as? VocabularyCard.Intro ?: return@launch
+            _state.value = if (note != null && latestCard.itemId == card.itemId) {
+                latest.copy(explainLoading = false, session = latest.session.copy(card = latestCard.copy(aiExplanation = note)))
+            } else {
+                latest.copy(explainLoading = false)
             }
         }
     }

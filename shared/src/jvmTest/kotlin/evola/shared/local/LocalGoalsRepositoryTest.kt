@@ -49,7 +49,7 @@ class LocalGoalsRepositoryTest {
         // one material + lesson + one vocab item, already at the top of the 5-status ladder
         db.materialsQueries.insert("m1", LOCAL_USER, goal.id, "f.pdf", "h", "READY", "application/pdf", 1L, null, "entire", null, null, "txt", 0L)
         db.lessonsQueries.insert("l1", "m1", goal.id, 1L, "Lesson 1", "ready", null, 0L)
-        db.vocabularyQueries.insertItem("v1", "l1", "Hund", "dog", null, null, null, null, null, null, null, null, null, null, null, null, 0L)
+        db.vocabularyQueries.insertItem("v1", "l1", "Hund", "dog", null, null, null, null, null, null, null, null, null, null, null, null, null, 0L)
         db.vocabularyQueries.insertProgress("p1", LOCAL_USER, "v1", "mastered", 0L, 0L, 0L, 0L, null, 0L, 0L)
         db.activityQueries.upsert("a1", LOCAL_USER, "2026-08-05")
 
@@ -66,7 +66,7 @@ class LocalGoalsRepositoryTest {
         val goal = (r.createGoal("Learn German", null, NativeLanguage.ENGLISH) as CreateGoalResult.Success).goal
         db.materialsQueries.insert("m1", LOCAL_USER, goal.id, "f.pdf", "h", "READY", "application/pdf", 1L, null, "entire", null, null, "txt", 0L)
         db.lessonsQueries.insert("l1", "m1", goal.id, 1L, "Lesson 1", "ready", null, 0L)
-        db.vocabularyQueries.insertItem("v1", "l1", "Hund", "dog", null, null, null, null, null, null, null, null, null, null, null, null, 0L)
+        db.vocabularyQueries.insertItem("v1", "l1", "Hund", "dog", null, null, null, null, null, null, null, null, null, null, null, null, null, 0L)
         // "learning" is index 2 of 5 statuses (unseen=0..mastered=4) → 2/4 = 50%
         db.vocabularyQueries.insertProgress("p1", LOCAL_USER, "v1", "learning", 0L, 0L, 0L, 0L, null, 0L, 0L)
 

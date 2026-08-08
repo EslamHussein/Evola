@@ -1,9 +1,13 @@
 package evola.shared.local
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.shared.ai.AnthropicClient
 import evola.shared.core.ApiResult
 import evola.shared.db.EvolaDatabase
 import evola.shared.vocabulary.VocabularyCard
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,11 +27,12 @@ class LocalVocabularyRepositoryTest {
             val id = "v$i"
             db.vocabularyQueries.insertItem(
                 id, "l1", "Wort$i", "word$i", "der", "Das Wort$i ist gut.",
-                null, null, null, null, null, null, null, null, null, null, 0L,
+                null, null, null, null, null, null, null, null, null, null, null, 0L,
             )
             db.vocabularyQueries.insertProgress("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
         }
-        return LocalVocabularyRepository(db) to db
+        val anthropic = AnthropicClient(MockEngine { respond("{\"content\":[]}", HttpStatusCode.OK) }) { "sk-test" }
+        return LocalVocabularyRepository(db, anthropic) to db
     }
 
     @Test

@@ -29,12 +29,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -196,9 +198,11 @@ private fun CardBody(state: VocabularySessionUiState.InProgress, viewModel: Voca
         when (val card = state.session.card) {
             is VocabularyCard.Intro -> IntroCard(
                 card = card,
+                explainLoading = state.explainLoading,
                 onGotIt = viewModel::submitIntro,
                 onToggleBookmark = viewModel::toggleBookmark,
                 onToggleDifficult = viewModel::toggleDifficult,
+                onExplain = viewModel::explainWord,
             )
             is VocabularyCard.Recognition -> RecognitionCard(
                 card = card,
@@ -264,10 +268,23 @@ private fun GenderBadge(gender: String?) {
 @Composable
 private fun IntroCard(
     card: VocabularyCard.Intro,
+    explainLoading: Boolean,
     onGotIt: () -> Unit,
     onToggleBookmark: () -> Unit,
     onToggleDifficult: () -> Unit,
+    onExplain: () -> Unit,
 ) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(EvolaSpacing.xs))
+        Text(
+            "New word — learn it, then you'll practice it right away.",
+            style = MaterialTheme.typography.labelMedium,
+            color = EvolaColors.Text2,
+        )
+    }
+    Spacer(Modifier.height(EvolaSpacing.md))
+
     Row(verticalAlignment = Alignment.Top) {
         GenderBadge(card.gender)
         Spacer(Modifier.width(EvolaSpacing.md))
@@ -291,6 +308,11 @@ private fun IntroCard(
                 tint = if (card.isBookmarked) EvolaColors.Gold else EvolaColors.Text3,
             )
         }
+    }
+
+    val posLine = listOfNotNull(card.partOfSpeech, card.plural?.let { "Pl. $it" }).joinToString(" · ")
+    if (posLine.isNotEmpty()) {
+        Text(posLine, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
     }
     Spacer(Modifier.height(EvolaSpacing.sm))
 
@@ -359,6 +381,29 @@ private fun IntroCard(
         Spacer(Modifier.height(EvolaSpacing.md))
     }
 
+    val aiExplanation = card.aiExplanation
+    if (aiExplanation == null) {
+        OutlinedButton(onClick = onExplain, enabled = !explainLoading, modifier = Modifier.fillMaxWidth()) {
+            if (explainLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = EvolaColors.Accent)
+                Spacer(Modifier.width(EvolaSpacing.sm))
+            } else {
+                Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+            }
+            Text("AI explain")
+        }
+    } else {
+        Surface(color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.small, modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = Modifier.padding(EvolaSpacing.md)) {
+                Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(EvolaSpacing.sm))
+                Text(aiExplanation, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+    Spacer(Modifier.height(EvolaSpacing.md))
+
     OutlinedButton(onClick = onToggleDifficult, modifier = Modifier.fillMaxWidth()) {
         Icon(
             Icons.Filled.Warning,
@@ -371,7 +416,7 @@ private fun IntroCard(
     }
     Spacer(Modifier.height(EvolaSpacing.lg))
 
-    Button(onClick = onGotIt, modifier = Modifier.fillMaxWidth()) { Text("Got it") }
+    Button(onClick = onGotIt, modifier = Modifier.fillMaxWidth()) { Text("Got it — practice now") }
 }
 
 /** Ladder step 1: term shown, pick the correct translation from 4 options - matches the retired

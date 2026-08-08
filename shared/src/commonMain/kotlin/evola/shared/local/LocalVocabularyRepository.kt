@@ -1,5 +1,7 @@
 package evola.shared.local
 
+import evola.shared.ai.AnthropicClient
+import evola.shared.ai.AnthropicModels
 import evola.shared.core.ApiResult
 import evola.shared.core.DataError
 import evola.shared.db.EvolaDatabase
@@ -36,7 +38,10 @@ private val LADDER = listOf("recognition", "wordbank", "hint", "blind")
  * user is always [LOCAL_USER]. No AI grading call anywhere in this flow - every graded step is
  * decided deterministically (exact match for Recognition/WordBank, [isTolerantMatch] for Hint/Blind).
  */
-class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepository {
+class LocalVocabularyRepository(
+    private val db: EvolaDatabase,
+    private val anthropic: AnthropicClient,
+) : VocabularyRepository {
 
     override suspend fun startOrResumeSession(lessonId: String): ApiResult<VocabularySessionState> {
         db.lessonsQueries.selectById(lessonId).executeAsOneOrNull()
@@ -58,6 +63,8 @@ class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepos
                 meaning = row.meaning,
                 gender = row.gender,
                 exampleSentence = row.example_sentence,
+                partOfSpeech = row.part_of_speech,
+                plural = row.plural,
                 status = row.p_status,
                 nativeMeaning = row.native_meaning,
                 ipaPronunciation = row.ipa_pronunciation,
@@ -167,6 +174,30 @@ class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepos
         return ApiResult.Success(loadItemWithProgress(itemId))
     }
 
+    override suspend fun explainItem(itemId: String): ApiResult<String> {
+        val item = db.vocabularyQueries.itemById(itemId).executeAsOneOrNull()
+            ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
+        item.ai_note?.let { return ApiResult.Success(it) }
+
+        val system = "You explain a single vocabulary word to a language learner in 2-3 short, " +
+            "plain-language sentences: what it means, and one concrete usage or memory tip beyond " +
+            "what's already obvious from its translation. No headers, no markdown, no repeating the " +
+            "translation verbatim."
+        val user = buildString {
+            append("Word: ${item.term}")
+            append(" (${item.meaning})")
+            item.example_sentence?.let { append("\nExample: $it") }
+        }
+        return when (val result = anthropic.complete(AnthropicModels.SMALL, 300, system, user)) {
+            is ApiResult.Failure -> result
+            is ApiResult.Success -> {
+                val note = result.data.trim()
+                db.vocabularyQueries.updateAiNote(note, itemId)
+                ApiResult.Success(note)
+            }
+        }
+    }
+
     private fun loadItemWithProgress(itemId: String): VocabularyItem {
         val row = db.vocabularyQueries.itemWithProgress(itemId, LOCAL_USER).executeAsOne()
         return VocabularyItem(
@@ -175,6 +206,8 @@ class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepos
             meaning = row.meaning,
             gender = row.gender,
             exampleSentence = row.example_sentence,
+            partOfSpeech = row.part_of_speech,
+            plural = row.plural,
             status = row.p_status,
             nativeMeaning = row.native_meaning,
             ipaPronunciation = row.ipa_pronunciation,
@@ -323,6 +356,8 @@ class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepos
                 itemId = item.id,
                 term = item.term,
                 gender = item.gender,
+                partOfSpeech = item.part_of_speech,
+                plural = item.plural,
                 ipaPronunciation = item.ipa_pronunciation,
                 meaning = item.meaning,
                 exampleSentence = item.example_sentence,
@@ -334,6 +369,7 @@ class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepos
                 memoryTip = item.memory_tip,
                 isBookmarked = isBookmarked,
                 markedDifficult = isDifficult,
+                aiExplanation = item.ai_note,
             )
             "recognition" -> VocabularyCard.Recognition(
                 itemId = item.id,

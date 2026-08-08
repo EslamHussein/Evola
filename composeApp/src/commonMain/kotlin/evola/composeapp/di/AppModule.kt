@@ -40,7 +40,7 @@ class AppModule(
 
     val goalsRepository = LocalGoalsRepository(database)
     val lessonsRepository = LocalLessonsRepository(database)
-    val vocabularyRepository = LocalVocabularyRepository(database)
+    val vocabularyRepository = LocalVocabularyRepository(database, anthropic)
     val grammarRepository = LocalGrammarRepository(database)
     val materialsRepository = LocalMaterialsRepository(
         db = database,

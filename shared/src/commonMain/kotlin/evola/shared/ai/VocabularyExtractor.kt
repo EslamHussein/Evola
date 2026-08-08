@@ -12,6 +12,7 @@ data class ExtractedVocabItem(
     val gender: String? = null,
     val exampleSentence: String? = null,
     val partOfSpeech: String? = null,
+    val plural: String? = null,
     val grammaticalCase: String? = null,
     val exampleSentenceTranslation: String? = null,
     val nativeMeaning: String? = null,
@@ -30,6 +31,7 @@ private data class VocabItemJson(
     val gender: String? = null,
     @SerialName("example_sentence") val exampleSentence: String? = null,
     @SerialName("part_of_speech") val partOfSpeech: String? = null,
+    @SerialName("plural") val plural: String? = null,
     @SerialName("grammatical_case") val grammaticalCase: String? = null,
     @SerialName("example_sentence_translation") val exampleSentenceTranslation: String? = null,
     @SerialName("native_meaning") val nativeMeaning: String? = null,
@@ -59,6 +61,7 @@ private const val SYSTEM_PREFIX =
         "- gender: grammatical gender/article if the language marks it (der/die/das for German), else null\n" +
         "- example_sentence: a sentence using the word - prefer one from the source; it MUST contain the term\n" +
         "- part_of_speech: one of noun, verb, adjective, adverb, pronoun, preposition, conjunction, numeral, interjection, other\n" +
+        "- plural: the term's plural form if it's a noun (e.g. \"die Bücher\" for \"das Buch\"), else null\n" +
         "- grammatical_case: the term's case AS USED in example_sentence (nominative/accusative/dative/genitive) or null\n" +
         "- example_sentence_translation: a concise English translation of example_sentence\n" +
         "- native_meaning: a concise %NATIVE_LANGUAGE% translation of the term (the learner's native language)\n" +
@@ -74,7 +77,7 @@ private const val SYSTEM_PREFIX =
         "Output ONLY valid JSON, no prose, no markdown fences.\n\n" +
         "Output schema:\n" +
         "{\"items\": [{\"term\": string, \"meaning\": string, \"gender\": string|null, \"example_sentence\": string, " +
-        "\"part_of_speech\": string, \"grammatical_case\": string|null, \"example_sentence_translation\": string, " +
+        "\"part_of_speech\": string, \"plural\": string|null, \"grammatical_case\": string|null, \"example_sentence_translation\": string, " +
         "\"native_meaning\": string, \"ipa_pronunciation\": string, \"related_words\": [string], \"difficulty_rating\": string, " +
         "\"frequency_rating\": string, \"memory_tip\": string, \"grammar_note\": string|null}]}"
 
@@ -112,7 +115,7 @@ class VocabularyExtractor(
 
     private fun VocabItemJson.toDomain() = ExtractedVocabItem(
         term = term, meaning = meaning, gender = gender, exampleSentence = exampleSentence,
-        partOfSpeech = partOfSpeech, grammaticalCase = grammaticalCase,
+        partOfSpeech = partOfSpeech, plural = plural, grammaticalCase = grammaticalCase,
         exampleSentenceTranslation = exampleSentenceTranslation, nativeMeaning = nativeMeaning,
         ipaPronunciation = ipaPronunciation, relatedWords = relatedWords,
         difficultyRating = difficultyRating, frequencyRating = frequencyRating, memoryTip = memoryTip,

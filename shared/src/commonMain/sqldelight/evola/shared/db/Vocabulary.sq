@@ -6,6 +6,7 @@ CREATE TABLE vocabulary_items (
     gender TEXT,
     example_sentence TEXT,
     part_of_speech TEXT,
+    plural TEXT,
     grammatical_case TEXT,
     example_sentence_translation TEXT,
     native_meaning TEXT,
@@ -15,6 +16,7 @@ CREATE TABLE vocabulary_items (
     frequency_rating TEXT,
     memory_tip TEXT,
     grammar_note TEXT,
+    ai_note TEXT,
     created_at INTEGER NOT NULL
 );
 
@@ -82,14 +84,17 @@ itemsByLesson:
 SELECT * FROM vocabulary_items WHERE lesson_id = ? ORDER BY created_at ASC;
 
 insertItem:
-INSERT INTO vocabulary_items(id, lesson_id, term, meaning, gender, example_sentence, part_of_speech, grammatical_case, example_sentence_translation, native_meaning, ipa_pronunciation, related_words, difficulty_rating, frequency_rating, memory_tip, grammar_note, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO vocabulary_items(id, lesson_id, term, meaning, gender, example_sentence, part_of_speech, plural, grammatical_case, example_sentence_translation, native_meaning, ipa_pronunciation, related_words, difficulty_rating, frequency_rating, memory_tip, grammar_note, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 itemById:
 SELECT * FROM vocabulary_items WHERE id = ?;
 
 updateItemContent:
 UPDATE vocabulary_items SET term = ?, meaning = ?, native_meaning = ? WHERE id = ?;
+
+updateAiNote:
+UPDATE vocabulary_items SET ai_note = ? WHERE id = ?;
 
 -- progress ----------------------------------------------------------------
 

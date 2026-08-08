@@ -10,6 +10,8 @@ data class VocabularyItem(
     val meaning: String,
     val gender: String? = null,
     val exampleSentence: String? = null,
+    val partOfSpeech: String? = null,
+    val plural: String? = null,
     val status: String,
     val nativeMeaning: String? = null,
     val ipaPronunciation: String? = null,
@@ -35,6 +37,8 @@ sealed interface VocabularyCard {
         override val itemId: String,
         val term: String,
         val gender: String?,
+        val partOfSpeech: String?,
+        val plural: String?,
         val ipaPronunciation: String?,
         val meaning: String,
         val exampleSentence: String?,
@@ -46,6 +50,9 @@ sealed interface VocabularyCard {
         val memoryTip: String?,
         val isBookmarked: Boolean,
         val markedDifficult: Boolean,
+        /** null until the learner taps "AI explain"; populated (and persisted) by
+         * [VocabularyRepository.explainItem] on first request. */
+        val aiExplanation: String? = null,
     ) : VocabularyCard
 
     /** Ladder step 1 (graded): the term is shown, the learner picks its correct translation from
@@ -147,4 +154,8 @@ interface VocabularyRepository {
 
     /** Edits the extracted term/meaning directly - lets the learner fix an AI extraction mistake. */
     suspend fun updateItem(itemId: String, term: String, meaning: String, nativeMeaning: String?): ApiResult<VocabularyItem>
+
+    /** The Intro card's "AI explain" toggle: a short plain-language note on the word, generated
+     * once on first request and persisted so re-viewing the card never re-calls the model. */
+    suspend fun explainItem(itemId: String): ApiResult<String>
 }
