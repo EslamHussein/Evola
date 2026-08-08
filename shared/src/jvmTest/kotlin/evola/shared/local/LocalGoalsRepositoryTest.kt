@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.shared.core.ApiResult
 import evola.shared.db.EvolaDatabase
 import evola.shared.goals.CreateGoalResult
+import evola.shared.language.NativeLanguage
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,7 +23,7 @@ class LocalGoalsRepositoryTest {
     @Test
     fun `create then read active goal`() = runTest {
         val (r, _) = repo()
-        val created = r.createGoal("Pass the German B1 exam", null)
+        val created = r.createGoal("Pass the German B1 exam", null, NativeLanguage.ENGLISH)
         assertIs<CreateGoalResult.Success>(created)
         assertEquals("Pass the German B1 exam", created.goal.goalText)
 
@@ -33,7 +34,7 @@ class LocalGoalsRepositoryTest {
     @Test
     fun `getProgress is an honest zero state with no lessons`() = runTest {
         val (r, _) = repo()
-        val created = r.createGoal("Learn German", null) as CreateGoalResult.Success
+        val created = r.createGoal("Learn German", null, NativeLanguage.ENGLISH) as CreateGoalResult.Success
         val progress = (r.getProgress(created.goal.id, "2026-08-05") as ApiResult.Success).data
         assertEquals(0f, progress.overallPct)
         assertNull(progress.currentLessonId)
@@ -44,7 +45,7 @@ class LocalGoalsRepositoryTest {
     @Test
     fun `progress reflects a fully mastered lesson and streak`() = runTest {
         val (r, db) = repo()
-        val goal = (r.createGoal("Learn German", null) as CreateGoalResult.Success).goal
+        val goal = (r.createGoal("Learn German", null, NativeLanguage.ENGLISH) as CreateGoalResult.Success).goal
         // one material + lesson + one vocab item, already at the top of the 5-status ladder
         db.materialsQueries.insert("m1", LOCAL_USER, goal.id, "f.pdf", "h", "READY", "application/pdf", 1L, null, "entire", null, null, "txt", 0L)
         db.lessonsQueries.insert("l1", "m1", goal.id, 1L, "Lesson 1", "ready", null, 0L)
@@ -62,7 +63,7 @@ class LocalGoalsRepositoryTest {
     @Test
     fun `mid-ladder status yields partial progress`() = runTest {
         val (r, db) = repo()
-        val goal = (r.createGoal("Learn German", null) as CreateGoalResult.Success).goal
+        val goal = (r.createGoal("Learn German", null, NativeLanguage.ENGLISH) as CreateGoalResult.Success).goal
         db.materialsQueries.insert("m1", LOCAL_USER, goal.id, "f.pdf", "h", "READY", "application/pdf", 1L, null, "entire", null, null, "txt", 0L)
         db.lessonsQueries.insert("l1", "m1", goal.id, 1L, "Lesson 1", "ready", null, 0L)
         db.vocabularyQueries.insertItem("v1", "l1", "Hund", "dog", null, null, null, null, null, null, null, null, null, null, null, null, 0L)

@@ -11,7 +11,7 @@ data class VocabularyItem(
     val gender: String? = null,
     val exampleSentence: String? = null,
     val status: String,
-    val meaningAr: String? = null,
+    val nativeMeaning: String? = null,
     val ipaPronunciation: String? = null,
     val relatedWords: List<String> = emptyList(),
     val difficultyRating: String? = null,
@@ -146,5 +146,5 @@ interface VocabularyRepository {
     suspend fun updateFlags(itemId: String, isBookmarked: Boolean? = null, markedDifficult: Boolean? = null): ApiResult<VocabularyItem>
 
     /** Edits the extracted term/meaning directly - lets the learner fix an AI extraction mistake. */
-    suspend fun updateItem(itemId: String, term: String, meaning: String, meaningAr: String?): ApiResult<VocabularyItem>
+    suspend fun updateItem(itemId: String, term: String, meaning: String, nativeMeaning: String?): ApiResult<VocabularyItem>
 }

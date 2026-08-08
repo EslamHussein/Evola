@@ -25,7 +25,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
+import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -89,7 +89,7 @@ private fun CenteredMessage(message: String) {
 private fun ProgressMessage(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator()
+            ChaseLoadingIndicator()
             Spacer(Modifier.height(16.dp))
             Text(message, style = MaterialTheme.typography.bodyLarge)
         }

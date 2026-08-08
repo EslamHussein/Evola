@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
+import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,7 +38,7 @@ fun ProcessingScreen(
         ) {
             when (val current = state) {
                 ProcessingState.InProgress, is ProcessingState.Done -> {
-                    CircularProgressIndicator()
+                    ChaseLoadingIndicator()
                     Spacer(Modifier.height(EvolaSpacing.md))
                     Text("Analyzing your resource...", style = MaterialTheme.typography.titleMedium)
                     Text(

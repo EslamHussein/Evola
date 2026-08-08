@@ -34,7 +34,7 @@ import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import evola.composeapp.loading.ChaseLoadingDots
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -84,6 +84,7 @@ fun AiWizardScreen(
     (submitState as? WizardSubmitState.Duplicate)?.let { duplicate ->
         AlertDialog(
             onDismissRequest = viewModel::dismissDuplicatePrompt,
+            shape = MaterialTheme.shapes.large,
             title = { Text("Already uploaded") },
             text = { Text("You've already uploaded this content. Would you like to view it instead?") },
             confirmButton = {
@@ -126,7 +127,7 @@ fun AiWizardScreen(
                     ) {
                         if (isSubmitting) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = LocalContentColor.current)
+                                ChaseLoadingDots(size = 16.dp, color = LocalContentColor.current)
                                 Text("Starting...")
                             }
                         } else {

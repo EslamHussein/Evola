@@ -24,6 +24,7 @@ class EvolaDatabaseTest {
             user_id = "local",
             goal_text = "Pass the German B1 exam",
             title = "My journey",
+            native_language = "en",
             is_active = 1,
             created_at = 1_000L,
             updated_at = 1_000L,

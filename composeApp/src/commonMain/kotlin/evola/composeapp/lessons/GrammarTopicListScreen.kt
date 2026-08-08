@@ -16,7 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
+import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -56,7 +56,7 @@ fun GrammarTopicListScreen(viewModel: GrammarTopicListViewModel, onOpenTopic: (S
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
                 is GrammarTopicListState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    ChaseLoadingIndicator()
                 }
 
                 is GrammarTopicListState.Error -> Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {

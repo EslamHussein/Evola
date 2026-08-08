@@ -34,9 +34,9 @@ class VocabularyListViewModel(
         }
     }
 
-    fun updateItem(itemId: String, term: String, meaning: String, meaningAr: String?) {
+    fun updateItem(itemId: String, term: String, meaning: String, nativeMeaning: String?) {
         viewModelScope.launch {
-            repository.updateItem(itemId, term, meaning, meaningAr).fold(
+            repository.updateItem(itemId, term, meaning, nativeMeaning).fold(
                 onSuccess = { updated ->
                     val current = _state.value
                     if (current is VocabularyListState.Loaded) {

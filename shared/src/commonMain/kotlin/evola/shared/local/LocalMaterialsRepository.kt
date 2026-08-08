@@ -10,6 +10,7 @@ import evola.shared.files.FileTextExtractor
 import evola.shared.files.detectMimeType
 import evola.shared.files.MIME_TEXT_PLAIN
 import evola.shared.db.EvolaDatabase
+import evola.shared.language.NativeLanguage
 import evola.shared.materials.Lesson
 import evola.shared.materials.Material
 import evola.shared.materials.MaterialDetail
@@ -140,7 +141,9 @@ class LocalMaterialsRepository(
             db.materialsQueries.updateStatus("FAILED", materialId)
             return
         }
-        val goalText = db.goalsQueries.selectById(material.goal_id).executeAsOneOrNull()?.goal_text ?: ""
+        val goalRow = db.goalsQueries.selectById(material.goal_id).executeAsOneOrNull()
+        val goalText = goalRow?.goal_text ?: ""
+        val nativeLanguage = goalRow?.native_language?.let { NativeLanguage.fromCode(it) } ?: NativeLanguage.ENGLISH
         EvolaLog.d("extract", "processMaterial start: mode=${material.organization_mode} textChars=${text.length} goalChars=${goalText.length}")
 
         val segments: List<RawSegment> = if (material.organization_mode == "entire") {
@@ -175,7 +178,7 @@ class LocalMaterialsRepository(
                 lessonId, materialId, material.goal_id, (index + 1).toLong(), segment.title.take(150),
                 "pending", "${segment.startOffset}:${segment.endOffset}", now,
             )
-            extractVocabulary(lessonId, goalText, lessonText, material.ai_instructions, existingTerms)
+            extractVocabulary(lessonId, goalText, lessonText, material.ai_instructions, nativeLanguage, existingTerms)
             // Vocabulary-only scope: grammar extraction is disabled for now (saves the grammar
             // generation + answer-key-validation model calls). Re-enable extractGrammar(...) to
             // bring Grammar back.
@@ -191,9 +194,10 @@ class LocalMaterialsRepository(
         goalText: String,
         lessonText: String,
         aiInstructions: String?,
+        nativeLanguage: NativeLanguage,
         existingTerms: MutableSet<String>,
     ) {
-        val items = when (val r = vocabExtractor.extract(goalText, lessonText, aiInstructions)) {
+        val items = when (val r = vocabExtractor.extract(goalText, lessonText, aiInstructions, nativeLanguage)) {
             is ApiResult.Success -> r.data
             is ApiResult.Failure -> {
                 EvolaLog.d("extract", "vocab extraction failed for lesson=$lessonId error=${r.error}")
@@ -209,7 +213,7 @@ class LocalMaterialsRepository(
             val itemId = newId()
             db.vocabularyQueries.insertItem(
                 itemId, lessonId, item.term, item.meaning, item.gender, item.exampleSentence,
-                item.partOfSpeech, item.grammaticalCase, item.exampleSentenceTranslation, item.meaningAr,
+                item.partOfSpeech, item.grammaticalCase, item.exampleSentenceTranslation, item.nativeMeaning,
                 item.ipaPronunciation, encodeStringList(item.relatedWords), item.difficultyRating,
                 item.frequencyRating, item.memoryTip, item.grammarNote, now,
             )

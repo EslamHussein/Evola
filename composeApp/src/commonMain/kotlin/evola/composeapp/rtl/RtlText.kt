@@ -12,12 +12,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
+import evola.composeapp.language.LocalNativeLanguage
 import evola.composeapp.theme.arabicFamily
 
-/** Renders Arabic (or any RTL-script) text: forces RTL layout direction, right-alignment, and the
- * dedicated Arabic-capable font - neither of the app's Latin fonts (Inter/Fraunces) contain Arabic
- * glyphs, so this is required everywhere Arabic vocabulary/translations appear, not just a visual
- * nicety. */
+/** Renders text in the learner's chosen native language ([LocalNativeLanguage]): RTL layout,
+ * right-alignment, and the dedicated Arabic-script font for RTL languages (Arabic today; neither of
+ * the app's Latin fonts contain those glyphs), or a plain LTR `Text` for everything else. Every
+ * translation/native-language call site uses this instead of branching itself. */
 @Composable
 fun RtlText(
     text: String,
@@ -25,6 +26,11 @@ fun RtlText(
     style: TextStyle = LocalTextStyle.current,
     color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
 ) {
+    val nativeLanguage = LocalNativeLanguage.current
+    if (!nativeLanguage.isRtl) {
+        Text(text = text, modifier = modifier, style = style, color = color)
+        return
+    }
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
             Text(

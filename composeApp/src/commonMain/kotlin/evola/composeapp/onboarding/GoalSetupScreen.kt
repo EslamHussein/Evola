@@ -33,12 +33,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import evola.shared.goals.Goal
+import evola.shared.language.NativeLanguage
 
 private const val GOAL_TEXT_SOFT_CAP = 200
 
-/** Goal Setup per 01_PRODUCT_SPEC.md §1.4 - freeform text only, no template picker. */
+/** Goal Setup per 01_PRODUCT_SPEC.md §1.4 - freeform text only, no template picker. [nativeLanguage]
+ * was already chosen on the preceding onboarding step and is saved atomically with the goal. */
 @Composable
-fun GoalSetupScreen(viewModel: GoalSetupViewModel, onGoalCreated: (Goal) -> Unit) {
+fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguage, onGoalCreated: (Goal) -> Unit) {
     val isSubmitting by viewModel.isSubmitting.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
     var goalText by remember { mutableStateOf("") }
@@ -112,7 +114,7 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, onGoalCreated: (Goal) -> Unit
             }
             Spacer(Modifier.height(24.dp))
             Button(
-                onClick = { viewModel.createGoal(goalText, title, onGoalCreated) },
+                onClick = { viewModel.createGoal(goalText, title, nativeLanguage, onGoalCreated) },
                 enabled = !isSubmitting && goalText.trim().length >= 3,
                 modifier = Modifier.fillMaxWidth(),
             ) {

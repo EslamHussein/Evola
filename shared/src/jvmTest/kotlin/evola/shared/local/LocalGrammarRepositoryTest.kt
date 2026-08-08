@@ -15,7 +15,7 @@ class LocalGrammarRepositoryTest {
         EvolaDatabase.Schema.create(driver)
         val db = EvolaDatabase(driver)
         // goal + material + lesson + one topic (progress 'new') + two fill_in_blank exercises
-        db.goalsQueries.insert("g1", LOCAL_USER, "Learn German", "t", 1L, 0L, 0L)
+        db.goalsQueries.insert("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L)
         db.materialsQueries.insert("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L)
         db.lessonsQueries.insert("l1", "m1", "g1", 1L, "Lesson 1", "ready", null, 0L)
         db.grammarQueries.insertTopic("t1", "l1", "Akkusativ", "The accusative case", 0L)

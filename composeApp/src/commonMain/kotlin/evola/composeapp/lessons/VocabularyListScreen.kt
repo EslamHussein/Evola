@@ -17,7 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
+import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import evola.composeapp.language.LocalNativeLanguage
 import evola.composeapp.rtl.RtlText
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
@@ -51,8 +52,8 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
         EditVocabularyDialog(
             item = item,
             onDismiss = { editingItem = null },
-            onSave = { term, meaning, meaningAr ->
-                viewModel.updateItem(item.itemId, term, meaning, meaningAr)
+            onSave = { term, meaning, nativeMeaning ->
+                viewModel.updateItem(item.itemId, term, meaning, nativeMeaning)
                 editingItem = null
             },
         )
@@ -73,7 +74,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
                 is VocabularyListState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    ChaseLoadingIndicator()
                 }
 
                 is VocabularyListState.Error -> Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -125,10 +126,10 @@ private fun VocabularyRow(item: VocabularyItem, onClick: () -> Unit) {
                 )
             }
 
-            // Arabic is the design handoff's real target native-language translation - falls back
-            // to nothing (the English meaning above already covers pre-V12 items) rather than a
-            // duplicate/confusing second English line.
-            item.meaningAr?.let {
+            // The learner's chosen native-language translation - falls back to nothing (the
+            // English meaning above already covers items with no native translation yet) rather
+            // than a duplicate/confusing second English line.
+            item.nativeMeaning?.let {
                 Spacer(Modifier.height(EvolaSpacing.xs))
                 RtlText(it, style = MaterialTheme.typography.bodyMedium)
             }
@@ -166,14 +167,16 @@ private fun Tag(label: String) {
 private fun EditVocabularyDialog(
     item: VocabularyItem,
     onDismiss: () -> Unit,
-    onSave: (term: String, meaning: String, meaningAr: String?) -> Unit,
+    onSave: (term: String, meaning: String, nativeMeaning: String?) -> Unit,
 ) {
     var term by remember(item.itemId) { mutableStateOf(item.term) }
     var meaning by remember(item.itemId) { mutableStateOf(item.meaning) }
-    var meaningAr by remember(item.itemId) { mutableStateOf(item.meaningAr ?: "") }
+    var nativeMeaning by remember(item.itemId) { mutableStateOf(item.nativeMeaning ?: "") }
+    val nativeLanguage = LocalNativeLanguage.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = MaterialTheme.shapes.large,
         title = { Text("Edit word") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
@@ -192,9 +195,9 @@ private fun EditVocabularyDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
-                    value = meaningAr,
-                    onValueChange = { meaningAr = it },
-                    label = { Text("Arabic meaning (optional)") },
+                    value = nativeMeaning,
+                    onValueChange = { nativeMeaning = it },
+                    label = { Text("${nativeLanguage.englishName} meaning (optional)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -202,7 +205,7 @@ private fun EditVocabularyDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(term.trim(), meaning.trim(), meaningAr.trim().ifBlank { null }) },
+                onClick = { onSave(term.trim(), meaning.trim(), nativeMeaning.trim().ifBlank { null }) },
                 enabled = term.isNotBlank() && meaning.isNotBlank(),
             ) { Text("Save") }
         },

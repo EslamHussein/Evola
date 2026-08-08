@@ -35,7 +35,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -138,7 +138,7 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
-                is VocabularySessionUiState.Loading -> CenteredMessage { CircularProgressIndicator() }
+                is VocabularySessionUiState.Loading -> CenteredMessage { ChaseLoadingIndicator() }
 
                 is VocabularySessionUiState.Error -> CenteredMessage {
                     Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)

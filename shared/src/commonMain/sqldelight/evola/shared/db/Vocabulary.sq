@@ -8,7 +8,7 @@ CREATE TABLE vocabulary_items (
     part_of_speech TEXT,
     grammatical_case TEXT,
     example_sentence_translation TEXT,
-    meaning_ar TEXT,
+    native_meaning TEXT,
     ipa_pronunciation TEXT,
     related_words TEXT,
     difficulty_rating TEXT,
@@ -82,14 +82,14 @@ itemsByLesson:
 SELECT * FROM vocabulary_items WHERE lesson_id = ? ORDER BY created_at ASC;
 
 insertItem:
-INSERT INTO vocabulary_items(id, lesson_id, term, meaning, gender, example_sentence, part_of_speech, grammatical_case, example_sentence_translation, meaning_ar, ipa_pronunciation, related_words, difficulty_rating, frequency_rating, memory_tip, grammar_note, created_at)
+INSERT INTO vocabulary_items(id, lesson_id, term, meaning, gender, example_sentence, part_of_speech, grammatical_case, example_sentence_translation, native_meaning, ipa_pronunciation, related_words, difficulty_rating, frequency_rating, memory_tip, grammar_note, created_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 itemById:
 SELECT * FROM vocabulary_items WHERE id = ?;
 
 updateItemContent:
-UPDATE vocabulary_items SET term = ?, meaning = ?, meaning_ar = ? WHERE id = ?;
+UPDATE vocabulary_items SET term = ?, meaning = ?, native_meaning = ? WHERE id = ?;
 
 -- progress ----------------------------------------------------------------
 
@@ -180,7 +180,7 @@ WHERE vp.user_id = ? AND vp.status = 'mastered'
 LIMIT ?;
 
 allUserVocab:
-SELECT vi.id, vi.term, vi.meaning, vi.meaning_ar, vi.example_sentence, vi.example_sentence_translation
+SELECT vi.id, vi.term, vi.meaning, vi.native_meaning, vi.example_sentence, vi.example_sentence_translation
 FROM vocabulary_items vi
 JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
 WHERE vp.user_id = ?;

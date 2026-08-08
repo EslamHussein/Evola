@@ -14,6 +14,7 @@ poi = "5.2.5"
 agp = "8.7.3"
 composeMultiplatform = "1.8.0"
 androidxActivity = "1.9.3"
+androidxSplashscreen = "1.0.1"
 androidxLifecycle = "2.8.4"
 kotlinxDatetime = "0.6.1"
 androidxSecurityCrypto = "1.1.0-alpha06"
@@ -74,6 +75,7 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "jun
 kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
 
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
+androidx-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidxSplashscreen" }
 androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidxSecurityCrypto" }

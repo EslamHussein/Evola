@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The largest/last square of the Compose splash's 3-square mark (see
+     evola.composeapp.splash.SplashScreen) - shown as the OS-level splash icon so the system's
+     mandatory pre-draw splash (Android 12+) bridges into the real animation on the same brand
+     mark, instead of the default launcher-icon placeholder. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#7C6CF0"
+        android:pathData="M34,24 H74 A10,10 0 0 1 84,34 V74 A10,10 0 0 1 74,84 H34 A10,10 0 0 1 24,74 V34 A10,10 0 0 1 34,24 Z" />
+</vector>

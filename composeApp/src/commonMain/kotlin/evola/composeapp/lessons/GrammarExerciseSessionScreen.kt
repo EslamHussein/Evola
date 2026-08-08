@@ -20,7 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -74,7 +74,7 @@ fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onD
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
-                is GrammarExerciseSessionState.Loading -> CenteredMessage { CircularProgressIndicator() }
+                is GrammarExerciseSessionState.Loading -> CenteredMessage { ChaseLoadingIndicator() }
 
                 is GrammarExerciseSessionState.Error -> CenteredMessage {
                     Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)

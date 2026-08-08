@@ -10,6 +10,7 @@ import evola.shared.goals.Lesson
 import evola.shared.goals.NudgeWord
 import evola.shared.goals.UpdateGoalResult
 import evola.shared.goals.VocabularyBreakdown
+import evola.shared.language.NativeLanguage
 import evola.shared.srs.computeStreak
 import evola.shared.vocabulary.VocabularySrs
 import kotlinx.datetime.LocalDate
@@ -19,30 +20,33 @@ import kotlinx.datetime.LocalDate
  * mirrors the retired server `GoalService`. */
 class LocalGoalsRepository(private val db: EvolaDatabase) : GoalsRepository {
 
-    override suspend fun createGoal(goalText: String, title: String?): CreateGoalResult {
+    override suspend fun createGoal(goalText: String, title: String?, nativeLanguage: NativeLanguage): CreateGoalResult {
         val text = goalText.trim()
         if (text.length !in 3..200) return CreateGoalResult.ValidationError("Goal text must be 3-200 characters.")
         val resolvedTitle = title?.trim()?.ifBlank { null } ?: autoTitle(text)
         val now = nowMillis()
         db.goalsQueries.deactivateAll(LOCAL_USER)
         val id = newId()
-        db.goalsQueries.insert(id, LOCAL_USER, text, resolvedTitle, 1L, now, now)
-        return CreateGoalResult.Success(Goal(id, text, resolvedTitle, isActive = true, createdAt = now.toString()))
+        db.goalsQueries.insert(id, LOCAL_USER, text, resolvedTitle, nativeLanguage.code, 1L, now, now)
+        return CreateGoalResult.Success(Goal(id, text, resolvedTitle, nativeLanguage, isActive = true, createdAt = now.toString()))
     }
 
-    override suspend fun updateGoal(goalId: String, goalText: String?, title: String?): UpdateGoalResult {
+    override suspend fun updateGoal(goalId: String, goalText: String?, title: String?, nativeLanguage: NativeLanguage?): UpdateGoalResult {
         val existing = db.goalsQueries.selectById(goalId).executeAsOneOrNull()
             ?: return UpdateGoalResult.NotFound
         val newText = goalText?.trim() ?: existing.goal_text
         if (newText.length !in 3..200) return UpdateGoalResult.ValidationError("Goal text must be 3-200 characters.")
         val newTitle = title?.trim()?.ifBlank { null } ?: existing.title
-        db.goalsQueries.update(newText, newTitle, nowMillis(), goalId)
-        return UpdateGoalResult.Success(Goal(goalId, newText, newTitle, existing.is_active == 1L, existing.created_at.toString()))
+        val newNativeLanguage = nativeLanguage ?: NativeLanguage.fromCode(existing.native_language)
+        db.goalsQueries.update(newText, newTitle, newNativeLanguage.code, nowMillis(), goalId)
+        return UpdateGoalResult.Success(Goal(goalId, newText, newTitle, newNativeLanguage, existing.is_active == 1L, existing.created_at.toString()))
     }
 
     override suspend fun getActiveGoal(): ApiResult<Goal?> {
         val row = db.goalsQueries.selectActive(LOCAL_USER).executeAsOneOrNull()
-        return ApiResult.Success(row?.let { Goal(it.id, it.goal_text, it.title, it.is_active == 1L, it.created_at.toString()) })
+        return ApiResult.Success(
+            row?.let { Goal(it.id, it.goal_text, it.title, NativeLanguage.fromCode(it.native_language), it.is_active == 1L, it.created_at.toString()) },
+        )
     }
 
     override suspend fun listLessons(goalId: String): ApiResult<List<Lesson>> {

@@ -1,12 +1,14 @@
 package evola.shared.goals
 
 import evola.shared.core.ApiResult
+import evola.shared.language.NativeLanguage
 
 /** Onboarding + Goal Setup per 01_PRODUCT_SPEC.md §1.3-1.4: exactly one active goal per account. */
 data class Goal(
     val id: String,
     val goalText: String,
     val title: String?,
+    val nativeLanguage: NativeLanguage,
     val isActive: Boolean,
     val createdAt: String,
 )
@@ -72,8 +74,8 @@ data class VocabularyBreakdown(
 interface GoalsRepository {
     // createGoal/updateGoal keep their own sealed result types — they model domain-specific
     // outcomes (active-goal conflict, validation) that a generic ApiResult would flatten.
-    suspend fun createGoal(goalText: String, title: String?): CreateGoalResult
-    suspend fun updateGoal(goalId: String, goalText: String?, title: String?): UpdateGoalResult
+    suspend fun createGoal(goalText: String, title: String?, nativeLanguage: NativeLanguage): CreateGoalResult
+    suspend fun updateGoal(goalId: String, goalText: String?, title: String?, nativeLanguage: NativeLanguage?): UpdateGoalResult
     /** Success(null) means "no active goal yet" (a real state → onboarding), distinct from a
      * Failure (network/server) — the old `Goal?` couldn't tell them apart. */
     suspend fun getActiveGoal(): ApiResult<Goal?>

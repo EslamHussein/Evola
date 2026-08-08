@@ -32,6 +32,7 @@ kotlin {
             api(compose.materialIconsExtended)
             api(compose.ui)
             implementation(compose.components.resources)
+            implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.haze)
@@ -42,6 +43,9 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.sqldelight.android.driver)
             implementation(libs.pdfbox.android)
+            // Not debug-scoped: the KMP androidMain DSL doesn't expose build-type-specific
+            // configurations. Small tooling dependency, acceptable to ship in release too.
+            implementation(compose.uiTooling)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

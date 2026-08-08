@@ -6,6 +6,7 @@ import evola.shared.core.getOrNull
 import evola.shared.goals.CreateGoalResult
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalsRepository
+import evola.shared.language.NativeLanguage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +24,7 @@ class GoalSetupViewModel(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    fun createGoal(goalText: String, title: String?, onSuccess: (Goal) -> Unit) {
+    fun createGoal(goalText: String, title: String?, nativeLanguage: NativeLanguage, onSuccess: (Goal) -> Unit) {
         val trimmedText = goalText.trim()
         if (trimmedText.length < 3) {
             _errorMessage.value = "Tell us a bit more about your goal (at least 3 characters)."
@@ -34,7 +35,7 @@ class GoalSetupViewModel(
             _isSubmitting.value = true
             _errorMessage.value = null
             try {
-                when (val result = goalsRepository.createGoal(trimmedText, title?.trim()?.ifBlank { null })) {
+                when (val result = goalsRepository.createGoal(trimmedText, title?.trim()?.ifBlank { null }, nativeLanguage)) {
                     is CreateGoalResult.Success -> onSuccess(result.goal)
                     CreateGoalResult.ActiveGoalExists -> onSuccess(
                         // Shouldn't normally happen from this screen, but if it does the user

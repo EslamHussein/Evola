@@ -1,6 +1,7 @@
 package evola.shared.ai
 
 import evola.shared.core.ApiResult
+import evola.shared.language.NativeLanguage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -13,7 +14,7 @@ data class ExtractedVocabItem(
     val partOfSpeech: String? = null,
     val grammaticalCase: String? = null,
     val exampleSentenceTranslation: String? = null,
-    val meaningAr: String? = null,
+    val nativeMeaning: String? = null,
     val ipaPronunciation: String? = null,
     val relatedWords: List<String> = emptyList(),
     val difficultyRating: String? = null,
@@ -31,7 +32,7 @@ private data class VocabItemJson(
     @SerialName("part_of_speech") val partOfSpeech: String? = null,
     @SerialName("grammatical_case") val grammaticalCase: String? = null,
     @SerialName("example_sentence_translation") val exampleSentenceTranslation: String? = null,
-    @SerialName("meaning_ar") val meaningAr: String? = null,
+    @SerialName("native_meaning") val nativeMeaning: String? = null,
     @SerialName("ipa_pronunciation") val ipaPronunciation: String? = null,
     @SerialName("related_words") val relatedWords: List<String> = emptyList(),
     @SerialName("difficulty_rating") val difficultyRating: String? = null,
@@ -60,7 +61,7 @@ private const val SYSTEM_PREFIX =
         "- part_of_speech: one of noun, verb, adjective, adverb, pronoun, preposition, conjunction, numeral, interjection, other\n" +
         "- grammatical_case: the term's case AS USED in example_sentence (nominative/accusative/dative/genitive) or null\n" +
         "- example_sentence_translation: a concise English translation of example_sentence\n" +
-        "- meaning_ar: a concise Modern Standard Arabic translation of the term (the learner's native language)\n" +
+        "- native_meaning: a concise %NATIVE_LANGUAGE% translation of the term (the learner's native language)\n" +
         "- ipa_pronunciation: the term's pronunciation in IPA\n" +
         "- related_words: 2-4 related German words (array of strings), empty if none\n" +
         "- difficulty_rating: easy, medium, or hard\n" +
@@ -74,7 +75,7 @@ private const val SYSTEM_PREFIX =
         "Output schema:\n" +
         "{\"items\": [{\"term\": string, \"meaning\": string, \"gender\": string|null, \"example_sentence\": string, " +
         "\"part_of_speech\": string, \"grammatical_case\": string|null, \"example_sentence_translation\": string, " +
-        "\"meaning_ar\": string, \"ipa_pronunciation\": string, \"related_words\": [string], \"difficulty_rating\": string, " +
+        "\"native_meaning\": string, \"ipa_pronunciation\": string, \"related_words\": [string], \"difficulty_rating\": string, " +
         "\"frequency_rating\": string, \"memory_tip\": string, \"grammar_note\": string|null}]}"
 
 /** On-device vocabulary extraction (04_AI_PROMPTS.md §2), ported from `VocabularyExtractionWorker`.
@@ -84,8 +85,13 @@ class VocabularyExtractor(
     private val client: AnthropicClient,
     private val maxAttempts: Int = 3,
 ) {
-    suspend fun extract(goalText: String, lessonText: String, aiInstructions: String?): ApiResult<List<ExtractedVocabItem>> {
-        val system = SYSTEM_PREFIX.replace("%GOAL%", goalText) +
+    suspend fun extract(
+        goalText: String,
+        lessonText: String,
+        aiInstructions: String?,
+        nativeLanguage: NativeLanguage,
+    ): ApiResult<List<ExtractedVocabItem>> {
+        val system = SYSTEM_PREFIX.replace("%GOAL%", goalText).replace("%NATIVE_LANGUAGE%", nativeLanguage.aiPromptName) +
             (aiInstructions?.trim()?.takeIf { it.isNotEmpty() }?.let { AI_INSTRUCTIONS_SUFFIX + it } ?: "")
 
         var lastFailure: ApiResult.Failure? = null
@@ -107,7 +113,7 @@ class VocabularyExtractor(
     private fun VocabItemJson.toDomain() = ExtractedVocabItem(
         term = term, meaning = meaning, gender = gender, exampleSentence = exampleSentence,
         partOfSpeech = partOfSpeech, grammaticalCase = grammaticalCase,
-        exampleSentenceTranslation = exampleSentenceTranslation, meaningAr = meaningAr,
+        exampleSentenceTranslation = exampleSentenceTranslation, nativeMeaning = nativeMeaning,
         ipaPronunciation = ipaPronunciation, relatedWords = relatedWords,
         difficultyRating = difficultyRating, frequencyRating = frequencyRating, memoryTip = memoryTip,
         grammarNote = grammarNote,

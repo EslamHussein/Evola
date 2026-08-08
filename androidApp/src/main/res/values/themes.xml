@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ shows this system splash unconditionally before the first frame draws,
+         regardless of whether the app defines one - core-splashscreen backports it to minSdk 24
+         too, so this is the single source of truth on every supported version. Configured to
+         match evola.composeapp.splash.SplashScreen's own opening frame (same background, same
+         mark) so the handoff from system splash to the real animation is seamless rather than a
+         mismatched default-launcher-icon flash. -->
+    <style name="Theme.Evola.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_mark</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.Material.Light.NoActionBar</item>
+    </style>
+</resources>

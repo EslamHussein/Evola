@@ -59,7 +59,7 @@ class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepos
                 gender = row.gender,
                 exampleSentence = row.example_sentence,
                 status = row.p_status,
-                meaningAr = row.meaning_ar,
+                nativeMeaning = row.native_meaning,
                 ipaPronunciation = row.ipa_pronunciation,
                 relatedWords = decodeStringList(row.related_words),
                 difficultyRating = row.difficulty_rating,
@@ -102,7 +102,7 @@ class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepos
         }
         val item = db.vocabularyQueries.itemById(itemId).executeAsOneOrNull()
             ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
-        val correctAnswer = if (queueRow.card_type == "recognition") item.meaning_ar ?: item.meaning else item.term
+        val correctAnswer = if (queueRow.card_type == "recognition") item.native_meaning ?: item.meaning else item.term
         val correct = selectedChoice == correctAnswer
 
         return gradeAndAdvance(sessionId, itemId, queueRow.id, queueRow.card_type, queueRow.position, correct, selectedChoice).let {
@@ -160,10 +160,10 @@ class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepos
         return ApiResult.Success(loadItemWithProgress(itemId))
     }
 
-    override suspend fun updateItem(itemId: String, term: String, meaning: String, meaningAr: String?): ApiResult<VocabularyItem> {
+    override suspend fun updateItem(itemId: String, term: String, meaning: String, nativeMeaning: String?): ApiResult<VocabularyItem> {
         db.vocabularyQueries.progressForItem(LOCAL_USER, itemId).executeAsOneOrNull()
             ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
-        db.vocabularyQueries.updateItemContent(term, meaning, meaningAr, itemId)
+        db.vocabularyQueries.updateItemContent(term, meaning, nativeMeaning, itemId)
         return ApiResult.Success(loadItemWithProgress(itemId))
     }
 
@@ -176,7 +176,7 @@ class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepos
             gender = row.gender,
             exampleSentence = row.example_sentence,
             status = row.p_status,
-            meaningAr = row.meaning_ar,
+            nativeMeaning = row.native_meaning,
             ipaPronunciation = row.ipa_pronunciation,
             relatedWords = decodeStringList(row.related_words),
             difficultyRating = row.difficulty_rating,
@@ -250,10 +250,10 @@ class LocalVocabularyRepository(private val db: EvolaDatabase) : VocabularyRepos
 
     private fun buildChoicesFor(itemId: String, cardType: String): String {
         val item = db.vocabularyQueries.itemById(itemId).executeAsOne()
-        val correct = if (cardType == "recognition") item.meaning_ar ?: item.meaning else item.term
+        val correct = if (cardType == "recognition") item.native_meaning ?: item.meaning else item.term
         val pool = db.vocabularyQueries.allUserVocab(LOCAL_USER).executeAsList().filter { it.id != itemId }
         val distractors = if (cardType == "recognition") {
-            pool.map { it.meaning_ar ?: it.meaning }
+            pool.map { it.native_meaning ?: it.meaning }
         } else {
             pool.map { it.term }
         }.shuffled().take(CHOICE_COUNT - 1)

@@ -16,7 +16,7 @@ class LocalVocabularyRepositoryTest {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         EvolaDatabase.Schema.create(driver)
         val db = EvolaDatabase(driver)
-        db.goalsQueries.insert("g1", LOCAL_USER, "Learn German", "t", 1L, 0L, 0L)
+        db.goalsQueries.insert("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L)
         db.materialsQueries.insert("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L)
         db.lessonsQueries.insert("l1", "m1", "g1", 1L, "Lesson 1", "ready", null, 0L)
         repeat(itemCount) { i ->
