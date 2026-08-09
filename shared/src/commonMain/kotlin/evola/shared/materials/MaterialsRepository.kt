@@ -13,6 +13,9 @@ sealed interface UploadResult {
     data class DuplicateFile(val existingMaterialId: String) : UploadResult
 }
 
+/** One picked photo for the Add Resource "Image" material type - see [MaterialsRepository.uploadImages]. */
+data class ImageInput(val fileName: String, val mimeType: String, val bytes: ByteArray)
+
 interface MaterialsRepository {
     // upload/uploadText keep the UploadResult sealed type — it models seven specific outcomes
     // (duplicate, password-protected, no extractable text, …) a generic ApiResult would flatten.
@@ -29,6 +32,17 @@ interface MaterialsRepository {
         goalId: String,
         fileName: String,
         text: String,
+        organizationMode: String = "auto",
+        aiInstructions: String? = null,
+        resourceType: String? = null,
+    ): UploadResult
+
+    /** One or more photos (e.g. photographed book pages), transcribed on-device via
+     * [evola.shared.ai.ImageTranscriber] and concatenated into one material - the resulting text
+     * runs through the exact same segmentation/vocab/grammar pipeline as PDF/DOCX/pasted text. */
+    suspend fun uploadImages(
+        goalId: String,
+        images: List<ImageInput>,
         organizationMode: String = "auto",
         aiInstructions: String? = null,
         resourceType: String? = null,

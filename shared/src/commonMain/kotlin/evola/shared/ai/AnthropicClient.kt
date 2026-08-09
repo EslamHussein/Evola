@@ -18,6 +18,8 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 /** Model IDs, matching the tiers the server used: SMALL for extraction/generation, LARGE for the
  * mandatory grammar answer-key validation. */
@@ -42,6 +44,23 @@ private data class AnthropicContentBlock(val type: String, val text: String? = n
 
 @Serializable
 private data class AnthropicResponse(val content: List<AnthropicContentBlock> = emptyList())
+
+@Serializable
+private data class AnthropicImageSource(val type: String = "base64", @SerialName("media_type") val mediaType: String, val data: String)
+
+@Serializable
+private data class AnthropicRequestBlock(val type: String, val text: String? = null, val source: AnthropicImageSource? = null)
+
+@Serializable
+private data class AnthropicVisionMessage(val role: String, val content: List<AnthropicRequestBlock>)
+
+@Serializable
+private data class AnthropicVisionRequest(
+    val model: String,
+    @SerialName("max_tokens") val maxTokens: Int,
+    val system: String? = null,
+    val messages: List<AnthropicVisionMessage>,
+)
 
 /**
  * On-device Anthropic Messages client (serverless architecture): calls `api.anthropic.com` directly
@@ -84,6 +103,41 @@ class AnthropicClient(
         }
         if (result is ApiResult.Failure) {
             EvolaLog.d("anthropic", "call failed: model=$model keyLen=${key.length} inputChars=${userMessage.length} error=${result.error}")
+        }
+        return result.map { response -> response.content.mapNotNull { it.text }.joinToString("") }
+    }
+
+    /** Same contract as [complete], but the user turn is an image + text prompt instead of plain
+     * text - used for the Add Resource "Image" material type (transcribing a photographed page
+     * on-device, no native OCR library needed since Claude's vision input already does this). */
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun completeWithImage(
+        model: String,
+        maxTokens: Int,
+        system: String?,
+        prompt: String,
+        imageBytes: ByteArray,
+        imageMediaType: String,
+    ): ApiResult<String> {
+        val key = apiKeyProvider()?.takeIf { it.isNotBlank() }
+        if (key == null) {
+            EvolaLog.d("anthropic", "no API key available (null/blank) — short-circuiting to 401")
+            return ApiResult.Failure(DataError.Http(401, "No Anthropic API key set. Add it in Profile."))
+        }
+        val content = listOf(
+            AnthropicRequestBlock(type = "image", source = AnthropicImageSource(mediaType = imageMediaType, data = Base64.encode(imageBytes))),
+            AnthropicRequestBlock(type = "text", text = prompt),
+        )
+        val result = safeRequest<AnthropicResponse> {
+            client.post("https://api.anthropic.com/v1/messages") {
+                header("x-api-key", key)
+                header("anthropic-version", "2023-06-01")
+                contentType(ContentType.Application.Json)
+                setBody(AnthropicVisionRequest(model, maxTokens, system, listOf(AnthropicVisionMessage("user", content))))
+            }
+        }
+        if (result is ApiResult.Failure) {
+            EvolaLog.d("anthropic", "vision call failed: model=$model keyLen=${key.length} imageBytes=${imageBytes.size} error=${result.error}")
         }
         return result.map { response -> response.content.mapNotNull { it.text }.joinToString("") }
     }

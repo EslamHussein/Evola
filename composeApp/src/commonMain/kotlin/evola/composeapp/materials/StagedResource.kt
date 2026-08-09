@@ -13,4 +13,8 @@ sealed interface StagedResource {
     data class Text(val text: String) : StagedResource {
         override val title: String get() = "Pasted text"
     }
+
+    data class Images(val images: List<PickedFile>) : StagedResource {
+        override val title: String get() = if (images.size == 1) images.first().fileName else "${images.size} photos"
+    }
 }

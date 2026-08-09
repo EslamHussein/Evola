@@ -14,6 +14,13 @@ import platform.Foundation.dataWithContentsOfURL
 import platform.UIKit.UIApplication
 import platform.UIKit.UIDocumentPickerDelegateProtocol
 import platform.UIKit.UIDocumentPickerViewController
+import platform.UIKit.UIImage
+import platform.UIKit.UIImagePickerController
+import platform.UIKit.UIImagePickerControllerDelegateProtocol
+import platform.UIKit.UIImagePickerControllerOriginalImage
+import platform.UIKit.UIImagePickerControllerSourceType
+import platform.UIKit.UIImageJPEGRepresentation
+import platform.UIKit.UINavigationControllerDelegateProtocol
 import platform.UniformTypeIdentifiers.UTType
 import platform.UniformTypeIdentifiers.UTTypePDF
 import platform.darwin.NSObject
@@ -77,5 +84,54 @@ actual fun rememberFilePicker(onPicked: (PickedFile) -> Unit): () -> Unit {
         picker.delegate = delegate
         UIApplication.sharedApplication.keyWindow?.rootViewController
             ?.presentViewController(picker, animated = true, completion = null)
+    }
+}
+
+/** One photo per launch (tap the Add Resource screen's "+" tile again for more) - mirrors
+ * [FilePickerDelegate]'s pattern but for [UIImagePickerController]'s photo-library source. */
+@OptIn(ExperimentalForeignApi::class)
+private class ImagePickerDelegate(
+    private val onPicked: (PickedFile) -> Unit,
+) : NSObject(), UIImagePickerControllerDelegateProtocol, UINavigationControllerDelegateProtocol {
+
+    override fun imagePickerController(picker: UIImagePickerController, didFinishPickingMediaWithInfo: Map<Any?, *>) {
+        picker.dismissViewControllerAnimated(true, completion = null)
+        val image = didFinishPickingMediaWithInfo[UIImagePickerControllerOriginalImage] as? UIImage ?: return
+        val data = UIImageJPEGRepresentation(image, 0.85) ?: return
+        onPicked(PickedFile("photo.jpg", "image/jpeg", data.toByteArray()))
+    }
+
+    override fun imagePickerControllerDidCancel(picker: UIImagePickerController) {
+        picker.dismissViewControllerAnimated(true, completion = null)
+    }
+}
+
+@Composable
+actual fun rememberImagePicker(onPicked: (PickedFile) -> Unit): () -> Unit {
+    val onPickedState = rememberUpdatedState(onPicked)
+    val delegate = remember { ImagePickerDelegate { onPickedState.value(it) } }
+    return {
+        val picker = UIImagePickerController()
+        picker.sourceType = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypePhotoLibrary
+        picker.delegate = delegate
+        UIApplication.sharedApplication.keyWindow?.rootViewController
+            ?.presentViewController(picker, animated = true, completion = null)
+    }
+}
+
+@Composable
+actual fun rememberCameraCapture(onPicked: (PickedFile) -> Unit): () -> Unit {
+    val onPickedState = rememberUpdatedState(onPicked)
+    val delegate = remember { ImagePickerDelegate { onPickedState.value(it) } }
+    return {
+        // No-ops on simulators/devices without a camera - matches this function's documented
+        // contract (rather than crashing UIImagePickerController, which requires this check).
+        if (UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera)) {
+            val picker = UIImagePickerController()
+            picker.sourceType = UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera
+            picker.delegate = delegate
+            UIApplication.sharedApplication.keyWindow?.rootViewController
+                ?.presentViewController(picker, animated = true, completion = null)
+        }
     }
 }

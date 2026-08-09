@@ -3,6 +3,7 @@ package evola.composeapp.wizard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import evola.composeapp.materials.StagedResource
+import evola.shared.materials.ImageInput
 import evola.shared.materials.MaterialsRepository
 import evola.shared.materials.UploadResult
 import kotlinx.coroutines.CancellationException
@@ -121,6 +122,12 @@ class AiWizardViewModel(
                     )
                     is StagedResource.Text -> repository.uploadText(
                         goalId, resource.title, resource.text,
+                        organizationMode = _organizationMode.value.wireValue,
+                        aiInstructions = instructions,
+                        resourceType = _resourceType.value.wireValue,
+                    )
+                    is StagedResource.Images -> repository.uploadImages(
+                        goalId, resource.images.map { ImageInput(it.fileName, it.mimeType, it.bytes) },
                         organizationMode = _organizationMode.value.wireValue,
                         aiInstructions = instructions,
                         resourceType = _resourceType.value.wireValue,

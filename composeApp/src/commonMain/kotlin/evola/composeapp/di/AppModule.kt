@@ -4,6 +4,7 @@ import evola.composeapp.KEY_ANTHROPIC_API_KEY
 import evola.composeapp.SecureStore
 import evola.shared.ai.AnthropicClient
 import evola.shared.ai.GrammarExtractor
+import evola.shared.ai.ImageTranscriber
 import evola.shared.ai.SegmentationExtractor
 import evola.shared.ai.VocabularyExtractor
 import evola.shared.db.EvolaDatabase
@@ -48,6 +49,7 @@ class AppModule(
         segmentation = SegmentationExtractor(anthropic),
         vocabExtractor = VocabularyExtractor(anthropic),
         grammarExtractor = GrammarExtractor(anthropic),
+        imageTranscriber = ImageTranscriber(anthropic),
         scope = extractionScope,
     )
 }

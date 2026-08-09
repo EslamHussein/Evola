@@ -1,6 +1,7 @@
 package evola.shared.local
 
 import evola.shared.ai.GrammarExtractor
+import evola.shared.ai.ImageTranscriber
 import evola.shared.ai.SegmentationExtractor
 import evola.shared.ai.VocabularyExtractor
 import evola.shared.core.ApiResult
@@ -11,6 +12,7 @@ import evola.shared.files.detectMimeType
 import evola.shared.files.MIME_TEXT_PLAIN
 import evola.shared.db.EvolaDatabase
 import evola.shared.language.NativeLanguage
+import evola.shared.materials.ImageInput
 import evola.shared.materials.Lesson
 import evola.shared.materials.Material
 import evola.shared.materials.MaterialDetail
@@ -39,6 +41,7 @@ class LocalMaterialsRepository(
     private val segmentation: SegmentationExtractor,
     private val vocabExtractor: VocabularyExtractor,
     private val grammarExtractor: GrammarExtractor,
+    private val imageTranscriber: ImageTranscriber,
     private val scope: CoroutineScope,
 ) : MaterialsRepository {
 
@@ -67,6 +70,35 @@ class LocalMaterialsRepository(
     ): UploadResult {
         if (text.length > MAX_PASTED_TEXT_LENGTH) return UploadResult.FileTooLarge
         return finishUpload(goalId, fileName, MIME_TEXT_PLAIN, text.encodeToByteArray().size.toLong(), text, organizationMode, aiInstructions, resourceType)
+    }
+
+    override suspend fun uploadImages(
+        goalId: String,
+        images: List<ImageInput>,
+        organizationMode: String,
+        aiInstructions: String?,
+        resourceType: String?,
+    ): UploadResult {
+        if (images.isEmpty()) return UploadResult.NoExtractableText
+        if (images.sumOf { it.bytes.size } > MAX_FILE_SIZE_BYTES) return UploadResult.FileTooLarge
+
+        val transcribed = images.mapNotNull { image ->
+            when (val result = imageTranscriber.transcribe(image.bytes, image.mimeType)) {
+                is ApiResult.Success -> result.data.trim().takeIf { it.isNotEmpty() }
+                is ApiResult.Failure -> {
+                    EvolaLog.d("materials", "image transcription failed for ${image.fileName}: ${result.error}")
+                    null
+                }
+            }
+        }
+        val combinedText = transcribed.joinToString("\n\n")
+        if (combinedText.isEmpty()) return UploadResult.NoExtractableText
+
+        val fileName = if (images.size == 1) images.first().fileName else "${images.size} photos"
+        return finishUpload(
+            goalId, fileName, MIME_TEXT_PLAIN, combinedText.encodeToByteArray().size.toLong(),
+            combinedText, organizationMode, aiInstructions, resourceType,
+        )
     }
 
     private fun finishUpload(
