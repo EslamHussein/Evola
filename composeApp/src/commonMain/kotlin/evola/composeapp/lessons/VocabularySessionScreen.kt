@@ -239,6 +239,15 @@ private fun genderBadgeLabel(gender: String?): String? = when (gender?.lowercase
     else -> null
 }
 
+/** Some already-extracted rows have the article baked into [term] itself (a pre-existing extraction
+ * slip - see [evola.shared.ai.VocabularyExtractor]); guards this render site so it doesn't show up
+ * twice ("Der Der Hund") when we prepend [gender] below. */
+private fun termWithoutDuplicateArticle(term: String, gender: String?): String {
+    if (gender.isNullOrBlank()) return term
+    val prefix = "$gender "
+    return if (term.startsWith(prefix, ignoreCase = true)) term.substring(prefix.length) else term
+}
+
 /** der = blue, die = red, das = green - a common learner mnemonic for the article. */
 private fun articleColor(gender: String?): androidx.compose.ui.graphics.Color? = when (gender?.lowercase()) {
     "der" -> EvolaColors.GenderMasculine
@@ -296,7 +305,7 @@ private fun IntroCard(
                             withStyle(SpanStyle(color = color)) { append("$gender ") }
                         } ?: append("$gender ")
                     }
-                    append(card.term)
+                    append(termWithoutDuplicateArticle(card.term, card.gender))
                 },
                 style = MaterialTheme.typography.headlineMedium,
             )

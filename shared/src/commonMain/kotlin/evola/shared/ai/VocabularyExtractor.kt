@@ -56,7 +56,9 @@ private const val SYSTEM_PREFIX =
         "text contains far more candidate words than useful (e.g. skip incidental proper nouns), " +
         "not to invent vocabulary that isn't actually in the text.\n\n" +
         "For each vocabulary-worthy word or short fixed phrase in the lesson text:\n" +
-        "- term: base/dictionary form (not the inflected form) unless the inflection is the teaching point\n" +
+        "- term: base/dictionary form (not the inflected form) unless the inflection is the teaching point. " +
+        "For languages with a grammatical article (e.g. German der/die/das), term is the noun ALONE, " +
+        "WITHOUT the article - the article goes only in the separate gender field below\n" +
         "- meaning: a concise translation/definition in the learner's native language\n" +
         "- gender: grammatical gender/article if the language marks it (der/die/das for German), else null\n" +
         "- example_sentence: a sentence using the word - prefer one from the source; it MUST contain the term\n" +
@@ -114,11 +116,20 @@ class VocabularyExtractor(
     }
 
     private fun VocabItemJson.toDomain() = ExtractedVocabItem(
-        term = term, meaning = meaning, gender = gender, exampleSentence = exampleSentence,
+        term = stripLeadingArticle(term, gender), meaning = meaning, gender = gender, exampleSentence = exampleSentence,
         partOfSpeech = partOfSpeech, plural = plural, grammaticalCase = grammaticalCase,
         exampleSentenceTranslation = exampleSentenceTranslation, nativeMeaning = nativeMeaning,
         ipaPronunciation = ipaPronunciation, relatedWords = relatedWords,
         difficultyRating = difficultyRating, frequencyRating = frequencyRating, memoryTip = memoryTip,
         grammarNote = grammarNote,
     )
+}
+
+/** Defends against the model occasionally folding the article into [term] itself (e.g. term="Der
+ * Hund", gender="der") despite the prompt saying not to - callers that prepend gender to term for
+ * display would otherwise render it twice ("Der Der Hund"). */
+private fun stripLeadingArticle(term: String, gender: String?): String {
+    if (gender.isNullOrBlank()) return term
+    val prefix = "$gender "
+    return if (term.startsWith(prefix, ignoreCase = true)) term.substring(prefix.length) else term
 }
