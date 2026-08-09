@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
@@ -49,6 +48,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import evola.composeapp.BackHandler
 import evola.composeapp.language.LocalNativeLanguage
 import evola.composeapp.rtl.RtlText
 import evola.composeapp.theme.EvolaColors
@@ -61,14 +61,15 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
     var editingItem by remember { mutableStateOf<VocabularyItem?>(null) }
 
     editingItem?.let { item ->
-        EditVocabularyDialog(
+        EditVocabularyScreen(
             item = item,
-            onDismiss = { editingItem = null },
+            onBack = { editingItem = null },
             onSave = { term, meaning, nativeMeaning ->
                 viewModel.updateItem(item.itemId, term, meaning, nativeMeaning)
                 editingItem = null
             },
         )
+        return
     }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -200,52 +201,65 @@ private fun Tag(label: String, icon: androidx.compose.ui.graphics.vector.ImageVe
     }
 }
 
+/** Full screen rather than a popup dialog - editing needs enough room for the on-screen keyboard
+ * plus three fields (one of them RTL-aware) without the dialog's cramped fixed height. */
 @Composable
-private fun EditVocabularyDialog(
+private fun EditVocabularyScreen(
     item: VocabularyItem,
-    onDismiss: () -> Unit,
+    onBack: () -> Unit,
     onSave: (term: String, meaning: String, nativeMeaning: String?) -> Unit,
 ) {
     var term by remember(item.itemId) { mutableStateOf(item.term) }
     var meaning by remember(item.itemId) { mutableStateOf(item.meaning) }
     var nativeMeaning by remember(item.itemId) { mutableStateOf(item.nativeMeaning ?: "") }
     val nativeLanguage = LocalNativeLanguage.current
+    val canSave = term.isNotBlank() && meaning.isNotBlank()
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.large,
-        title = { Text("Edit word") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-                OutlinedTextField(
-                    value = term,
-                    onValueChange = { term = it },
-                    label = { Text("Term") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = meaning,
-                    onValueChange = { meaning = it },
-                    label = { Text("Meaning") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = nativeMeaning,
-                    onValueChange = { nativeMeaning = it },
-                    label = { Text("${nativeLanguage.englishName} meaning (optional)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+    BackHandler(onBack = onBack)
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Edit word") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel")
+                    }
+                },
+                actions = {
+                    TextButton(
+                        onClick = { onSave(term.trim(), meaning.trim(), nativeMeaning.trim().ifBlank { null }) },
+                        enabled = canSave,
+                    ) { Text("Save") }
+                },
+            )
         },
-        confirmButton = {
-            TextButton(
-                onClick = { onSave(term.trim(), meaning.trim(), nativeMeaning.trim().ifBlank { null }) },
-                enabled = term.isNotBlank() && meaning.isNotBlank(),
-            ) { Text("Save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+    ) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(EvolaSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(EvolaSpacing.md),
+        ) {
+            OutlinedTextField(
+                value = term,
+                onValueChange = { term = it },
+                label = { Text("Term") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = meaning,
+                onValueChange = { meaning = it },
+                label = { Text("Meaning") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = nativeMeaning,
+                onValueChange = { nativeMeaning = it },
+                label = { Text("${nativeLanguage.englishName} meaning (optional)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
 }
