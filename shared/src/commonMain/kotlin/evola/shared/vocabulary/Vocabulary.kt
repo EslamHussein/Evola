@@ -116,6 +116,11 @@ data class VocabularySessionState(
     val cardsRemaining: Int,
     val card: VocabularyCard,
     val origin: String,
+    /** 1-based position of the current word among the session's distinct words (not ladder
+     * cards - a new word spans several cards but counts as one step here), and the session's
+     * total distinct word count. Drives a "word 3 of 5" readout. */
+    val wordIndex: Int,
+    val totalWords: Int,
 )
 
 /** [correct] is null for Intro (never graded - "Got it" always proceeds). [correctAnswer] is the

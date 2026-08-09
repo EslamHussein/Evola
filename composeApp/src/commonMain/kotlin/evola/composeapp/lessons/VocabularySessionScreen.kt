@@ -125,15 +125,18 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
                 )
                 (state as? VocabularySessionUiState.InProgress)?.let { inProgress ->
                     val session = inProgress.session
-                    if (session.origin == "new") {
-                        val step = ladderStepIndex(session.card)
-                        Text(
-                            "Step ${step + 1} of ${LADDER_LABELS.size} · ${LADDER_LABELS[step]}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = EvolaColors.Text3,
-                            modifier = Modifier.padding(horizontal = EvolaSpacing.lg),
-                        )
-                    }
+                    Text(
+                        buildString {
+                            append("Word ${session.wordIndex} of ${session.totalWords}")
+                            if (session.origin == "new") {
+                                val step = ladderStepIndex(session.card)
+                                append(" · Step ${step + 1} of ${LADDER_LABELS.size} · ${LADDER_LABELS[step]}")
+                            }
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = EvolaColors.Text3,
+                        modifier = Modifier.padding(horizontal = EvolaSpacing.lg),
+                    )
                     val total = (session.cardsCompleted + session.cardsRemaining).coerceAtLeast(1)
                     LinearProgressIndicator(
                         progress = { session.cardsCompleted / total.toFloat() },

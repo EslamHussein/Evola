@@ -342,6 +342,11 @@ class LocalVocabularyRepository(
         val queueRow = currentQueueRow(sessionId) ?: return null
         val queue = db.vocabularyQueries.queueForSession(sessionId).executeAsList()
         val completed = queue.count { it.answered_at != null }
+        // A word's ladder spans several queue rows (intro, recognition, ...); count only distinct
+        // words reached so far, not cards, so "word 3 of 5" advances once per word, not per step.
+        val wordIndex = queue.filter { it.position <= queueRow.position }
+            .map { it.vocabulary_item_id }.distinct().size
+        val totalWords = (session.new_words_count + session.review_words_count).toInt()
 
         val item = db.vocabularyQueries.itemById(queueRow.vocabulary_item_id).executeAsOne()
         val progress = db.vocabularyQueries.progressForItem(LOCAL_USER, queueRow.vocabulary_item_id).executeAsOne()
@@ -413,6 +418,8 @@ class LocalVocabularyRepository(
             cardsRemaining = queue.size - completed,
             card = card,
             origin = queueRow.origin,
+            wordIndex = wordIndex,
+            totalWords = totalWords,
         )
     }
 
