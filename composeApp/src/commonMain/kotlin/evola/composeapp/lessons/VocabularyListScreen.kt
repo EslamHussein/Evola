@@ -1,10 +1,11 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 
 package evola.composeapp.lessons
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,11 +17,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.HourglassBottom
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import evola.composeapp.loading.ChaseLoadingIndicator
@@ -144,10 +148,10 @@ private fun VocabularyRow(item: VocabularyItem, onClick: () -> Unit) {
 
             if (item.difficultyRating != null || item.frequencyRating != null || item.relatedWords.isNotEmpty()) {
                 Spacer(Modifier.height(EvolaSpacing.sm))
-                Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
-                    item.difficultyRating?.let { Tag(it) }
-                    item.frequencyRating?.let { Tag(it) }
-                    item.relatedWords.forEach { Tag(it) }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs), verticalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
+                    item.difficultyRating?.let { Tag(it, Icons.Filled.Speed, EvolaColors.Gold) }
+                    item.frequencyRating?.let { Tag(it, Icons.AutoMirrored.Filled.TrendingUp, EvolaColors.Ink2) }
+                    item.relatedWords.forEach { Tag(it, Icons.Filled.Link, EvolaColors.Text2) }
                 }
             }
 
@@ -179,15 +183,20 @@ private fun VocabularyStatusBadge(status: String) {
     }
 }
 
+/** [icon]/[tint] tell difficulty, frequency, and related-word chips apart at a glance - previously
+ * all three rendered identically, so a learner had no way to tell what a given pill meant without
+ * reading its text and guessing from context. */
 @Composable
-private fun Tag(label: String) {
+private fun Tag(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: androidx.compose.ui.graphics.Color) {
     Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.SurfaceAlt) {
-        Text(
-            label,
+        Row(
             modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = EvolaColors.Text2,
-        )
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(12.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text2)
+        }
     }
 }
 
