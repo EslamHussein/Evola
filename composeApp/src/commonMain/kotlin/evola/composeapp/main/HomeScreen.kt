@@ -21,9 +21,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.TrackChanges
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -262,63 +264,84 @@ private fun ReadinessRing(percent: Int, vocabulary: VocabularyBreakdown, modifie
     }
 }
 
-/** "Word breakdown" header (with the goal's total word count) plus three red/yellow/green bars -
- * a re-cut of the same words by how they're actually going, not just SRS status: red = the most
- * recent answer was wrong (needs attention now), green = mastered, yellow = everything else
- * still building up. A word can't land in both red and green - any wrong answer demotes it out of
- * "mastered" immediately (see VocabularySrs.onIncorrect) - so the three bars always sum to the
- * total with no double-counting. */
+/** "Word breakdown" header (with the goal's total word count as a pill) plus three red/yellow/
+ * green cards - a re-cut of the same words by how they're actually going, not just SRS status:
+ * red = the most recent answer was wrong (needs attention now), green = mastered, yellow =
+ * everything else still building up. A word can't land in both red and green - any wrong answer
+ * demotes it out of "mastered" immediately (see VocabularySrs.onIncorrect) - so the three cards
+ * always sum to the total with no double-counting. */
 @Composable
 private fun WordBreakdownSection(vocabulary: VocabularyBreakdown) {
     val total = vocabulary.notStarted + vocabulary.inProgress + vocabulary.mastered
     val struggling = vocabulary.struggling
     val mastered = vocabulary.mastered
     val learning = (total - struggling - mastered).coerceAtLeast(0)
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text("Word breakdown", style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text2)
-        Text("$total words total", style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text3)
-    }
-    Spacer(Modifier.height(EvolaSpacing.sm))
-    Column(verticalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
-        MasteryBar("Needs practice", struggling, total, EvolaColors.Rust)
-        MasteryBar("Learning", learning, total, EvolaColors.Amber)
-        MasteryBar("Mastered", mastered, total, EvolaColors.Teal)
-    }
-}
-
-/** One row of the red/yellow/green breakdown: a colored tab, a track filled to count/total, the
- * count. [total] of 0 (no vocabulary yet) renders an empty track rather than dividing by zero. */
-@Composable
-private fun MasteryBar(label: String, count: Int, total: Int, color: Color) {
-    Row(modifier = Modifier.fillMaxWidth().height(28.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.width(4.dp).fillMaxHeight().background(color, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)))
-        Spacer(Modifier.width(EvolaSpacing.sm))
-        Box(
-            modifier = Modifier.weight(1f).fillMaxHeight()
-                .clip(MaterialTheme.shapes.small)
-                .background(EvolaColors.SurfaceAlt),
-        ) {
-            val fraction = if (total > 0) count / total.toFloat() else 0f
-            Box(
-                modifier = Modifier.fillMaxHeight().fillMaxWidth(fraction.coerceIn(0f, 1f))
-                    .clip(MaterialTheme.shapes.small)
-                    .background(color),
-            )
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Text("Word breakdown", style = MaterialTheme.typography.titleMedium)
+        Surface(color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.extraLarge) {
             Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                color = EvolaColors.Text,
-                modifier = Modifier.align(Alignment.CenterStart).padding(start = EvolaSpacing.sm),
+                "$total words total",
+                style = MaterialTheme.typography.labelMedium,
+                color = EvolaColors.Text2,
+                modifier = Modifier.padding(horizontal = EvolaSpacing.md, vertical = EvolaSpacing.xs),
             )
         }
-        Spacer(Modifier.width(EvolaSpacing.sm))
-        Text(
-            "$count",
-            style = MaterialTheme.typography.labelMedium,
-            color = color,
-            modifier = Modifier.width(28.dp),
-            textAlign = TextAlign.End,
-        )
+    }
+    Spacer(Modifier.height(EvolaSpacing.md))
+    Column(verticalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
+        MasteryCard(Icons.Filled.TrackChanges, "Needs practice", "Review soon", struggling, total, EvolaColors.Rust, EvolaColors.RustSoft)
+        MasteryCard(Icons.AutoMirrored.Filled.MenuBook, "Learning", "Keep it up", learning, total, EvolaColors.Amber, EvolaColors.AmberSoft)
+        MasteryCard(Icons.Filled.EmojiEvents, "Mastered", "Well done!", mastered, total, EvolaColors.Teal, EvolaColors.TealSoft)
+    }
+    Spacer(Modifier.height(EvolaSpacing.sm))
+    Text(
+        "Progress updates as you learn",
+        style = MaterialTheme.typography.labelMedium,
+        color = EvolaColors.Text3,
+        modifier = Modifier.fillMaxWidth(),
+        textAlign = TextAlign.Center,
+    )
+}
+
+/** One card of the red/yellow/green breakdown: an icon avatar, title/subtitle, count + share of
+ * the total, and a thin progress track. [total] of 0 (no vocabulary yet) renders an empty track
+ * rather than dividing by zero. */
+@Composable
+private fun MasteryCard(icon: ImageVector, title: String, subtitle: String, count: Int, total: Int, color: Color, softColor: Color) {
+    val fraction = if (total > 0) count / total.toFloat() else 0f
+    val percent = if (total > 0) (count * 100f / total).roundToInt() else 0
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = EvolaColors.SurfaceAlt)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.md), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(52.dp).clip(MaterialTheme.shapes.medium).background(softColor),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = color)
+            }
+            Spacer(Modifier.width(EvolaSpacing.md))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = color)
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
+                Spacer(Modifier.height(EvolaSpacing.sm))
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(6.dp)
+                        .clip(MaterialTheme.shapes.extraLarge)
+                        .background(EvolaColors.Surface),
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxHeight().fillMaxWidth(fraction.coerceIn(0f, 1f))
+                            .clip(MaterialTheme.shapes.extraLarge)
+                            .background(color),
+                    )
+                }
+            }
+            Spacer(Modifier.width(EvolaSpacing.md))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
+                Text("$count", style = MaterialTheme.typography.titleMedium, color = color)
+                Text("|", style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Border)
+                Text("$percent%", style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
+            }
+        }
     }
 }
 
