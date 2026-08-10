@@ -142,7 +142,7 @@ WHERE vi.lesson_id = ?;
 -- Every word's current status across every lesson in a goal, for the Home dashboard's
 -- not-started/in-progress/mastered breakdown (bucketed in Kotlin against VocabularySrs.STATUSES).
 wordStatusesByGoal:
-SELECT vi.id AS item_id, COALESCE(vp.status, 'unseen') AS status
+SELECT vi.id AS item_id, COALESCE(vp.status, 'unseen') AS status, COALESCE(vp.incorrect_streak, 0) AS incorrect_streak
 FROM vocabulary_items vi
 JOIN lessons l ON l.id = vi.lesson_id
 LEFT JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?

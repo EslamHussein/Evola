@@ -81,11 +81,12 @@ class LocalGoalsRepository(private val db: EvolaDatabase) : GoalsRepository {
     }
 
     private fun vocabularyBreakdown(goalId: String): VocabularyBreakdown {
-        val statuses = db.vocabularyQueries.wordStatusesByGoal(LOCAL_USER, goalId).executeAsList().map { it.status }
-        val mastered = statuses.count { it == VocabularySrs.STATUSES.last() }
-        val notStarted = statuses.count { it == VocabularySrs.STATUSES.first() }
-        val inProgress = statuses.size - mastered - notStarted
-        return VocabularyBreakdown(notStarted, inProgress, mastered)
+        val rows = db.vocabularyQueries.wordStatusesByGoal(LOCAL_USER, goalId).executeAsList()
+        val mastered = rows.count { it.status == VocabularySrs.STATUSES.last() }
+        val notStarted = rows.count { it.status == VocabularySrs.STATUSES.first() }
+        val inProgress = rows.size - mastered - notStarted
+        val struggling = rows.count { it.incorrect_streak > 0 }
+        return VocabularyBreakdown(notStarted, inProgress, mastered, struggling)
     }
 
     /** The in-progress word closest to "mastered" (highest STATUSES index) - ties broken by

@@ -45,6 +45,8 @@ object EvolaColors {
     val TealSoft = Color(0xFF16302C)
     val Rust = Color(0xFFE0715C)       // error
     val RustSoft = Color(0xFF3A211C)
+    val Amber = Color(0xFFE0B347)      // in-progress / caution
+    val AmberSoft = Color(0xFF3A2F16)
 
     val Text = Color(0xFFEEF1F8)       // primary text
     val Text2 = Color(0xFFAAB2C6)      // secondary text

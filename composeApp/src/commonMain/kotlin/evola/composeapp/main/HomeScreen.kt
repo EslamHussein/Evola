@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -261,33 +262,63 @@ private fun ReadinessRing(percent: Int, vocabulary: VocabularyBreakdown, modifie
     }
 }
 
-/** "Word breakdown" header (with the goal's total word count) plus the three status tiles, each
- * colored to match [ReadinessRing]'s segments - the color mapping doubles as its own legend. */
+/** "Word breakdown" header (with the goal's total word count) plus three red/yellow/green bars -
+ * a re-cut of the same words by how they're actually going, not just SRS status: red = the most
+ * recent answer was wrong (needs attention now), green = mastered, yellow = everything else
+ * still building up. A word can't land in both red and green - any wrong answer demotes it out of
+ * "mastered" immediately (see VocabularySrs.onIncorrect) - so the three bars always sum to the
+ * total with no double-counting. */
 @Composable
 private fun WordBreakdownSection(vocabulary: VocabularyBreakdown) {
     val total = vocabulary.notStarted + vocabulary.inProgress + vocabulary.mastered
+    val struggling = vocabulary.struggling
+    val mastered = vocabulary.mastered
+    val learning = (total - struggling - mastered).coerceAtLeast(0)
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text("Word breakdown", style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text2)
         Text("$total words total", style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text3)
     }
     Spacer(Modifier.height(EvolaSpacing.sm))
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-        BreakdownStat("${vocabulary.mastered}", "Mastered", MasteredColor, Modifier.weight(1f))
-        BreakdownStat("${vocabulary.inProgress}", "Learning", LearningColor, Modifier.weight(1f))
-        BreakdownStat("${vocabulary.notStarted}", "Not started", NotStartedColor, Modifier.weight(1f))
+    Column(verticalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
+        MasteryBar("Needs practice", struggling, total, EvolaColors.Rust)
+        MasteryBar("Learning", learning, total, EvolaColors.Amber)
+        MasteryBar("Mastered", mastered, total, EvolaColors.Teal)
     }
 }
 
+/** One row of the red/yellow/green breakdown: a colored tab, a track filled to count/total, the
+ * count. [total] of 0 (no vocabulary yet) renders an empty track rather than dividing by zero. */
 @Composable
-private fun BreakdownStat(value: String, label: String, valueColor: Color, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier, color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.small) {
-        Column(
-            modifier = Modifier.padding(vertical = EvolaSpacing.md),
-            horizontalAlignment = Alignment.CenterHorizontally,
+private fun MasteryBar(label: String, count: Int, total: Int, color: Color) {
+    Row(modifier = Modifier.fillMaxWidth().height(28.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.width(4.dp).fillMaxHeight().background(color, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)))
+        Spacer(Modifier.width(EvolaSpacing.sm))
+        Box(
+            modifier = Modifier.weight(1f).fillMaxHeight()
+                .clip(MaterialTheme.shapes.small)
+                .background(EvolaColors.SurfaceAlt),
         ) {
-            Text(value, style = MaterialTheme.typography.titleLarge, color = valueColor)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text3)
+            val fraction = if (total > 0) count / total.toFloat() else 0f
+            Box(
+                modifier = Modifier.fillMaxHeight().fillMaxWidth(fraction.coerceIn(0f, 1f))
+                    .clip(MaterialTheme.shapes.small)
+                    .background(color),
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = EvolaColors.Text,
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = EvolaSpacing.sm),
+            )
         }
+        Spacer(Modifier.width(EvolaSpacing.sm))
+        Text(
+            "$count",
+            style = MaterialTheme.typography.labelMedium,
+            color = color,
+            modifier = Modifier.width(28.dp),
+            textAlign = TextAlign.End,
+        )
     }
 }
 
