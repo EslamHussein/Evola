@@ -537,9 +537,8 @@ private fun WordBankCard(
     AdvanceButton(answered, onContinue)
 }
 
-/** Ladder step 3: typed recall, input pre-filled with the first half of the term, rendered inline
- * within the sentence (not a separate boxed field) to match the design's "keep typing where the
- * blank is" feel. */
+/** Ladder step 3: the prompt is the native-language meaning (no German sentence context) - pure
+ * meaning-to-term recall, like Anki - with the input pre-filled with the first half of the term. */
 @Composable
 private fun HintCard(
     card: VocabularyCard.Hint,
@@ -549,26 +548,26 @@ private fun HintCard(
 ) {
     var typedAnswer by remember(card.itemId, answered) { mutableStateOf(card.hintPrefix) }
     val focusManager = LocalFocusManager.current
-    val (prefix, suffix) = splitOnBlank(card.sentenceWithBlank)
+
+    Text("What's the German word for...", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
+    Spacer(Modifier.height(EvolaSpacing.xs))
+    RtlText(card.meaning, style = MaterialTheme.typography.headlineMedium)
+    Spacer(Modifier.height(EvolaSpacing.md))
+    Text("It's started for you — finish the word", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
+    Spacer(Modifier.height(EvolaSpacing.sm))
 
     if (answered == null) {
-        Text("It's started for you — finish the word", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
-        Spacer(Modifier.height(EvolaSpacing.sm))
         InlineFillSentence(
-            prefix = prefix,
-            suffix = suffix,
+            prefix = "",
+            suffix = "",
             value = typedAnswer,
             onValueChange = { typedAnswer = it },
             onDone = { focusManager.clearFocus() },
         )
     } else {
-        RevealedInlineSentence(prefix = prefix, word = answered.correctAnswer ?: typedAnswer, suffix = suffix, correct = answered.correct == true)
+        RevealedInlineSentence(prefix = "", word = answered.correctAnswer ?: typedAnswer, suffix = "", correct = answered.correct == true)
     }
     Spacer(Modifier.height(EvolaSpacing.sm))
-    card.sentenceTranslation?.let {
-        Text(it, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
-        Spacer(Modifier.height(EvolaSpacing.sm))
-    }
     card.grammarNote?.let {
         Text(it, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Accent)
     }
@@ -584,8 +583,8 @@ private fun HintCard(
     }
 }
 
-/** Ladder step 4 (final) for new words, and the only step for due-for-review words: typed from
- * scratch, no scaffolding, rendered inline within the sentence like [HintCard]. */
+/** Ladder step 4 (final) for new words, and the only step for due-for-review words: same
+ * meaning-to-term prompt as [HintCard], typed from scratch with no scaffolding. */
 @Composable
 private fun BlindCard(
     card: VocabularyCard.Blind,
@@ -595,24 +594,24 @@ private fun BlindCard(
 ) {
     var typedAnswer by remember(card.itemId, answered) { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
-    val (prefix, suffix) = splitOnBlank(card.sentenceWithBlank)
+
+    Text("What's the German word for...", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
+    Spacer(Modifier.height(EvolaSpacing.xs))
+    RtlText(card.meaning, style = MaterialTheme.typography.headlineMedium)
+    Spacer(Modifier.height(EvolaSpacing.md))
 
     if (answered == null) {
         InlineFillSentence(
-            prefix = prefix,
-            suffix = suffix,
+            prefix = "",
+            suffix = "",
             value = typedAnswer,
             onValueChange = { typedAnswer = it },
             onDone = { focusManager.clearFocus() },
         )
     } else {
-        RevealedInlineSentence(prefix = prefix, word = answered.correctAnswer ?: typedAnswer, suffix = suffix, correct = answered.correct == true)
+        RevealedInlineSentence(prefix = "", word = answered.correctAnswer ?: typedAnswer, suffix = "", correct = answered.correct == true)
     }
     Spacer(Modifier.height(EvolaSpacing.sm))
-    card.sentenceTranslation?.let {
-        Text(it, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
-        Spacer(Modifier.height(EvolaSpacing.sm))
-    }
     card.grammarNote?.let {
         Text(it, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Accent)
     }
@@ -666,11 +665,6 @@ private fun blankedSentence(sentence: String): AnnotatedString = buildAnnotatedS
     append(sentence.substring(0, idx))
     withStyle(SpanStyle(textDecoration = TextDecoration.Underline)) { append("_____") }
     append(sentence.substring(idx + 3))
-}
-
-private fun splitOnBlank(sentence: String): Pair<String, String> {
-    val idx = sentence.indexOf("___")
-    return if (idx < 0) sentence to "" else sentence.substring(0, idx) to sentence.substring(idx + 3)
 }
 
 /** Typed recall rendered inline within the sentence itself - the blank IS the text field, styled

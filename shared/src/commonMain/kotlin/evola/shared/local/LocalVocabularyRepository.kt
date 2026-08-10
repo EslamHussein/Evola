@@ -353,8 +353,16 @@ class LocalVocabularyRepository(
         val isBookmarked = progress.is_bookmarked == 1L
         val isDifficult = progress.marked_difficult == 1L
         val exampleSentence = item.example_sentence
-        val blankEligible = exampleSentence != null && exampleSentence.contains(item.term, ignoreCase = true)
-        val sentenceWithBlank = if (blankEligible) blankOutTerm(exampleSentence!!, item.term) else item.term
+        // German verbs are almost always conjugated in a natural example sentence (e.g. "laufen"
+        // appears as "läuft"), so a literal match on the dictionary form frequently fails. Falling
+        // back to the bare term here used to feed Hint/Blind's "prefix + word + suffix" renderer a
+        // sentence with no "___" at all, which duplicated the term next to the typed answer
+        // ("laufenlaufen"). Falling back to "___" keeps that renderer's contract intact instead.
+        val blankSpan = exampleSentence?.let { findBlankableSpan(it, item.term) }
+        val sentenceWithBlank = when {
+            blankSpan != null -> exampleSentence!!.substring(0, blankSpan.first) + "___" + exampleSentence.substring(blankSpan.last + 1)
+            else -> "___"
+        }
 
         val card: VocabularyCard = when (queueRow.card_type) {
             "intro" -> VocabularyCard.Intro(
@@ -394,8 +402,7 @@ class LocalVocabularyRepository(
             )
             "hint" -> VocabularyCard.Hint(
                 itemId = item.id,
-                sentenceWithBlank = sentenceWithBlank,
-                sentenceTranslation = item.example_sentence_translation,
+                meaning = item.native_meaning ?: item.meaning,
                 grammarNote = item.grammar_note,
                 hintPrefix = item.term.take(ceil(item.term.length / 2.0).toInt()),
                 isBookmarked = isBookmarked,
@@ -403,8 +410,7 @@ class LocalVocabularyRepository(
             )
             else -> VocabularyCard.Blind(
                 itemId = item.id,
-                sentenceWithBlank = sentenceWithBlank,
-                sentenceTranslation = item.example_sentence_translation,
+                meaning = item.native_meaning ?: item.meaning,
                 grammarNote = item.grammar_note,
                 isBookmarked = isBookmarked,
                 markedDifficult = isDifficult,
@@ -423,11 +429,24 @@ class LocalVocabularyRepository(
         )
     }
 
-    private fun blankOutTerm(sentence: String, term: String): String {
-        val idx = sentence.indexOf(term, ignoreCase = true)
-        if (idx < 0) return sentence
-        return sentence.substring(0, idx) + "___" + sentence.substring(idx + term.length)
+    /** Finds the span in [sentence] to blank out for [term]: an exact (case-insensitive) match if
+     * the sentence uses the dictionary form, otherwise the first word whose umlaut-normalized form
+     * shares [term]'s stem - covers common German strong-verb conjugation (laufen -> läuft, tragen
+     * -> trägt) where the sentence never contains the literal infinitive. Null if nothing matches,
+     * which the caller treats as "no usable example sentence" rather than guessing. */
+    private fun findBlankableSpan(sentence: String, term: String): IntRange? {
+        val exactIdx = sentence.indexOf(term, ignoreCase = true)
+        if (exactIdx >= 0) return exactIdx until (exactIdx + term.length)
+
+        val stem = normalizeGerman(term).take(minOf(4, term.length))
+        if (stem.isEmpty()) return null
+        return Regex("\\p{L}+").findAll(sentence)
+            .firstOrNull { normalizeGerman(it.value).startsWith(stem) }
+            ?.range
     }
+
+    private fun normalizeGerman(s: String): String =
+        s.lowercase().replace("ä", "a").replace("ö", "o").replace("ü", "u").replace("ß", "ss")
 
     private fun Vocabulary_progress.toState() =
         VocabularySrs.State(status, interval_index.toInt(), correct_streak.toInt(), incorrect_streak.toInt())

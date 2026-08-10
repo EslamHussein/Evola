@@ -78,26 +78,24 @@ sealed interface VocabularyCard {
         val markedDifficult: Boolean,
     ) : VocabularyCard
 
-    /** Ladder step 3 (graded): a blanked sentence, typed recall, but the input starts pre-filled
-     * with [hintPrefix] (the first half of the term). Submitted via
-     * [VocabularyRepository.submitTyped]. */
+    /** Ladder step 3 (graded): the learner's native-language meaning is the prompt (no German
+     * sentence context), typed recall of the German term, input starts pre-filled with
+     * [hintPrefix] (the first half of the term). Submitted via [VocabularyRepository.submitTyped]. */
     data class Hint(
         override val itemId: String,
-        val sentenceWithBlank: String,
-        val sentenceTranslation: String?,
+        val meaning: String,
         val grammarNote: String?,
         val hintPrefix: String,
         val isBookmarked: Boolean,
         val markedDifficult: Boolean,
     ) : VocabularyCard
 
-    /** Ladder step 4 (graded, final) for new words, and the *only* step for due-for-review words: a
-     * blanked sentence, typed from scratch, no scaffolding. Submitted via
+    /** Ladder step 4 (graded, final) for new words, and the *only* step for due-for-review words:
+     * the native-language meaning is the prompt, typed from scratch, no scaffolding. Submitted via
      * [VocabularyRepository.submitTyped]. */
     data class Blind(
         override val itemId: String,
-        val sentenceWithBlank: String,
-        val sentenceTranslation: String?,
+        val meaning: String,
         val grammarNote: String?,
         val isBookmarked: Boolean,
         val markedDifficult: Boolean,
