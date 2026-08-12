@@ -4,6 +4,7 @@ import evola.shared.ai.AnthropicClient
 import evola.shared.ai.AnthropicModels
 import evola.shared.core.ApiResult
 import evola.shared.core.DataError
+import evola.shared.core.EvolaLog
 import evola.shared.db.EvolaDatabase
 import evola.shared.db.Vocabulary_progress
 import evola.shared.vocabulary.VocabularyAnswerResult
@@ -46,12 +47,12 @@ class LocalVocabularyRepository(
 
     override suspend fun startOrResumeSession(lessonId: String): ApiResult<VocabularySessionState> {
         db.lessonsQueries.selectById(lessonId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Lesson not found"))
+            ?: return fail(404, "Lesson not found", "lessonId=$lessonId")
         val sessionId = db.vocabularyQueries.incompleteSessionForLesson(LOCAL_USER, lessonId).executeAsOneOrNull()?.id
             ?: createSession(lessonId)
-            ?: return ApiResult.Failure(DataError.Http(404, "No vocabulary available"))
+            ?: return fail(404, "No vocabulary available", "lessonId=$lessonId")
         return buildSessionState(sessionId)?.let { ApiResult.Success(it) }
-            ?: ApiResult.Failure(DataError.Http(409, "Session already complete"))
+            ?: fail(409, "Session already complete", "sessionId=$sessionId")
     }
 
     /** Same red/yellow/green split as [evola.shared.local.LocalGoalsRepository.vocabularyBreakdown]
@@ -67,7 +68,7 @@ class LocalVocabularyRepository(
                 WordCategory.LEARNING -> row.incorrect_streak == 0L && row.status != VocabularySrs.STATUSES.last()
             }
         }.map { it.item_id }.take(limit)
-        if (picked.isEmpty()) return ApiResult.Failure(DataError.Http(404, "No words in this category"))
+        if (picked.isEmpty()) return fail(404, "No words in this category", "goalId=$goalId category=$category")
 
         val sessionId = newId()
         db.vocabularyQueries.insertSession(sessionId, LOCAL_USER, null, 1L, nowMillis(), 0L, picked.size.toLong())
@@ -77,12 +78,12 @@ class LocalVocabularyRepository(
             position += POSITION_STEP
         }
         return buildSessionState(sessionId)?.let { ApiResult.Success(it) }
-            ?: ApiResult.Failure(DataError.Http(409, "Session already complete"))
+            ?: fail(409, "Session already complete", "sessionId=$sessionId")
     }
 
     override suspend fun listVocabulary(lessonId: String): ApiResult<List<VocabularyItem>> {
         db.lessonsQueries.selectById(lessonId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Lesson not found"))
+            ?: return fail(404, "Lesson not found", "lessonId=$lessonId")
         val items = db.vocabularyQueries.itemsWithProgressByLesson(lessonId, LOCAL_USER).executeAsList().map { row ->
             VocabularyItem(
                 itemId = row.id,
@@ -108,15 +109,15 @@ class LocalVocabularyRepository(
 
     override suspend fun submitIntro(sessionId: String, itemId: String): ApiResult<VocabularyAnswerResult> {
         val queueRow = currentQueueRow(sessionId)
-            ?: return ApiResult.Failure(DataError.Http(409, "Session already complete"))
+            ?: return fail(409, "Session already complete", "sessionId=$sessionId")
         if (queueRow.vocabulary_item_id != itemId || queueRow.card_type != "intro") {
-            return ApiResult.Failure(DataError.Http(409, "Out of order"))
+            return fail(409, "Out of order", "sessionId=$sessionId itemId=$itemId expected=intro actual=${queueRow.card_type}")
         }
         val now = nowMillis()
         db.vocabularyQueries.answerQueueItem(now, null, null, queueRow.id)
 
         val progress = db.vocabularyQueries.progressForItem(LOCAL_USER, itemId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
+            ?: return fail(404, "Item not found", "itemId=$itemId")
         val next = VocabularySrs.introduce(progress.toState())
         db.vocabularyQueries.updateProgress(
             next.status, next.correctStreak.toLong(), next.incorrectStreak.toLong(), next.intervalIndex.toLong(),
@@ -130,12 +131,12 @@ class LocalVocabularyRepository(
 
     override suspend fun submitChoice(sessionId: String, itemId: String, selectedChoice: String): ApiResult<VocabularyAnswerResult> {
         val queueRow = currentQueueRow(sessionId)
-            ?: return ApiResult.Failure(DataError.Http(409, "Session already complete"))
+            ?: return fail(409, "Session already complete", "sessionId=$sessionId")
         if (queueRow.vocabulary_item_id != itemId || queueRow.card_type !in setOf("recognition", "wordbank")) {
-            return ApiResult.Failure(DataError.Http(409, "Out of order"))
+            return fail(409, "Out of order", "sessionId=$sessionId itemId=$itemId actual=${queueRow.card_type}")
         }
         val item = db.vocabularyQueries.itemById(itemId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
+            ?: return fail(404, "Item not found", "itemId=$itemId")
         val correctAnswer = if (queueRow.card_type == "recognition") item.native_meaning ?: item.meaning else item.term
         val correct = selectedChoice == correctAnswer
 
@@ -148,12 +149,12 @@ class LocalVocabularyRepository(
 
     override suspend fun submitTyped(sessionId: String, itemId: String, response: String): ApiResult<VocabularyAnswerResult> {
         val queueRow = currentQueueRow(sessionId)
-            ?: return ApiResult.Failure(DataError.Http(409, "Session already complete"))
+            ?: return fail(409, "Session already complete", "sessionId=$sessionId")
         if (queueRow.vocabulary_item_id != itemId || queueRow.card_type !in setOf("hint", "blind")) {
-            return ApiResult.Failure(DataError.Http(409, "Out of order"))
+            return fail(409, "Out of order", "sessionId=$sessionId itemId=$itemId actual=${queueRow.card_type}")
         }
         val item = db.vocabularyQueries.itemById(itemId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
+            ?: return fail(404, "Item not found", "itemId=$itemId")
         // Hint/Blind ask for the word's dictionary form from meaning alone (no sentence to infer
         // grammatical gender from), so a noun's answer must include its article - "der Hund", not
         // just "Hund" - the same way the Intro/list screens already display it.
@@ -169,7 +170,7 @@ class LocalVocabularyRepository(
 
     override suspend fun complete(sessionId: String, localDate: String): ApiResult<VocabularySessionSummary> {
         val session = db.vocabularyQueries.sessionById(sessionId, LOCAL_USER).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Session not found"))
+            ?: return fail(404, "Session not found", "sessionId=$sessionId")
         val wordsLearned = db.vocabularyQueries.wordsPracticedInSession(sessionId).executeAsOne().toInt()
         val totalAnswered = session.correct_count + session.incorrect_count
         val accuracy = if (totalAnswered > 0) (session.correct_count.toDouble() / totalAnswered) * 100.0 else 0.0
@@ -192,7 +193,7 @@ class LocalVocabularyRepository(
 
     override suspend fun updateFlags(itemId: String, isBookmarked: Boolean?, markedDifficult: Boolean?): ApiResult<VocabularyItem> {
         db.vocabularyQueries.progressForItem(LOCAL_USER, itemId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
+            ?: return fail(404, "Item not found", "itemId=$itemId")
         isBookmarked?.let { db.vocabularyQueries.setBookmarked(if (it) 1L else 0L, LOCAL_USER, itemId) }
         markedDifficult?.let { db.vocabularyQueries.setMarkedDifficult(if (it) 1L else 0L, LOCAL_USER, itemId) }
         return ApiResult.Success(loadItemWithProgress(itemId))
@@ -200,14 +201,14 @@ class LocalVocabularyRepository(
 
     override suspend fun updateItem(itemId: String, term: String, meaning: String, nativeMeaning: String?): ApiResult<VocabularyItem> {
         db.vocabularyQueries.progressForItem(LOCAL_USER, itemId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
+            ?: return fail(404, "Item not found", "itemId=$itemId")
         db.vocabularyQueries.updateItemContent(term, meaning, nativeMeaning, itemId)
         return ApiResult.Success(loadItemWithProgress(itemId))
     }
 
     override suspend fun explainItem(itemId: String): ApiResult<String> {
         val item = db.vocabularyQueries.itemById(itemId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
+            ?: return fail(404, "Item not found", "itemId=$itemId")
         item.ai_note?.let { return ApiResult.Success(it) }
 
         val system = "You explain a single vocabulary word to a language learner in 2-3 short, " +
@@ -488,4 +489,9 @@ class LocalVocabularyRepository(
 
     private fun Vocabulary_progress.toState() =
         VocabularySrs.State(status, interval_index.toInt(), correct_streak.toInt(), incorrect_streak.toInt())
+
+    private fun fail(code: Int, message: String, context: String): ApiResult.Failure {
+        EvolaLog.d("vocabulary", "$message ($context)")
+        return ApiResult.Failure(DataError.Http(code, message))
+    }
 }

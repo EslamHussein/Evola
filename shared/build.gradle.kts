@@ -22,9 +22,11 @@ kotlin {
             api(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.client.auth)
+            implementation(libs.ktor.client.logging)
             implementation(libs.ktor.serialization.kotlinx.json)
             api(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines.extensions)
+            api(libs.kermit)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)

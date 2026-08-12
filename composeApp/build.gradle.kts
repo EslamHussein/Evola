@@ -43,6 +43,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.sqldelight.android.driver)
             implementation(libs.pdfbox.android)
+            implementation(libs.kermit.io)
             // Not debug-scoped: the KMP androidMain DSL doesn't expose build-type-specific
             // configurations. Small tooling dependency, acceptable to ship in release too.
             implementation(compose.uiTooling)
@@ -50,6 +51,7 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation(libs.sqldelight.native.driver)
+            implementation(libs.kermit.io)
         }
     }
 }

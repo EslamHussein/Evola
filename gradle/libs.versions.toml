@@ -21,6 +21,7 @@ androidxSecurityCrypto = "1.1.0-alpha06"
 sqldelight = "2.0.2"
 pdfboxAndroid = "2.0.27.0"
 haze = "1.6.5"
+kermit = "2.0.5"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -83,6 +84,9 @@ androidx-security-crypto = { module = "androidx.security:security-crypto", versi
 jbcrypt = { module = "org.mindrot:jbcrypt", version = "0.4" }
 
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
+
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+kermit-io = { module = "co.touchlab:kermit-io", version.ref = "kermit" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

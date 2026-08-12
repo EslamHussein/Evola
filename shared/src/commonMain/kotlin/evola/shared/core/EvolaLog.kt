@@ -1,12 +1,30 @@
 package evola.shared.core
 
+import co.touchlab.kermit.LogWriter
+import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
+import co.touchlab.kermit.mutableLoggerConfigInit
+import co.touchlab.kermit.platformLogWriter
+
 /**
- * Minimal cross-platform logging via stdout. On Android this surfaces in logcat (tag `System.out`,
- * level I); on iOS it prints to the device console. Grep for the `EVOLA/` prefix. Deliberately
- * dependency-free — enough to diagnose on-device extraction/AI failures without a logging library.
+ * Cross-platform logging backed by Kermit. Always writes to the platform console (Logcat on
+ * Android, os_log on iOS) via the default [platformLogWriter]. [attachFileWriter] adds a second,
+ * persistent sink — wired from `:composeApp` at startup once a writable app directory is known —
+ * so network/DB/app-logic failures can be read back from a local log file instead of reproduced
+ * with a screenshot.
  */
 object EvolaLog {
+    private val logger = Logger(
+        config = mutableLoggerConfigInit(platformLogWriter(), minSeverity = Severity.Debug),
+        tag = "EVOLA",
+    )
+
     fun d(area: String, message: String) {
-        println("EVOLA/$area: $message")
+        logger.d(tag = area) { message }
+    }
+
+    fun attachFileWriter(writer: LogWriter) {
+        val config = logger.mutableConfig
+        config.logWriterList = config.logWriterList + writer
     }
 }

@@ -1,0 +1,15 @@
+package evola.composeapp.di
+
+import androidx.compose.runtime.Composable
+import co.touchlab.kermit.LogWriter
+
+/** Creates the platform file [LogWriter] — Android's app-private files dir and iOS's Documents
+ * directory. Lives in `:composeApp` (which alone has the Android `Context`), mirroring
+ * [DatabaseDriverFactory]; `:shared`'s [evola.shared.core.EvolaLog] only knows about [LogWriter],
+ * never how to construct one. */
+expect class LogFileWriterFactory {
+    fun create(): LogWriter
+}
+
+@Composable
+expect fun rememberLogFileWriterFactory(): LogFileWriterFactory

@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import evola.composeapp.di.AppModule
 import evola.composeapp.di.rememberDatabaseDriverFactory
 import evola.composeapp.di.rememberFileTextExtractor
+import evola.composeapp.di.rememberLogFileWriterFactory
 import evola.composeapp.main.MainScreen
 import evola.composeapp.onboarding.GoalSetupScreen
 import evola.composeapp.onboarding.GoalSetupViewModel
@@ -16,6 +17,7 @@ import evola.composeapp.onboarding.NativeLanguageScreen
 import evola.composeapp.onboarding.WelcomeScreen
 import evola.composeapp.splash.SplashScreen
 import evola.composeapp.theme.EvolaTheme
+import evola.shared.core.EvolaLog
 import evola.shared.core.getOrNull
 import evola.shared.goals.Goal
 import evola.shared.language.NativeLanguage
@@ -38,6 +40,9 @@ fun App() {
     EvolaTheme {
         var screen by remember { mutableStateOf<AppScreen>(AppScreen.Splash) }
         var resolvedTarget by remember { mutableStateOf<AppScreen?>(null) }
+
+        val logFileWriterFactory = rememberLogFileWriterFactory()
+        remember { EvolaLog.attachFileWriter(logFileWriterFactory.create()) }
 
         val driverFactory = rememberDatabaseDriverFactory()
         val secureStore = rememberSecureStore()

@@ -2,6 +2,7 @@ package evola.shared.local
 
 import evola.shared.core.ApiResult
 import evola.shared.core.DataError
+import evola.shared.core.EvolaLog
 import evola.shared.db.EvolaDatabase
 import evola.shared.lessons.LessonDetail
 import evola.shared.lessons.LessonSection
@@ -13,9 +14,9 @@ class LocalLessonsRepository(private val db: EvolaDatabase) : LessonsRepository 
 
     override suspend fun getLessonDetail(lessonId: String): ApiResult<LessonDetail> {
         val lesson = db.lessonsQueries.selectById(lessonId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Lesson not found"))
+            ?: return fail(404, "Lesson not found", "lessonId=$lessonId")
         val material = db.materialsQueries.selectById(lesson.material_id).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Material not found"))
+            ?: return fail(404, "Material not found", "lessonId=$lessonId materialId=${lesson.material_id}")
 
         val vocabCount = db.vocabItemCount(lessonId)
         val vocabProgress = db.lessonVocabProgress(lessonId)
@@ -44,5 +45,10 @@ class LocalLessonsRepository(private val db: EvolaDatabase) : LessonsRepository 
             ),
         )
         return ApiResult.Success(detail)
+    }
+
+    private fun fail(code: Int, message: String, context: String): ApiResult.Failure {
+        EvolaLog.d("lessons", "$message ($context)")
+        return ApiResult.Failure(DataError.Http(code, message))
     }
 }

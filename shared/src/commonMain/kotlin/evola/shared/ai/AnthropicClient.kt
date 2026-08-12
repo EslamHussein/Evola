@@ -9,6 +9,9 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger as KtorLogger
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -78,6 +81,13 @@ class AnthropicClient(
     private val client = HttpClient(engine) {
         expectSuccess = false
         install(ContentNegotiation) { json(json) }
+        install(Logging) {
+            logger = object : KtorLogger {
+                override fun log(message: String) = EvolaLog.d("http", message)
+            }
+            // BODY (not HEADERS/ALL) so the `x-api-key` header never lands in the log file.
+            level = LogLevel.BODY
+        }
         install(HttpTimeout) {
             requestTimeoutMillis = 120_000
             connectTimeoutMillis = 15_000

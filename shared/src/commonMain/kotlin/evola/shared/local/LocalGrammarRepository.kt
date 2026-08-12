@@ -2,6 +2,7 @@ package evola.shared.local
 
 import evola.shared.core.ApiResult
 import evola.shared.core.DataError
+import evola.shared.core.EvolaLog
 import evola.shared.db.EvolaDatabase
 import evola.shared.grammar.GrammarAnswerResult
 import evola.shared.grammar.GrammarExercise
@@ -22,7 +23,7 @@ class LocalGrammarRepository(private val db: EvolaDatabase) : GrammarRepository 
 
     override suspend fun listTopics(lessonId: String): ApiResult<List<GrammarTopic>> {
         db.lessonsQueries.selectById(lessonId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Lesson not found"))
+            ?: return fail(404, "Lesson not found", "lessonId=$lessonId")
         val topics = db.grammarQueries.topicsByLesson(lessonId).executeAsList().mapNotNull { topic ->
             val progress = db.grammarQueries.progressForTopic(LOCAL_USER, topic.id).executeAsOneOrNull()
                 ?: return@mapNotNull null
@@ -33,9 +34,9 @@ class LocalGrammarRepository(private val db: EvolaDatabase) : GrammarRepository 
 
     override suspend fun startOrResumeSession(topicId: String): ApiResult<GrammarSession> {
         db.grammarQueries.progressForTopic(LOCAL_USER, topicId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Topic not found"))
+            ?: return fail(404, "Topic not found", "topicId=$topicId")
         val topic = db.grammarQueries.topicById(topicId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Topic not found"))
+            ?: return fail(404, "Topic not found", "topicId=$topicId")
 
         val existing = db.grammarQueries.incompleteSessionForTopic(LOCAL_USER, topicId).executeAsOneOrNull()
         val sessionId = existing?.id ?: newId().also {
@@ -54,7 +55,7 @@ class LocalGrammarRepository(private val db: EvolaDatabase) : GrammarRepository 
     override suspend fun answer(sessionId: String, exerciseId: String, response: String, correct: Boolean): ApiResult<GrammarAnswerResult> {
         val session = db.grammarQueries.sessionById(sessionId).executeAsOneOrNull()
             ?.takeIf { it.user_id == LOCAL_USER }
-            ?: return ApiResult.Failure(DataError.Http(404, "Session not found"))
+            ?: return fail(404, "Session not found", "sessionId=$sessionId")
         val topicId = session.topic_id
 
         // Idempotency: a retried answer returns the stored snapshot without re-applying MasterySrs.
@@ -63,7 +64,7 @@ class LocalGrammarRepository(private val db: EvolaDatabase) : GrammarRepository 
         }
 
         val progress = db.grammarQueries.progressForTopic(LOCAL_USER, topicId).executeAsOneOrNull()
-            ?: return ApiResult.Failure(DataError.Http(404, "Topic progress missing"))
+            ?: return fail(404, "Topic progress missing", "sessionId=$sessionId topicId=$topicId")
 
         val currentState = MasterySrs.State(progress.mastery_state, progress.interval_index.toInt(), progress.correct_streak.toInt())
         val nextState = when {
@@ -89,7 +90,7 @@ class LocalGrammarRepository(private val db: EvolaDatabase) : GrammarRepository 
     override suspend fun complete(sessionId: String, localDate: String): ApiResult<GrammarSessionSummary> {
         db.grammarQueries.sessionById(sessionId).executeAsOneOrNull()
             ?.takeIf { it.user_id == LOCAL_USER }
-            ?: return ApiResult.Failure(DataError.Http(404, "Session not found"))
+            ?: return fail(404, "Session not found", "sessionId=$sessionId")
 
         val answers = db.grammarQueries.answersForSession(sessionId).executeAsList()
         val completed = answers.size
@@ -127,4 +128,9 @@ class LocalGrammarRepository(private val db: EvolaDatabase) : GrammarRepository 
     }
 
     private fun isoOf(millis: Long): String = Instant.fromEpochMilliseconds(millis).toString()
+
+    private fun fail(code: Int, message: String, context: String): ApiResult.Failure {
+        EvolaLog.d("grammar", "$message ($context)")
+        return ApiResult.Failure(DataError.Http(code, message))
+    }
 }

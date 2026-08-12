@@ -2,6 +2,7 @@ package evola.composeapp
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import evola.shared.core.EvolaLog
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc
@@ -27,6 +28,7 @@ import platform.Foundation.dataUsingEncoding
 import platform.Security.SecItemAdd
 import platform.Security.SecItemCopyMatching
 import platform.Security.SecItemDelete
+import platform.Security.errSecItemNotFound
 import platform.Security.errSecSuccess
 import platform.Security.kSecAttrAccessibleAfterFirstUnlock
 import platform.Security.kSecAttrAccessible
@@ -63,6 +65,8 @@ class IosSecureStore(private val service: String = "evola_secure") : SecureStore
                 val data = CFBridgingRelease(result.value) as? NSData
                 data?.let { NSString.create(it, NSUTF8StringEncoding) as String? }
             } else {
+                // errSecItemNotFound is the normal "no key set yet" case, not a failure.
+                if (status != errSecItemNotFound) EvolaLog.d("securestore", "get failed: status=$status")
                 null
             }
         }
@@ -77,8 +81,9 @@ class IosSecureStore(private val service: String = "evola_secure") : SecureStore
         query.setObject(kSecAttrAccount, key as NSString)
         query.setObject(kSecValueData, (value as NSString).dataUsingEncoding(NSUTF8StringEncoding)!!)
         query.set(kSecAttrAccessible, kSecAttrAccessibleAfterFirstUnlock)
-        SecItemAdd(query.dict, null)
+        val status = SecItemAdd(query.dict, null)
         query.release()
+        if (status != errSecSuccess) EvolaLog.d("securestore", "put failed: status=$status")
     }
 
     override fun remove(key: String) {
@@ -86,8 +91,9 @@ class IosSecureStore(private val service: String = "evola_secure") : SecureStore
         query.set(kSecClass, kSecClassGenericPassword)
         query.setObject(kSecAttrService, service as NSString)
         query.setObject(kSecAttrAccount, key as NSString)
-        SecItemDelete(query.dict)
+        val status = SecItemDelete(query.dict)
         query.release()
+        if (status != errSecSuccess && status != errSecItemNotFound) EvolaLog.d("securestore", "remove failed: status=$status")
     }
 }
 

@@ -1,6 +1,7 @@
 package evola.shared.local
 
 import evola.shared.core.ApiResult
+import evola.shared.core.EvolaLog
 import evola.shared.db.EvolaDatabase
 import evola.shared.goals.CreateGoalResult
 import evola.shared.goals.Goal
@@ -22,7 +23,10 @@ class LocalGoalsRepository(private val db: EvolaDatabase) : GoalsRepository {
 
     override suspend fun createGoal(goalText: String, title: String?, nativeLanguage: NativeLanguage): CreateGoalResult {
         val text = goalText.trim()
-        if (text.length !in 3..200) return CreateGoalResult.ValidationError("Goal text must be 3-200 characters.")
+        if (text.length !in 3..200) {
+            EvolaLog.d("goals", "createGoal validation failed: length=${text.length}")
+            return CreateGoalResult.ValidationError("Goal text must be 3-200 characters.")
+        }
         val resolvedTitle = title?.trim()?.ifBlank { null } ?: autoTitle(text)
         val now = nowMillis()
         db.goalsQueries.deactivateAll(LOCAL_USER)
@@ -33,9 +37,15 @@ class LocalGoalsRepository(private val db: EvolaDatabase) : GoalsRepository {
 
     override suspend fun updateGoal(goalId: String, goalText: String?, title: String?, nativeLanguage: NativeLanguage?): UpdateGoalResult {
         val existing = db.goalsQueries.selectById(goalId).executeAsOneOrNull()
-            ?: return UpdateGoalResult.NotFound
+            ?: run {
+                EvolaLog.d("goals", "updateGoal: not found goalId=$goalId")
+                return UpdateGoalResult.NotFound
+            }
         val newText = goalText?.trim() ?: existing.goal_text
-        if (newText.length !in 3..200) return UpdateGoalResult.ValidationError("Goal text must be 3-200 characters.")
+        if (newText.length !in 3..200) {
+            EvolaLog.d("goals", "updateGoal validation failed: goalId=$goalId length=${newText.length}")
+            return UpdateGoalResult.ValidationError("Goal text must be 3-200 characters.")
+        }
         val newTitle = title?.trim()?.ifBlank { null } ?: existing.title
         val newNativeLanguage = nativeLanguage ?: NativeLanguage.fromCode(existing.native_language)
         db.goalsQueries.update(newText, newTitle, newNativeLanguage.code, nowMillis(), goalId)
