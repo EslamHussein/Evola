@@ -59,6 +59,7 @@ import evola.shared.goals.GoalProgress
 import evola.shared.goals.Lesson
 import evola.shared.goals.NudgeWord
 import evola.shared.goals.VocabularyBreakdown
+import evola.shared.vocabulary.WordCategory
 import kotlin.math.roundToInt
 
 /** Home tab / Progress Dashboard (01_PRODUCT_SPEC.md §1.10). Three honest states: the encouraging
@@ -71,6 +72,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onGoToMaterials: () -> Unit,
     onContinueLesson: (Lesson) -> Unit,
+    onStartCategorySession: (WordCategory) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -101,6 +103,7 @@ fun HomeScreen(
                                 progress = current.progress,
                                 currentLesson = current.currentLesson,
                                 onContinueLesson = onContinueLesson,
+                                onStartCategorySession = onStartCategorySession,
                                 modifier = Modifier.weight(1f).fillMaxWidth(),
                             )
                         }
@@ -140,12 +143,13 @@ private fun DashboardBody(
     progress: GoalProgress,
     currentLesson: Lesson?,
     onContinueLesson: (Lesson) -> Unit,
+    onStartCategorySession: (WordCategory) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
         TopTilesRow(percent = (progress.overallPct * 100).roundToInt(), vocabulary = progress.vocabulary, progress = progress)
         Spacer(Modifier.height(EvolaSpacing.lg))
-        WordBreakdownSection(progress.vocabulary)
+        WordBreakdownSection(progress.vocabulary, onStartCategorySession)
 
         progress.nudgeWord?.let { nudge ->
             Spacer(Modifier.height(EvolaSpacing.lg))
@@ -271,7 +275,7 @@ private fun ReadinessRing(percent: Int, vocabulary: VocabularyBreakdown, modifie
  * demotes it out of "mastered" immediately (see VocabularySrs.onIncorrect) - so the three cards
  * always sum to the total with no double-counting. */
 @Composable
-private fun WordBreakdownSection(vocabulary: VocabularyBreakdown) {
+private fun WordBreakdownSection(vocabulary: VocabularyBreakdown, onStartCategorySession: (WordCategory) -> Unit) {
     val total = vocabulary.notStarted + vocabulary.inProgress + vocabulary.mastered
     val struggling = vocabulary.struggling
     val mastered = vocabulary.mastered
@@ -289,9 +293,21 @@ private fun WordBreakdownSection(vocabulary: VocabularyBreakdown) {
     }
     Spacer(Modifier.height(EvolaSpacing.md))
     Column(verticalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-        MasteryCard(Icons.Filled.TrackChanges, "Needs practice", "Review soon", struggling, total, EvolaColors.Rust, EvolaColors.RustSoft)
-        MasteryCard(Icons.AutoMirrored.Filled.MenuBook, "Learning", "Keep it up", learning, total, EvolaColors.Amber, EvolaColors.AmberSoft)
-        MasteryCard(Icons.Filled.EmojiEvents, "Mastered", "Well done!", mastered, total, EvolaColors.Teal, EvolaColors.TealSoft)
+        MasteryCard(
+            Icons.Filled.TrackChanges, "Needs practice", "Review soon", struggling, total,
+            EvolaColors.Rust, EvolaColors.RustSoft,
+            onClick = { onStartCategorySession(WordCategory.STRUGGLING) }.takeIf { struggling > 0 },
+        )
+        MasteryCard(
+            Icons.AutoMirrored.Filled.MenuBook, "Learning", "Keep it up", learning, total,
+            EvolaColors.Amber, EvolaColors.AmberSoft,
+            onClick = { onStartCategorySession(WordCategory.LEARNING) }.takeIf { learning > 0 },
+        )
+        MasteryCard(
+            Icons.Filled.EmojiEvents, "Mastered", "Well done!", mastered, total,
+            EvolaColors.Teal, EvolaColors.TealSoft,
+            onClick = { onStartCategorySession(WordCategory.MASTERED) }.takeIf { mastered > 0 },
+        )
     }
     Spacer(Modifier.height(EvolaSpacing.sm))
     Text(
@@ -305,12 +321,27 @@ private fun WordBreakdownSection(vocabulary: VocabularyBreakdown) {
 
 /** One card of the red/yellow/green breakdown: an icon avatar, title/subtitle, count + share of
  * the total, and a thin progress track. [total] of 0 (no vocabulary yet) renders an empty track
- * rather than dividing by zero. */
+ * rather than dividing by zero. [onClick] is null (and the card non-interactive) when [count] is
+ * 0 - nothing to practice in that category yet. */
 @Composable
-private fun MasteryCard(icon: ImageVector, title: String, subtitle: String, count: Int, total: Int, color: Color, softColor: Color) {
+private fun MasteryCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    count: Int,
+    total: Int,
+    color: Color,
+    softColor: Color,
+    onClick: (() -> Unit)?,
+) {
     val fraction = if (total > 0) count / total.toFloat() else 0f
     val percent = if (total > 0) (count * 100f / total).roundToInt() else 0
-    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = EvolaColors.SurfaceAlt)) {
+    Card(
+        onClick = onClick ?: {},
+        modifier = Modifier.fillMaxWidth(),
+        enabled = onClick != null,
+        colors = CardDefaults.cardColors(containerColor = EvolaColors.SurfaceAlt),
+    ) {
         Row(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.md), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier.size(52.dp).clip(MaterialTheme.shapes.medium).background(softColor),

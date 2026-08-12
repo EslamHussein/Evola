@@ -11,6 +11,7 @@ import evola.shared.vocabulary.VocabularyCard
 import evola.shared.vocabulary.VocabularyRepository
 import evola.shared.vocabulary.VocabularySessionState
 import evola.shared.vocabulary.VocabularySessionSummary
+import evola.shared.vocabulary.WordCategory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,14 +29,23 @@ sealed interface VocabularySessionUiState {
     data class Error(val message: String) : VocabularySessionUiState
 }
 
+/** Where a vocabulary session's words come from - a single lesson (resumable, per
+ * [VocabularyRepository.startOrResumeSession]) or a Home red/yellow/green category cutting across
+ * every lesson in the goal (one-off, per [VocabularyRepository.startCategorySession]). */
+sealed interface VocabSessionSource {
+    data class Lesson(val lessonId: String) : VocabSessionSource
+    data class Category(val goalId: String, val category: WordCategory) : VocabSessionSource
+}
+
 /**
  * Lingvist-style flat SRS queue session, extended with a per-word difficulty ladder for new words:
  * Intro -> Recognition (MC) -> WordBank (tap) -> Hint (typed, pre-filled) -> Blind (typed). A
  * due-for-review word skips straight to Blind. Exiting mid-card is always safe - the repository
- * durably tracks queue position, so re-entering always resumes exactly where the user left off.
+ * durably tracks queue position, so re-entering always resumes exactly where the user left off
+ * (except a [VocabSessionSource.Category] session, which is a one-off and always starts fresh).
  */
 class VocabularySessionViewModel(
-    private val lessonId: String,
+    private val source: VocabSessionSource,
     private val repository: VocabularyRepository,
 ) : ViewModel() {
 
@@ -164,7 +174,11 @@ class VocabularySessionViewModel(
     private fun refresh() {
         viewModelScope.launch {
             _state.value = VocabularySessionUiState.Loading
-            _state.value = when (val result = repository.startOrResumeSession(lessonId)) {
+            val result = when (val s = source) {
+                is VocabSessionSource.Lesson -> repository.startOrResumeSession(s.lessonId)
+                is VocabSessionSource.Category -> repository.startCategorySession(s.goalId, s.category)
+            }
+            _state.value = when (result) {
                 is ApiResult.Success -> VocabularySessionUiState.InProgress(result.data)
                 is ApiResult.Failure -> VocabularySessionUiState.Error(result.error.toUserMessage())
             }

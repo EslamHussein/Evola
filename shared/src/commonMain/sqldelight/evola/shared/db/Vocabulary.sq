@@ -43,7 +43,9 @@ CREATE INDEX vocabulary_progress_due_idx ON vocabulary_progress(user_id, next_re
 CREATE TABLE vocabulary_sessions (
     id TEXT NOT NULL PRIMARY KEY,
     user_id TEXT NOT NULL,
-    lesson_id TEXT NOT NULL,
+    -- Null for a category-practice session (Home's Needs practice/Learning/Mastered cards): those
+    -- pull words across every lesson in the goal, so there's no single lesson to attribute to.
+    lesson_id TEXT,
     session_number INTEGER NOT NULL,
     started_at INTEGER NOT NULL,
     completed_at INTEGER,

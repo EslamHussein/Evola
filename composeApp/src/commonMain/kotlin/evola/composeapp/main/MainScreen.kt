@@ -33,6 +33,7 @@ import evola.composeapp.lessons.LessonDetailScreen
 import evola.composeapp.lessons.LessonDetailViewModel
 import evola.composeapp.lessons.VocabularyListScreen
 import evola.composeapp.lessons.VocabularyListViewModel
+import evola.composeapp.lessons.VocabSessionSource
 import evola.composeapp.lessons.VocabularySessionScreen
 import evola.composeapp.lessons.VocabularySessionViewModel
 import evola.composeapp.materials.AddMaterialScreen
@@ -52,6 +53,7 @@ import evola.shared.grammar.GrammarRepository
 import evola.shared.lessons.LessonsRepository
 import evola.shared.materials.MaterialsRepository
 import evola.shared.vocabulary.VocabularyRepository
+import evola.shared.vocabulary.WordCategory
 
 private enum class MainTab { HOME, MATERIALS, PROFILE }
 
@@ -68,6 +70,10 @@ private sealed interface MaterialsSubScreen {
     data class Detail(val materialId: String) : MaterialsSubScreen
     data class LessonDetail(val lessonId: String, val materialId: String?) : MaterialsSubScreen
     data class Session(val lessonId: String, val materialId: String?) : MaterialsSubScreen
+
+    /** Started from Home's Needs practice/Learning/Mastered card - a one-off, cross-lesson
+     * practice session, not tied to any single lesson (see [evola.composeapp.lessons.VocabSessionSource.Category]). */
+    data class CategorySession(val category: WordCategory) : MaterialsSubScreen
     data class VocabularyList(val lessonId: String, val materialId: String?) : MaterialsSubScreen
     data class GrammarTopics(val lessonId: String, val materialId: String?) : MaterialsSubScreen
     data class GrammarSession(val lessonId: String, val topicId: String, val materialId: String?) : MaterialsSubScreen
@@ -158,6 +164,10 @@ fun MainScreen(
                             selectedTab = MainTab.MATERIALS
                             materialsSubScreen = MaterialsSubScreen.LessonDetail(lesson.id, materialId = null)
                         },
+                        onStartCategorySession = { category ->
+                            selectedTab = MainTab.MATERIALS
+                            materialsSubScreen = MaterialsSubScreen.CategorySession(category)
+                        },
                     )
                 }
 
@@ -236,11 +246,24 @@ fun MainScreen(
 
                     is MaterialsSubScreen.Session -> {
                         val viewModel = remember(sub.lessonId) {
-                            VocabularySessionViewModel(sub.lessonId, vocabularyRepository)
+                            VocabularySessionViewModel(VocabSessionSource.Lesson(sub.lessonId), vocabularyRepository)
                         }
                         VocabularySessionScreen(
                             viewModel = viewModel,
                             onDone = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) },
+                        )
+                    }
+
+                    is MaterialsSubScreen.CategorySession -> {
+                        val viewModel = remember(sub.category) {
+                            VocabularySessionViewModel(VocabSessionSource.Category(goal.id, sub.category), vocabularyRepository)
+                        }
+                        VocabularySessionScreen(
+                            viewModel = viewModel,
+                            onDone = {
+                                selectedTab = MainTab.HOME
+                                materialsSubScreen = MaterialsSubScreen.List
+                            },
                         )
                     }
 

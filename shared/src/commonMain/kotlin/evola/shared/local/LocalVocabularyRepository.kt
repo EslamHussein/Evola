@@ -13,6 +13,7 @@ import evola.shared.vocabulary.VocabularyRepository
 import evola.shared.vocabulary.VocabularySessionState
 import evola.shared.vocabulary.VocabularySessionSummary
 import evola.shared.vocabulary.VocabularySrs
+import evola.shared.vocabulary.WordCategory
 import evola.shared.vocabulary.isTolerantMatch
 import kotlin.math.ceil
 
@@ -49,6 +50,32 @@ class LocalVocabularyRepository(
         val sessionId = db.vocabularyQueries.incompleteSessionForLesson(LOCAL_USER, lessonId).executeAsOneOrNull()?.id
             ?: createSession(lessonId)
             ?: return ApiResult.Failure(DataError.Http(404, "No vocabulary available"))
+        return buildSessionState(sessionId)?.let { ApiResult.Success(it) }
+            ?: ApiResult.Failure(DataError.Http(409, "Session already complete"))
+    }
+
+    /** Same red/yellow/green split as [evola.shared.local.LocalGoalsRepository.vocabularyBreakdown]
+     * (struggling = incorrect_streak > 0; mastered = "mastered" status, which - per
+     * [VocabularySrs.onIncorrect] - implies incorrect_streak is always 0; learning = everything
+     * else), so a word picked here always lands in the same bucket Home showed it in. */
+    override suspend fun startCategorySession(goalId: String, category: WordCategory, limit: Int): ApiResult<VocabularySessionState> {
+        val rows = db.vocabularyQueries.wordStatusesByGoal(LOCAL_USER, goalId).executeAsList()
+        val picked = rows.filter { row ->
+            when (category) {
+                WordCategory.STRUGGLING -> row.incorrect_streak > 0
+                WordCategory.MASTERED -> row.status == VocabularySrs.STATUSES.last() && row.incorrect_streak == 0L
+                WordCategory.LEARNING -> row.incorrect_streak == 0L && row.status != VocabularySrs.STATUSES.last()
+            }
+        }.map { it.item_id }.take(limit)
+        if (picked.isEmpty()) return ApiResult.Failure(DataError.Http(404, "No words in this category"))
+
+        val sessionId = newId()
+        db.vocabularyQueries.insertSession(sessionId, LOCAL_USER, null, 1L, nowMillis(), 0L, picked.size.toLong())
+        var position = 0L
+        picked.forEach { itemId ->
+            db.vocabularyQueries.insertQueueItem(newId(), sessionId, position, itemId, "blind", "due_review", null)
+            position += POSITION_STEP
+        }
         return buildSessionState(sessionId)?.let { ApiResult.Success(it) }
             ?: ApiResult.Failure(DataError.Http(409, "Session already complete"))
     }
@@ -127,11 +154,15 @@ class LocalVocabularyRepository(
         }
         val item = db.vocabularyQueries.itemById(itemId).executeAsOneOrNull()
             ?: return ApiResult.Failure(DataError.Http(404, "Item not found"))
-        val correct = isTolerantMatch(item.term, response)
+        // Hint/Blind ask for the word's dictionary form from meaning alone (no sentence to infer
+        // grammatical gender from), so a noun's answer must include its article - "der Hund", not
+        // just "Hund" - the same way the Intro/list screens already display it.
+        val expected = dictionaryForm(item.term, item.gender)
+        val correct = isTolerantMatch(expected, response)
 
         return gradeAndAdvance(sessionId, itemId, queueRow.id, queueRow.card_type, queueRow.position, correct, response).let {
             ApiResult.Success(
-                VocabularyAnswerResult(correct = correct, correctAnswer = item.term, completedSentence = item.example_sentence, next = it),
+                VocabularyAnswerResult(correct = correct, correctAnswer = expected, completedSentence = item.example_sentence, next = it),
             )
         }
     }
@@ -404,7 +435,7 @@ class LocalVocabularyRepository(
                 itemId = item.id,
                 meaning = item.native_meaning ?: item.meaning,
                 grammarNote = item.grammar_note,
-                hintPrefix = item.term.take(ceil(item.term.length / 2.0).toInt()),
+                hintPrefix = dictionaryForm(item.term, item.gender).let { it.take(ceil(it.length / 2.0).toInt()) },
                 isBookmarked = isBookmarked,
                 markedDifficult = isDifficult,
             )
@@ -447,6 +478,13 @@ class LocalVocabularyRepository(
 
     private fun normalizeGerman(s: String): String =
         s.lowercase().replace("ä", "a").replace("ö", "o").replace("ü", "u").replace("ß", "ss")
+
+    /** A noun's article is part of what a learner must memorize alongside it (there's no way to
+     * derive "der/die/das" from the word itself), so the dictionary form used for typed-recall
+     * grading and hints is "der Hund", not the bare "Hund". No-op for words without a gender
+     * (verbs, adjectives, ...). */
+    private fun dictionaryForm(term: String, gender: String?): String =
+        if (gender.isNullOrBlank()) term else "$gender $term"
 
     private fun Vocabulary_progress.toState() =
         VocabularySrs.State(status, interval_index.toInt(), correct_streak.toInt(), incorrect_streak.toInt())

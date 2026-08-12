@@ -5,6 +5,7 @@ import evola.shared.ai.AnthropicClient
 import evola.shared.core.ApiResult
 import evola.shared.db.EvolaDatabase
 import evola.shared.vocabulary.VocabularyCard
+import evola.shared.vocabulary.WordCategory
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
@@ -70,14 +71,16 @@ class LocalVocabularyRepositoryTest {
         assertEquals("review", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
 
         val hint = result.next!!.card as VocabularyCard.Hint
-        assertTrue(hint.hintPrefix.isNotEmpty() && "Wort0".startsWith(hint.hintPrefix))
-        result = (repo.submitTyped(result.next!!.sessionId, hint.itemId, "Wort0") as ApiResult.Success).data
+        // The item's gender ("der") is part of the dictionary form being tested, so the hint's
+        // scaffold - and the expected answer - is "der Wort0", not the bare term.
+        assertTrue(hint.hintPrefix.isNotEmpty() && "der Wort0".startsWith(hint.hintPrefix))
+        result = (repo.submitTyped(result.next!!.sessionId, hint.itemId, "der Wort0") as ApiResult.Success).data
         assertEquals(true, result.correct)
         assertEquals("mastered", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
 
         val blind = result.next!!.card
         assertIs<VocabularyCard.Blind>(blind)
-        result = (repo.submitTyped(result.next!!.sessionId, blind.itemId, "Wort0") as ApiResult.Success).data
+        result = (repo.submitTyped(result.next!!.sessionId, blind.itemId, "der Wort0") as ApiResult.Success).data
         assertEquals(true, result.correct)
         assertEquals("mastered", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
         // Ladder complete for this word this session - queue is now exhausted.
@@ -130,8 +133,8 @@ class LocalVocabularyRepositoryTest {
         session = (repo.submitIntro(session.sessionId, session.card.itemId) as ApiResult.Success).data.next!!
         var result = (repo.submitChoice(session.sessionId, session.card.itemId, "word0") as ApiResult.Success).data
         result = (repo.submitChoice(result.next!!.sessionId, result.next!!.card.itemId, "Wort0") as ApiResult.Success).data
-        result = (repo.submitTyped(result.next!!.sessionId, result.next!!.card.itemId, "Wort0") as ApiResult.Success).data
-        result = (repo.submitTyped(result.next!!.sessionId, result.next!!.card.itemId, "Wort0") as ApiResult.Success).data
+        result = (repo.submitTyped(result.next!!.sessionId, result.next!!.card.itemId, "der Wort0") as ApiResult.Success).data
+        result = (repo.submitTyped(result.next!!.sessionId, result.next!!.card.itemId, "der Wort0") as ApiResult.Success).data
 
         val summary = (repo.complete(session.sessionId, "2026-08-05") as ApiResult.Success).data
         assertEquals(1, summary.wordsLearned)
@@ -157,5 +160,33 @@ class LocalVocabularyRepositoryTest {
         val updated = (repo.updateFlags("v0", isBookmarked = true, markedDifficult = null) as ApiResult.Success).data
         assertTrue(updated.isBookmarked)
         assertTrue(!updated.markedDifficult)
+    }
+
+    @Test
+    fun `a category session pulls only words in that bucket, across the whole goal, as single blind cards`() = runTest {
+        val (repo, db) = setup(itemCount = 3)
+        // v0 struggling (wrong last answer), v1 mastered clean, v2 stays "unseen" (learning bucket) -
+        // the same red/yellow/green split Home shows (see LocalGoalsRepository.vocabularyBreakdown).
+        db.vocabularyQueries.updateProgress("learning", 0L, 1L, 0L, 0L, nowMillis(), LOCAL_USER, "v0")
+        db.vocabularyQueries.updateProgress("mastered", 3L, 0L, 4L, 0L, nowMillis(), LOCAL_USER, "v1")
+
+        val struggling = (repo.startCategorySession("g1", WordCategory.STRUGGLING) as ApiResult.Success).data
+        assertIs<VocabularyCard.Blind>(struggling.card)
+        assertEquals("v0", struggling.card.itemId)
+        assertEquals(1, struggling.totalWords)
+
+        val mastered = (repo.startCategorySession("g1", WordCategory.MASTERED) as ApiResult.Success).data
+        assertEquals("v1", mastered.card.itemId)
+
+        val learning = (repo.startCategorySession("g1", WordCategory.LEARNING) as ApiResult.Success).data
+        assertEquals("v2", learning.card.itemId)
+    }
+
+    @Test
+    fun `a category session fails when the bucket is empty`() = runTest {
+        val (repo, _) = setup(itemCount = 1)
+        // The single word is "unseen" (learning bucket) - nothing struggling or mastered.
+        val result = repo.startCategorySession("g1", WordCategory.STRUGGLING)
+        assertIs<ApiResult.Failure>(result)
     }
 }

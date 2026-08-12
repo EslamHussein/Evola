@@ -142,8 +142,18 @@ data class VocabularySessionSummary(
     val reviewWordsCount: Int,
 )
 
+/** Home's red/yellow/green word-breakdown buckets (see [evola.shared.goals.VocabularyBreakdown]),
+ * reused here to pick which words a "practice this category" session pulls in. */
+enum class WordCategory { STRUGGLING, LEARNING, MASTERED }
+
 interface VocabularyRepository {
     suspend fun startOrResumeSession(lessonId: String): ApiResult<VocabularySessionState>
+
+    /** A one-off practice session (not resumable, always starts fresh) pulling up to [limit] words
+     * from [category] across every lesson in the goal - unlike [startOrResumeSession], which is
+     * scoped to a single lesson. Each word is a single typed-recall (Blind-style) card. Fails if
+     * the category is empty. */
+    suspend fun startCategorySession(goalId: String, category: WordCategory, limit: Int = 10): ApiResult<VocabularySessionState>
     suspend fun listVocabulary(lessonId: String): ApiResult<List<VocabularyItem>>
     suspend fun submitIntro(sessionId: String, itemId: String): ApiResult<VocabularyAnswerResult>
 
