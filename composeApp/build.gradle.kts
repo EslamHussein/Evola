@@ -60,6 +60,18 @@ kotlin {
             implementation(libs.sqldelight.native.driver)
             implementation(libs.kermit.io)
         }
+        // JVM-backed unit tests for the FlowMVI Containers - no Android framework/emulator
+        // needed since Containers are plain Kotlin depending only on :shared. Mirrors :shared's
+        // own jvmTest setup (JdbcSqliteDriver backing a real EvolaDatabase + real Local*Repository
+        // implementations, not mocks) so a Container test exercises the same code path production
+        // does.
+        androidUnitTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.sqldelight.sqlite.driver)
+            implementation(libs.flowmvi.test)
+            implementation(libs.ktor.client.mock)
+        }
     }
 }
 
