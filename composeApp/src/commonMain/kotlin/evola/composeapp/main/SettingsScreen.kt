@@ -47,7 +47,7 @@ import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.SelectableChip
 import evola.shared.local.AppTheme
 import kotlin.math.roundToInt
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_settings_auto_pronounce_subtitle
 import evola.composeapp.generated.resources.main_settings_auto_pronounce_title
@@ -106,7 +106,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onNotificationsToggled: (Boolean) -> Unit,
 ) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     val settings = state.settings
     BackHandler(onBack = onBack)
 
@@ -136,7 +136,7 @@ fun SettingsScreen(
                                 SelectableChip(
                                     label = theme.name.lowercase().replaceFirstChar { it.uppercase() },
                                     selected = settings.appTheme == theme,
-                                    onClick = { viewModel.intent(SettingsIntent.SetAppTheme(theme)) },
+                                    onClick = { viewModel.setAppTheme(theme) },
                                 )
                             }
                         }
@@ -146,7 +146,7 @@ fun SettingsScreen(
                         title = stringResource(Res.string.main_settings_reduce_motion_title),
                         subtitle = stringResource(Res.string.main_settings_reduce_motion_subtitle),
                         checked = settings.reducedMotion,
-                        onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetReducedMotion(value)) },
+                        onCheckedChange = { value -> viewModel.setReducedMotion(value) },
                     )
                 }
 
@@ -160,28 +160,28 @@ fun SettingsScreen(
                             value = settings.dailyNewWordGoal,
                             range = 3..40,
                             step = 1,
-                            onChange = { value -> viewModel.intent(SettingsIntent.SetDailyNewWordGoal(value)) },
+                            onChange = { value -> viewModel.setDailyNewWordGoal(value) },
                         )
                         DividerRow()
                         ToggleRow(
                             title = stringResource(Res.string.main_settings_typed_exercise_title),
                             subtitle = stringResource(Res.string.main_settings_typed_exercise_subtitle),
                             checked = settings.keyboardExerciseEnabled,
-                            onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetKeyboardExerciseEnabled(value)) },
+                            onCheckedChange = { value -> viewModel.setKeyboardExerciseEnabled(value) },
                         )
                         DividerRow()
                         ToggleRow(
                             title = stringResource(Res.string.main_settings_mc_exercise_title),
                             subtitle = stringResource(Res.string.main_settings_mc_exercise_subtitle),
                             checked = settings.multipleChoiceExerciseEnabled,
-                            onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetMultipleChoiceExerciseEnabled(value)) },
+                            onCheckedChange = { value -> viewModel.setMultipleChoiceExerciseEnabled(value) },
                         )
                         DividerRow()
                         ToggleRow(
                             title = stringResource(Res.string.main_settings_invert_swipe_title),
                             subtitle = stringResource(Res.string.main_settings_invert_swipe_subtitle),
                             checked = settings.invertSwipe,
-                            onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetInvertSwipe(value)) },
+                            onCheckedChange = { value -> viewModel.setInvertSwipe(value) },
                         )
                     }
                 }
@@ -194,7 +194,7 @@ fun SettingsScreen(
                             title = stringResource(Res.string.main_settings_tts_enabled_title),
                             subtitle = stringResource(Res.string.main_settings_tts_enabled_subtitle),
                             checked = settings.ttsEnabled,
-                            onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetTtsEnabled(value)) },
+                            onCheckedChange = { value -> viewModel.setTtsEnabled(value) },
                         )
                         if (settings.ttsEnabled) {
                             DividerRow()
@@ -202,15 +202,15 @@ fun SettingsScreen(
                                 title = stringResource(Res.string.main_settings_auto_pronounce_title),
                                 subtitle = stringResource(Res.string.main_settings_auto_pronounce_subtitle),
                                 checked = settings.autoPronounce,
-                                onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetAutoPronounce(value)) },
+                                onCheckedChange = { value -> viewModel.setAutoPronounce(value) },
                             )
                             DividerRow()
-                            SpeechRateRow(rate = settings.ttsRate, onChange = { value -> viewModel.intent(SettingsIntent.SetTtsRate(value)) })
+                            SpeechRateRow(rate = settings.ttsRate, onChange = { value -> viewModel.setTtsRate(value) })
                             DividerRow()
                             VoicePickerRow(
                                 speechService = speechService,
                                 selected = settings.ttsVoiceName,
-                                onSelect = { value -> viewModel.intent(SettingsIntent.SetTtsVoiceName(value)) },
+                                onSelect = { value -> viewModel.setTtsVoiceName(value) },
                             )
                         }
                         DividerRow()
@@ -218,7 +218,7 @@ fun SettingsScreen(
                             title = stringResource(Res.string.main_settings_show_transcription_title),
                             subtitle = stringResource(Res.string.main_settings_show_transcription_subtitle),
                             checked = settings.showTranscription,
-                            onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetShowTranscription(value)) },
+                            onCheckedChange = { value -> viewModel.setShowTranscription(value) },
                         )
                     }
                 }
@@ -232,7 +232,7 @@ fun SettingsScreen(
                             subtitle = stringResource(Res.string.main_settings_review_reminders_subtitle),
                             checked = settings.notificationsEnabled,
                             onCheckedChange = { enabled ->
-                                viewModel.intent(SettingsIntent.SetNotificationsEnabled(enabled))
+                                viewModel.setNotificationsEnabled(enabled)
                                 onNotificationsToggled(enabled)
                             },
                         )
@@ -244,7 +244,7 @@ fun SettingsScreen(
                                 value = settings.reminderHour,
                                 range = 0..23,
                                 step = 1,
-                                onChange = { value -> viewModel.intent(SettingsIntent.SetReminderHour(value)) },
+                                onChange = { value -> viewModel.setReminderHour(value) },
                             )
                             DividerRow()
                             StepperRow(
@@ -253,7 +253,7 @@ fun SettingsScreen(
                                 value = settings.silentHoursStart,
                                 range = 0..23,
                                 step = 1,
-                                onChange = { value -> viewModel.intent(SettingsIntent.SetSilentHoursStart(value)) },
+                                onChange = { value -> viewModel.setSilentHoursStart(value) },
                             )
                             DividerRow()
                             StepperRow(
@@ -262,7 +262,7 @@ fun SettingsScreen(
                                 value = settings.silentHoursEnd,
                                 range = 0..23,
                                 step = 1,
-                                onChange = { value -> viewModel.intent(SettingsIntent.SetSilentHoursEnd(value)) },
+                                onChange = { value -> viewModel.setSilentHoursEnd(value) },
                             )
                             DividerRow()
                             StepperRow(
@@ -271,7 +271,7 @@ fun SettingsScreen(
                                 value = settings.notificationFrequencyLimitHours,
                                 range = 1..24,
                                 step = 1,
-                                onChange = { value -> viewModel.intent(SettingsIntent.SetNotificationFrequencyLimitHours(value)) },
+                                onChange = { value -> viewModel.setNotificationFrequencyLimitHours(value) },
                             )
                         }
                     }

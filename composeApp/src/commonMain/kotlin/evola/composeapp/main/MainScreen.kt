@@ -41,7 +41,7 @@ import evola.composeapp.materials.AddMaterialScreen
 import evola.composeapp.materials.AddMaterialViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.materials.MaterialDetailScreen
 import evola.composeapp.materials.MaterialDetailViewModel
 import evola.composeapp.materials.MaterialsListScreen
@@ -394,7 +394,7 @@ fun MainScreen(
                     ProfileSubScreen.Settings -> {
                         val settingsViewModel = koinViewModel<SettingsViewModel>()
                         val reminderScheduler = evola.composeapp.reminders.rememberReminderScheduler()
-                        val currentSettingsState by settingsViewModel.subscribe()
+                        val currentSettingsState by settingsViewModel.collectAsState()
                         val requestNotificationPermission = evola.composeapp.reminders.rememberNotificationPermissionRequester { granted ->
                             if (granted) {
                                 reminderScheduler.scheduleDaily(currentSettingsState.settings.reminderHour)
@@ -402,7 +402,7 @@ fun MainScreen(
                                 // Permission denied - the toggle stays visually on (matching the OS's own
                                 // "you can flip this in system settings later" convention) but nothing is
                                 // actually scheduled until the user grants it from system settings.
-                                settingsViewModel.intent(SettingsIntent.SetNotificationsEnabled(false))
+                                settingsViewModel.setNotificationsEnabled(false)
                             }
                         }
                         val speechService = evola.composeapp.speech.rememberSpeechService()
