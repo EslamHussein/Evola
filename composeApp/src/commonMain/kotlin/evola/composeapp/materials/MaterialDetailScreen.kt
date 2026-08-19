@@ -77,21 +77,42 @@ import evola.composeapp.generated.resources.materials_detail_unsupported
 import evola.composeapp.generated.resources.materials_detail_vocabulary_label
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.components.CircularProgressRing
 import evola.composeapp.theme.components.StatusTag
 import evola.composeapp.theme.components.StatusTagStyle
 import evola.shared.materials.Lesson
+import evola.shared.materials.Material
 import evola.shared.materials.MaterialDetail
 import evola.shared.materials.MaterialStatus
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit, onOpenLesson: (String) -> Unit) {
     val state by viewModel.collectAsState()
+    MaterialDetailContent(
+        state = state,
+        onBack = onBack,
+        onOpenLesson = onOpenLesson,
+        onRetry = { viewModel.retry() },
+        onDeleteLesson = { lessonId -> viewModel.deleteLesson(lessonId) },
+    )
+}
+
+@Composable
+private fun MaterialDetailContent(
+    state: MaterialDetailState,
+    onBack: () -> Unit,
+    onOpenLesson: (String) -> Unit,
+    onRetry: () -> Unit,
+    onDeleteLesson: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.materials_detail_title)) },
@@ -105,14 +126,14 @@ fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit,
         },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (val current = state) {
+            when (state) {
                 is MaterialDetailState.Loading -> ProgressMessage(stringResource(Res.string.materials_detail_loading))
-                is MaterialDetailState.Error -> CenteredMessage(current.message)
+                is MaterialDetailState.Error -> CenteredMessage(state.message)
                 is MaterialDetailState.Loaded -> LoadedBody(
-                    current.detail,
-                    onRetry = { viewModel.retry() },
+                    state.detail,
+                    onRetry = onRetry,
                     onOpenLesson = onOpenLesson,
-                    onDeleteLesson = { lessonId -> viewModel.deleteLesson(lessonId) },
+                    onDeleteLesson = onDeleteLesson,
                 )
             }
         }
@@ -122,7 +143,7 @@ fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit,
 @Composable
 private fun CenteredMessage(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, modifier = Modifier.padding(24.dp))
+        Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, modifier = Modifier.padding(EvolaSpacing.xl))
     }
 }
 
@@ -133,7 +154,7 @@ private fun ProgressMessage(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             ChaseLoadingIndicator()
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(EvolaSpacing.lg))
             Text(message, style = MaterialTheme.typography.bodyLarge)
         }
     }
@@ -157,7 +178,7 @@ private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit, onOpenLesson
                             stringResource(Res.string.materials_detail_process_failed, detail.material.filename),
                             style = MaterialTheme.typography.bodyLarge,
                         )
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(EvolaSpacing.lg))
                         Button(onClick = onRetry) { Text(stringResource(Res.string.materials_detail_retry)) }
                     }
                 }
@@ -208,7 +229,7 @@ private fun InProgressBody(detail: MaterialDetail, onOpenLesson: (String) -> Uni
     LazyColumn(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {
         item {
             Text(detail.material.filename, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(EvolaSpacing.xs))
             Text(
                 stringResource(Res.string.materials_detail_ready_of_total, readyCount, lessons.size),
                 style = MaterialTheme.typography.bodyMedium,
@@ -275,7 +296,7 @@ private fun MetaStatRow(vocab: Int, grammar: Int, reading: Int, exercises: Int) 
 private fun MetaStat(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(icon, contentDescription = null, tint = EvolaColors.Text2, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(EvolaSpacing.xs))
         Text(value, style = MaterialTheme.typography.titleSmall)
         Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text3)
     }
@@ -283,7 +304,7 @@ private fun MetaStat(icon: androidx.compose.ui.graphics.vector.ImageVector, valu
 
 @Composable
 private fun PartialSuccessBody(detail: MaterialDetail, onRetry: () -> Unit, onOpenLesson: (String) -> Unit, onDeleteLesson: (String) -> Unit) {
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {
         item {
             Text(
                 stringResource(
@@ -293,9 +314,9 @@ private fun PartialSuccessBody(detail: MaterialDetail, onRetry: () -> Unit, onOp
                 ),
                 style = MaterialTheme.typography.bodyLarge,
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(EvolaSpacing.md))
             Button(onClick = onRetry) { Text(stringResource(Res.string.materials_detail_retry_rest)) }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(EvolaSpacing.lg))
         }
         items(detail.lessons, key = { it.id }) { lesson ->
             LessonRow(lesson, onClick = { onOpenLesson(lesson.id) }, onDelete = { onDeleteLesson(lesson.id) })
@@ -334,7 +355,7 @@ private fun LessonRow(lesson: Lesson, onClick: () -> Unit, onDelete: () -> Unit)
         ElevatedCard(
             onClick = onClick,
             enabled = lesson.status == "ready",
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = EvolaSpacing.xs),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.md),
@@ -365,3 +386,70 @@ private fun lessonCountLabel(count: Int): String =
     } else {
         stringResource(Res.string.materials_detail_lesson_count_plural, count)
     }
+
+private fun fakeMaterial(status: MaterialStatus) = Material(
+    id = "m1", userId = "u1", goalId = "g1", filename = "grammar-book.pdf", contentHash = "h1",
+    status = status, mimeType = "application/pdf", sizeBytes = 204_800L,
+    inputTokens = 12_400, outputTokens = 3_100,
+)
+
+private val fakeReadyDetail = MaterialDetail(
+    material = fakeMaterial(MaterialStatus.READY),
+    lessons = listOf(
+        Lesson(id = "l1", materialId = "m1", goalId = "g1", number = 1, title = "Greetings", status = "ready", vocabProgress = 1f, grammarProgress = 1f, grammarCount = 2, vocabCount = 12),
+        Lesson(id = "l2", materialId = "m1", goalId = "g1", number = 2, title = "Restaurants", status = "ready", vocabProgress = 0.4f, grammarProgress = 0f, vocabCount = 15),
+    ),
+)
+
+private val fakeInProgressDetail = MaterialDetail(
+    material = fakeMaterial(MaterialStatus.PROCESSING),
+    lessons = listOf(
+        Lesson(id = "l1", materialId = "m1", goalId = "g1", number = 1, title = "Greetings", status = "ready", vocabProgress = 1f, grammarProgress = 1f),
+        Lesson(id = "l2", materialId = "m1", goalId = "g1", number = 2, title = "Restaurants", status = "extracting", vocabProgress = 0f, grammarProgress = 0f),
+        Lesson(id = "l3", materialId = "m1", goalId = "g1", number = 3, title = "Lesson 3", status = "pending", vocabProgress = 0f, grammarProgress = 0f),
+    ),
+)
+
+private val fakePartialSuccessDetail = MaterialDetail(
+    material = fakeMaterial(MaterialStatus.FAILED),
+    lessons = listOf(
+        Lesson(id = "l1", materialId = "m1", goalId = "g1", number = 1, title = "Greetings", status = "ready", vocabProgress = 1f, grammarProgress = 1f),
+        Lesson(id = "l2", materialId = "m1", goalId = "g1", number = 2, title = "Restaurants", status = "failed", vocabProgress = 0f, grammarProgress = 0f),
+    ),
+)
+
+@Preview
+@Composable
+private fun MaterialDetailLoadingPreview() {
+    EvolaTheme { MaterialDetailContent(state = MaterialDetailState.Loading, onBack = {}, onOpenLesson = {}, onRetry = {}, onDeleteLesson = {}) }
+}
+
+@Preview
+@Composable
+private fun MaterialDetailReadyPreview() {
+    EvolaTheme {
+        MaterialDetailContent(state = MaterialDetailState.Loaded(fakeReadyDetail), onBack = {}, onOpenLesson = {}, onRetry = {}, onDeleteLesson = {})
+    }
+}
+
+@Preview
+@Composable
+private fun MaterialDetailInProgressPreview() {
+    EvolaTheme {
+        MaterialDetailContent(state = MaterialDetailState.Loaded(fakeInProgressDetail), onBack = {}, onOpenLesson = {}, onRetry = {}, onDeleteLesson = {})
+    }
+}
+
+@Preview
+@Composable
+private fun MaterialDetailPartialSuccessPreview() {
+    EvolaTheme {
+        MaterialDetailContent(state = MaterialDetailState.Loaded(fakePartialSuccessDetail), onBack = {}, onOpenLesson = {}, onRetry = {}, onDeleteLesson = {})
+    }
+}
+
+@Preview
+@Composable
+private fun MaterialDetailErrorPreview() {
+    EvolaTheme { MaterialDetailContent(state = MaterialDetailState.Error("Something went wrong."), onBack = {}, onOpenLesson = {}, onRetry = {}, onDeleteLesson = {}) }
+}
