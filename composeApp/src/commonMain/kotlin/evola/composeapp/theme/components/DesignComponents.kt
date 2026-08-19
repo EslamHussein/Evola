@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -223,7 +222,9 @@ fun GlassNavigationBar(hazeState: HazeState, modifier: Modifier = Modifier, cont
                     noiseFactor = 0.08f,
                 ),
             )
-            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)), shape),
+            // A pure-white hairline (right against the old dark glass bar) is nearly invisible on
+            // Reword's light, white-tinted blur - the ink token at low alpha reads on both.
+            .border(BorderStroke(1.dp, EvolaColors.Text.copy(alpha = 0.10f)), shape),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = EvolaSpacing.xs),
