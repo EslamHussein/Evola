@@ -61,9 +61,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
 import evola.composeapp.rtl.RtlText
+import evola.composeapp.speech.SpeechService
 import evola.composeapp.speech.rememberSpeechService
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.vocabulary.rememberCsvFilePicker
 import evola.shared.vocabulary.VocabularyItem
 import evola.shared.vocabulary.parseWordCsv
@@ -100,6 +102,7 @@ import evola.composeapp.generated.resources.lessons_sort_progress
 import evola.composeapp.generated.resources.lessons_vocab_title
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** The vocabulary list screen's own sub-screens live in sibling files in this package -
  * [VocabularyWordDetailScreen.kt] (word detail, also home to the shared `vocabularyStatusStyle`
@@ -117,25 +120,6 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
     var editingItem by remember { mutableStateOf<VocabularyItem?>(null) }
     var viewingItem by remember { mutableStateOf<VocabularyItem?>(null) }
     var addingWord by remember { mutableStateOf(false) }
-    var query by remember { mutableStateOf("") }
-    var sortMode by remember { mutableStateOf(VocabularySortMode.DEFAULT) }
-    var sortMenuExpanded by remember { mutableStateOf(false) }
-    var overflowMenuExpanded by remember { mutableStateOf(false) }
-    var showResetConfirm by remember { mutableStateOf(false) }
-
-    if (showResetConfirm) {
-        AlertDialog(
-            onDismissRequest = { showResetConfirm = false },
-            title = { Text(stringResource(Res.string.lessons_reset_progress_title)) },
-            text = { Text(stringResource(Res.string.lessons_reset_progress_text)) },
-            confirmButton = {
-                TextButton(onClick = { showResetConfirm = false; viewModel.resetProgress() }) { Text(stringResource(Res.string.lessons_reset_progress_confirm)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showResetConfirm = false }) { Text(stringResource(Res.string.lessons_action_cancel)) }
-            },
-        )
-    }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -220,7 +204,6 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
         return
     }
 
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val speechService = rememberSpeechService()
     val noValidRowsMsg = stringResource(Res.string.lessons_snackbar_no_valid_rows)
     val importCsv = rememberCsvFilePicker { text ->
@@ -232,8 +215,54 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
         }
     }
 
+    VocabularyListContent(
+        state = state,
+        snackbarHostState = snackbarHostState,
+        speechService = speechService,
+        onBack = onBack,
+        onSelectItem = { viewingItem = it },
+        onAddWord = { addingWord = true },
+        onImportCsv = importCsv,
+        onResetProgress = viewModel::resetProgress,
+    )
+}
+
+@Composable
+private fun VocabularyListContent(
+    state: VocabularyListState,
+    snackbarHostState: SnackbarHostState,
+    speechService: SpeechService,
+    onBack: () -> Unit,
+    onSelectItem: (VocabularyItem) -> Unit,
+    onAddWord: () -> Unit,
+    onImportCsv: () -> Unit,
+    onResetProgress: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var query by remember { mutableStateOf("") }
+    var sortMode by remember { mutableStateOf(VocabularySortMode.DEFAULT) }
+    var sortMenuExpanded by remember { mutableStateOf(false) }
+    var overflowMenuExpanded by remember { mutableStateOf(false) }
+    var showResetConfirm by remember { mutableStateOf(false) }
+
+    if (showResetConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirm = false },
+            title = { Text(stringResource(Res.string.lessons_reset_progress_title)) },
+            text = { Text(stringResource(Res.string.lessons_reset_progress_text)) },
+            confirmButton = {
+                TextButton(onClick = { showResetConfirm = false; onResetProgress() }) { Text(stringResource(Res.string.lessons_reset_progress_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirm = false }) { Text(stringResource(Res.string.lessons_action_cancel)) }
+            },
+        )
+    }
+
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.lessons_vocab_title)) },
@@ -261,7 +290,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                             }
                         }
                     }
-                    TextButton(onClick = importCsv) { Text(stringResource(Res.string.lessons_import_button)) }
+                    TextButton(onClick = onImportCsv) { Text(stringResource(Res.string.lessons_import_button)) }
                     Box {
                         IconButton(onClick = { overflowMenuExpanded = true }) {
                             Icon(Icons.Filled.MoreVert, contentDescription = stringResource(Res.string.lessons_content_desc_more))
@@ -279,7 +308,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { addingWord = true },
+                onClick = onAddWord,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(Res.string.lessons_fab_word)) },
                 containerColor = EvolaColors.Accent,
@@ -294,13 +323,13 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                     ChaseLoadingIndicator()
                 }
 
-                is VocabularyListContent.Error -> Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                is VocabularyListContent.Error -> Box(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
                     Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 }
 
                 is VocabularyListContent.Loaded -> {
                     if (current.items.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
                             Text(
                                 stringResource(Res.string.lessons_empty_vocabulary),
                                 style = MaterialTheme.typography.bodyLarge,
@@ -343,7 +372,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = EvolaSpacing.lg, vertical = EvolaSpacing.sm),
                             )
                             if (filtered.isEmpty()) {
-                                Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
                                     Text(stringResource(Res.string.lessons_no_words_match, query), style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
                                 }
                             } else {
@@ -356,7 +385,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                                     items(filtered, key = { it.itemId }) { item ->
                                         VocabularyRow(
                                             item = item,
-                                            onClick = { viewingItem = item },
+                                            onClick = { onSelectItem(item) },
                                             onPlay = { speechService.speak(item.term) },
                                         )
                                         if (item.itemId != filtered.last().itemId) {
@@ -410,5 +439,98 @@ private fun VocabularyRow(item: VocabularyItem, onClick: () -> Unit, onPlay: () 
                 Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(Res.string.lessons_action_play_pronunciation), tint = EvolaColors.Accent, modifier = Modifier.size(18.dp))
             }
         }
+    }
+}
+
+private val fakeVocabularyItems = listOf(
+    VocabularyItem(
+        itemId = "1",
+        term = "das Haus",
+        meaning = "house",
+        nativeMeaning = "بيت",
+        status = "learning",
+        ipaPronunciation = "haʊs",
+    ),
+    VocabularyItem(
+        itemId = "2",
+        term = "die Straße",
+        meaning = "street",
+        nativeMeaning = "شارع",
+        status = "new",
+    ),
+    VocabularyItem(
+        itemId = "3",
+        term = "laufen",
+        meaning = "to run",
+        nativeMeaning = "يجري",
+        status = "mastered",
+    ),
+)
+
+@Preview
+@Composable
+private fun VocabularyListContentLoadingPreview() {
+    EvolaTheme {
+        VocabularyListContent(
+            state = VocabularyListState(content = VocabularyListContent.Loading),
+            snackbarHostState = remember { SnackbarHostState() },
+            speechService = rememberSpeechService(),
+            onBack = {},
+            onSelectItem = {},
+            onAddWord = {},
+            onImportCsv = {},
+            onResetProgress = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun VocabularyListContentLoadedPreview() {
+    EvolaTheme {
+        VocabularyListContent(
+            state = VocabularyListState(content = VocabularyListContent.Loaded(fakeVocabularyItems)),
+            snackbarHostState = remember { SnackbarHostState() },
+            speechService = rememberSpeechService(),
+            onBack = {},
+            onSelectItem = {},
+            onAddWord = {},
+            onImportCsv = {},
+            onResetProgress = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun VocabularyListContentEmptyPreview() {
+    EvolaTheme {
+        VocabularyListContent(
+            state = VocabularyListState(content = VocabularyListContent.Loaded(emptyList())),
+            snackbarHostState = remember { SnackbarHostState() },
+            speechService = rememberSpeechService(),
+            onBack = {},
+            onSelectItem = {},
+            onAddWord = {},
+            onImportCsv = {},
+            onResetProgress = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun VocabularyListContentErrorPreview() {
+    EvolaTheme {
+        VocabularyListContent(
+            state = VocabularyListState(content = VocabularyListContent.Error("Couldn't load your vocabulary")),
+            snackbarHostState = remember { SnackbarHostState() },
+            speechService = rememberSpeechService(),
+            onBack = {},
+            onSelectItem = {},
+            onAddWord = {},
+            onImportCsv = {},
+            onResetProgress = {},
+        )
     }
 }
