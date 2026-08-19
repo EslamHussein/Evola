@@ -51,7 +51,7 @@ private const val SEGMENTATION_SYSTEM_PROMPT =
  */
 class SegmentationExtractor(private val client: AnthropicClient) {
 
-    suspend fun segment(text: String): ApiResult<SegmentationResult> {
+    suspend fun segment(text: String, onUsage: ((inputTokens: Int, outputTokens: Int) -> Unit)? = null): ApiResult<SegmentationResult> {
         LessonSegmenter.detectHeadings(text)?.let {
             return ApiResult.Success(SegmentationResult(LessonSegmenter.mergeAndCap(it), detectedLanguage = null, unsupported = false))
         }
@@ -64,7 +64,7 @@ class SegmentationExtractor(private val client: AnthropicClient) {
         val ranges = LessonSegmenter.chunkRanges(text.length)
         for (range in ranges) {
             val chunk = text.substring(range.first, range.last + 1)
-            val parsed = when (val r = callChunk(chunk)) {
+            val parsed = when (val r = callChunk(chunk, onUsage)) {
                 is ApiResult.Failure -> {
                     // A non-retryable client error (bad key, malformed request) is fatal for every
                     // chunk, so abort immediately. A transient failure that survived retries only
@@ -103,10 +103,10 @@ class SegmentationExtractor(private val client: AnthropicClient) {
     /** One chunk, retried up to [MAX_CHUNK_ATTEMPTS] with backoff on transient failures (network /
      * timeout / 429 / 5xx) — a single hiccup among dozens of sequential chunk calls shouldn't fail
      * the document. A non-retryable HTTP error (e.g. 401 bad key) returns immediately. */
-    private suspend fun callChunk(chunkText: String): ApiResult<SegResultJson> {
+    private suspend fun callChunk(chunkText: String, onUsage: ((inputTokens: Int, outputTokens: Int) -> Unit)?): ApiResult<SegResultJson> {
         var lastFailure: ApiResult.Failure = ApiResult.Failure(DataError.Unexpected)
         repeat(MAX_CHUNK_ATTEMPTS) { attempt ->
-            when (val r = client.complete(AnthropicModels.SMALL, 1500, SEGMENTATION_SYSTEM_PROMPT, "Content:\n$chunkText")) {
+            when (val r = client.complete(AnthropicModels.SMALL, 1500, SEGMENTATION_SYSTEM_PROMPT, "Content:\n$chunkText", onUsage)) {
                 is ApiResult.Success -> {
                     val parsed = runCatching {
                         extractionJson.decodeFromString(SegResultJson.serializer(), normalizeModelJson(r.data))

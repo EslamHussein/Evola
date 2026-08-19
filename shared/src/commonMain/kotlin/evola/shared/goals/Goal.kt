@@ -56,6 +56,34 @@ data class GoalProgress(
     val todayCompleted: Boolean,
     val vocabulary: VocabularyBreakdown,
     val nudgeWord: NudgeWord? = null,
+    /** The last 7 calendar days (oldest first, today last) for Home's weekly streak strip. */
+    val weeklyActivity: List<DayActivity> = emptyList(),
+    /** New words learned today vs. the configured daily goal ([evola.shared.local.AppSettings.
+     * dailyNewWordGoal]) - a Reword-style "Learned today X/Y" readout. */
+    val todayNewWordsLearned: Int = 0,
+    val dailyGoal: Int = 0,
+    /** Longest all-time consecutive-day run, alongside [streakDays]'s "current" run - Reword's
+     * "Best streak" stat. */
+    val bestStreakDays: Int = 0,
+    /** Reword's "Streak freeze" bank remaining - see [evola.shared.local.LocalGoalsRepository]. */
+    val streakFreezesAvailable: Int = 0,
+    /** Badges unlocked by *this* [getProgress] call, for a one-shot celebration toast - not the full
+     * unlocked set (Profile reads that separately via [evola.shared.achievements.AchievementsRepository.
+     * unlockedBadgeIds]). Empty on almost every call; non-empty only the first time a threshold is
+     * crossed. */
+    val newlyUnlockedBadges: List<evola.shared.achievements.BadgeDefinition> = emptyList(),
+    /** Reword's Home "Review words - Words to review: N" - goal-wide due count, distinct from
+     * [todayNewWordsLearned]/[dailyGoal] which cover the "Learn new words" row instead. */
+    val wordsToReviewCount: Int = 0,
+)
+
+/** One day's activity for the weekly streak strip - [newWordsLearned]/[wordsReviewed] drive Home's
+ * stacked activity chart, [hadActivity] alone drives the strip's filled/outlined circle. */
+data class DayActivity(
+    val date: String,
+    val hadActivity: Boolean,
+    val newWordsLearned: Int,
+    val wordsReviewed: Int,
 )
 
 /** The in-progress word closest to "mastered" on the vocabulary SRS ladder, for Home's "N

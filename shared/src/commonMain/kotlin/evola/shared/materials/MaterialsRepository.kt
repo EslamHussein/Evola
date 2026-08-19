@@ -50,4 +50,12 @@ interface MaterialsRepository {
     suspend fun list(): ApiResult<List<Material>>
     suspend fun get(materialId: String): ApiResult<MaterialDetail>
     suspend fun reprocess(materialId: String): ApiResult<Unit>
+
+    /** Cascades to every lesson/vocabulary/grammar row under this material via the DB's own
+     * foreign-key `ON DELETE CASCADE` (see the schema in `shared/.../sqldelight/.../db/`) - the
+     * repository only ever deletes the one row. */
+    suspend fun deleteMaterial(materialId: String): ApiResult<Unit>
+
+    /** Cascades to that lesson's vocabulary/grammar rows the same way [deleteMaterial] does. */
+    suspend fun deleteLesson(lessonId: String): ApiResult<Unit>
 }

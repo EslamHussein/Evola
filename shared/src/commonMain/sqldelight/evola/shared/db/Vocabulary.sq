@@ -1,6 +1,6 @@
 CREATE TABLE vocabulary_items (
     id TEXT NOT NULL PRIMARY KEY,
-    lesson_id TEXT NOT NULL,
+    lesson_id TEXT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
     term TEXT NOT NULL,
     meaning TEXT NOT NULL,
     gender TEXT,
@@ -25,7 +25,7 @@ CREATE TABLE vocabulary_items (
 CREATE TABLE vocabulary_progress (
     id TEXT NOT NULL PRIMARY KEY,
     user_id TEXT NOT NULL,
-    vocabulary_item_id TEXT NOT NULL,
+    vocabulary_item_id TEXT NOT NULL REFERENCES vocabulary_items(id) ON DELETE CASCADE,
     status TEXT NOT NULL,
     correct_streak INTEGER NOT NULL,
     incorrect_streak INTEGER NOT NULL,
@@ -38,6 +38,29 @@ CREATE TABLE vocabulary_progress (
 
 CREATE INDEX vocabulary_progress_due_idx ON vocabulary_progress(user_id, next_review_at);
 
+-- A word already taught in one lesson can reappear in another without creating a duplicate row:
+-- vocabulary_items.lesson_id stays the ORIGIN lesson (the one whose deletion cascade-deletes the
+-- word itself, including every lesson it's linked to here - accepted as simple v1 semantics rather
+-- than reference-counted cleanup), and this table records every OTHER lesson that reuses it. See
+-- the lesson_vocabulary view below, which every lesson-scoped vocabulary query joins through
+-- instead of filtering vocabulary_items.lesson_id directly, so origin and linked appearances are
+-- indistinguishable to every other query in this file.
+-- context_snippet: the surrounding source text a document-derived link was extracted from, for a
+-- future review UI - null for links created by the curriculum extraction pipeline, and null for
+-- document-derived links too until the (separate, not-yet-built) document extraction pipeline
+-- actually sends this text. Schema now, population later, by design.
+CREATE TABLE lesson_vocabulary_items (
+    lesson_id TEXT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+    vocabulary_item_id TEXT NOT NULL REFERENCES vocabulary_items(id) ON DELETE CASCADE,
+    context_snippet TEXT,
+    PRIMARY KEY (lesson_id, vocabulary_item_id)
+);
+
+CREATE VIEW lesson_vocabulary AS
+SELECT lesson_id, id AS vocabulary_item_id FROM vocabulary_items
+UNION
+SELECT lesson_id, vocabulary_item_id FROM lesson_vocabulary_items;
+
 -- One row per study session for a lesson. Composition stats feed the summary screen directly -
 -- no need to recompute from the queue at complete() time beyond the distinct-word count.
 CREATE TABLE vocabulary_sessions (
@@ -45,10 +68,15 @@ CREATE TABLE vocabulary_sessions (
     user_id TEXT NOT NULL,
     -- Null for a category-practice session (Home's Needs practice/Learning/Mastered cards): those
     -- pull words across every lesson in the goal, so there's no single lesson to attribute to.
-    lesson_id TEXT,
+    lesson_id TEXT REFERENCES lessons(id) ON DELETE CASCADE,
     session_number INTEGER NOT NULL,
     started_at INTEGER NOT NULL,
     completed_at INTEGER,
+    -- The caller's own local calendar date (kotlinx-datetime, same value passed to
+    -- activityQueries.upsert - see LocalVocabularyRepository.complete) - stored on the session itself
+    -- (not just derived from completed_at, a UTC instant) so Home's per-day new/review activity chart
+    -- groups by the learner's own day boundary, not UTC's. Null until completed.
+    local_date TEXT,
     new_words_count INTEGER NOT NULL,
     review_words_count INTEGER NOT NULL,
     correct_count INTEGER NOT NULL,
@@ -58,20 +86,21 @@ CREATE TABLE vocabulary_sessions (
 -- Persisted ordered queue: one row per card the session will show (or has shown). "Current card" is
 -- the first unanswered row by position - the same live-recompute-from-data convention the retired
 -- pack model used for its own current-position lookup, so exiting mid-card is always safe and
--- resuming lands exactly where the user left off. card_type is one of intro|recognition|wordbank|
--- hint|blind (evola.shared.vocabulary.VocabularyCard) - a new word's ladder (recognition->wordbank->
--- hint->blind) is spliced in one step at a time (never pre-inserted) as each step is answered
--- correctly, at `answeredPosition + 1` (well inside the 100-wide gap left between initially-inserted
--- rows). A wrong answer at any graded step appends one row of the SAME card_type at
+-- resuming lands exactly where the user left off. card_type is one of new|practice
+-- (evola.shared.vocabulary.VocabularyCard) - a Reword-style swipe model, not a forced ladder: a
+-- `new` row is never re-inserted (a word is only ever new once); a `practice` row is re-queued
+-- (never rewritten in place) any time the word isn't done for this session yet - "start learning"
+-- (New swipe-right), "keep showing" (Practice swipe-right, no SRS change), or a wrong/incomplete
+-- graded answer that hasn't reached review/mastered status yet. Every re-queue is a plain append at
 -- `maxQueuePosition + 100`, origin='repeat' - simply past every existing row, so it reappears later
 -- in the session without ever needing to shift other rows. choices (JSON-encoded, nullable) holds
--- the shuffled option set for recognition/wordbank rows, persisted so a resumed session shows the
--- identical choices rather than a reshuffle.
+-- the shuffled option set while a multiple-choice check is active for a `practice` row, persisted so
+-- a resumed session shows the identical choices rather than a reshuffle.
 CREATE TABLE vocabulary_session_queue (
     id TEXT NOT NULL PRIMARY KEY,
-    session_id TEXT NOT NULL,
+    session_id TEXT NOT NULL REFERENCES vocabulary_sessions(id) ON DELETE CASCADE,
     position INTEGER NOT NULL,
-    vocabulary_item_id TEXT NOT NULL,
+    vocabulary_item_id TEXT NOT NULL REFERENCES vocabulary_items(id) ON DELETE CASCADE,
     card_type TEXT NOT NULL,
     origin TEXT NOT NULL,
     choices TEXT,
@@ -83,11 +112,29 @@ CREATE TABLE vocabulary_session_queue (
 -- items -----------------------------------------------------------------
 
 itemsByLesson:
-SELECT * FROM vocabulary_items WHERE lesson_id = ? ORDER BY created_at ASC;
+SELECT vi.* FROM vocabulary_items vi
+JOIN lesson_vocabulary lv ON lv.vocabulary_item_id = vi.id
+WHERE lv.lesson_id = ? ORDER BY vi.created_at ASC;
 
 insertItem:
 INSERT INTO vocabulary_items(id, lesson_id, term, meaning, gender, example_sentence, part_of_speech, plural, grammatical_case, example_sentence_translation, native_meaning, ipa_pronunciation, related_words, difficulty_rating, frequency_rating, memory_tip, grammar_note, created_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Records that an already-existing word (found via cross-material/lesson dedup, see
+-- LocalMaterialsRepository.extractVocabulary) also appears in this lesson, instead of inserting a
+-- duplicate vocabulary_items row for it.
+linkItemToLesson:
+INSERT OR IGNORE INTO lesson_vocabulary_items(lesson_id, vocabulary_item_id) VALUES (?, ?);
+
+-- For the (not yet built) document pipeline, once it has context text to store.
+linkItemToLessonWithContext:
+INSERT OR IGNORE INTO lesson_vocabulary_items(lesson_id, vocabulary_item_id, context_snippet) VALUES (?, ?, ?);
+
+-- Removes only this specific (lesson, item) link - used by the Option B re-parenting path in
+-- LocalMaterialsRepository.deleteMaterial to drop a now-redundant link after reassignItemOrigin
+-- makes the origin relationship implicit instead.
+unlinkItemFromLesson:
+DELETE FROM lesson_vocabulary_items WHERE lesson_id = ? AND vocabulary_item_id = ?;
 
 itemById:
 SELECT * FROM vocabulary_items WHERE id = ?;
@@ -97,6 +144,9 @@ UPDATE vocabulary_items SET term = ?, meaning = ?, native_meaning = ? WHERE id =
 
 updateAiNote:
 UPDATE vocabulary_items SET ai_note = ? WHERE id = ?;
+
+deleteItem:
+DELETE FROM vocabulary_items WHERE id = ?;
 
 -- progress ----------------------------------------------------------------
 
@@ -111,6 +161,23 @@ updateProgress:
 UPDATE vocabulary_progress SET status = ?, correct_streak = ?, incorrect_streak = ?, interval_index = ?, next_review_at = ?, last_seen_at = ?
 WHERE user_id = ? AND vocabulary_item_id = ?;
 
+-- Reword's "Reset progress" - back to unseen, SRS state cleared. Bookmarks/difficulty flags are
+-- left untouched (they're the learner's own curation, not SRS state).
+resetLessonProgress:
+UPDATE vocabulary_progress
+SET status = 'unseen', correct_streak = 0, incorrect_streak = 0, interval_index = 0, next_review_at = 0, last_seen_at = NULL
+WHERE user_id = ? AND vocabulary_item_id IN (SELECT id FROM vocabulary_items WHERE lesson_id = ?);
+
+resetAllProgress:
+UPDATE vocabulary_progress
+SET status = 'unseen', correct_streak = 0, incorrect_streak = 0, interval_index = 0, next_review_at = 0, last_seen_at = NULL
+WHERE user_id = ?;
+
+-- Reword's achievement badges - a user-wide count (this app is single-goal-at-a-time per user, so
+-- this is equivalent to a goal-wide count) rather than scoped to any one lesson/goal.
+masteredCountForUser:
+SELECT COUNT(*) FROM vocabulary_progress WHERE user_id = ? AND status = 'mastered';
+
 setBookmarked:
 UPDATE vocabulary_progress SET is_bookmarked = ? WHERE user_id = ? AND vocabulary_item_id = ?;
 
@@ -121,8 +188,9 @@ UPDATE vocabulary_progress SET marked_difficult = ? WHERE user_id = ? AND vocabu
 itemsWithProgressByLesson:
 SELECT vi.*, vp.status AS p_status, vp.is_bookmarked AS p_is_bookmarked, vp.marked_difficult AS p_marked_difficult
 FROM vocabulary_items vi
+JOIN lesson_vocabulary lv ON lv.vocabulary_item_id = vi.id
 JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
-WHERE vi.lesson_id = ? AND vp.user_id = ?
+WHERE lv.lesson_id = ? AND vp.user_id = ?
 ORDER BY vi.created_at ASC;
 
 itemWithProgress:
@@ -138,46 +206,100 @@ WHERE vi.id = ? AND vp.user_id = ?;
 statusByLesson:
 SELECT vi.id AS item_id, COALESCE(vp.status, 'unseen') AS status
 FROM vocabulary_items vi
+JOIN lesson_vocabulary lv ON lv.vocabulary_item_id = vi.id
 LEFT JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
-WHERE vi.lesson_id = ?;
+WHERE lv.lesson_id = ?;
 
 -- Every word's current status across every lesson in a goal, for the Home dashboard's
 -- not-started/in-progress/mastered breakdown (bucketed in Kotlin against VocabularySrs.STATUSES).
+-- DISTINCT because a word linked into more than one lesson of the same goal would otherwise be
+-- counted once per lesson_vocabulary row instead of once.
+-- Both of these join curriculum_lessons (not lessons) - Home's dashboard breakdown/nudge is
+-- exactly the "list without expecting unfamiliar rows" case document-derived sections need
+-- shielding from.
 wordStatusesByGoal:
-SELECT vi.id AS item_id, COALESCE(vp.status, 'unseen') AS status, COALESCE(vp.incorrect_streak, 0) AS incorrect_streak
+SELECT DISTINCT vi.id AS item_id, COALESCE(vp.status, 'unseen') AS status, COALESCE(vp.incorrect_streak, 0) AS incorrect_streak
 FROM vocabulary_items vi
-JOIN lessons l ON l.id = vi.lesson_id
+JOIN lesson_vocabulary lv ON lv.vocabulary_item_id = vi.id
+JOIN curriculum_lessons l ON l.id = lv.lesson_id
 LEFT JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
 WHERE l.goal_id = ?;
 
 -- Words already in progress (learning/review, not yet mastered) across a goal, for the Home
 -- dashboard's "N review(s) from mastering <word>" nudge - the client picks the one closest to
--- mastered (highest VocabularySrs.STATUSES index).
+-- mastered (highest VocabularySrs.STATUSES index). DISTINCT for the same reason as above.
 inProgressWordsByGoal:
-SELECT vi.term AS term, vp.status AS status
+SELECT DISTINCT vi.term AS term, vp.status AS status
 FROM vocabulary_items vi
-JOIN lessons l ON l.id = vi.lesson_id
+JOIN lesson_vocabulary lv ON lv.vocabulary_item_id = vi.id
+JOIN curriculum_lessons l ON l.id = lv.lesson_id
 JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
 WHERE l.goal_id = ? AND vp.status IN ('introduced', 'learning', 'review');
+
+-- Reword's "Learn new words"/"Review words" Home rows - goal-wide (not lesson-scoped, unlike
+-- newItemsForLesson/dueItemsInLesson below) so a single-mode session can pull from every lesson in
+-- the goal, oldest-first / most-overdue-first same as the lesson-scoped versions.
+newItemsForGoal:
+SELECT DISTINCT vi.id FROM vocabulary_items vi
+JOIN lesson_vocabulary lv ON lv.vocabulary_item_id = vi.id
+JOIN curriculum_lessons l ON l.id = lv.lesson_id
+LEFT JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
+WHERE l.goal_id = ? AND (vp.id IS NULL OR vp.status = 'unseen')
+ORDER BY vi.created_at ASC LIMIT ?;
+
+dueItemsForGoal:
+SELECT DISTINCT vi.id FROM vocabulary_items vi
+JOIN lesson_vocabulary lv ON lv.vocabulary_item_id = vi.id
+JOIN curriculum_lessons l ON l.id = lv.lesson_id
+JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
+WHERE l.goal_id = ? AND vp.status NOT IN ('unseen', 'introduced') AND vp.next_review_at <= ?
+ORDER BY vp.next_review_at ASC LIMIT ?;
+
+-- Option B cascade support (see LocalMaterialsRepository.deleteMaterial) -----------------
+
+-- Words whose ORIGIN is this lesson - the ones actually at risk of cascade-deletion if the lesson
+-- is deleted (a word merely linked-not-originating here is unaffected either way).
+originatingItemsForLesson:
+SELECT id FROM vocabulary_items WHERE lesson_id = ?;
+
+-- Does this word have a surviving link to a real curriculum lesson (other than the document-origin
+-- lesson about to be deleted)? One arbitrary such lesson id is enough - reassignItemOrigin just
+-- needs any valid target.
+survivingCurriculumLinkForItem:
+SELECT lvi.lesson_id FROM lesson_vocabulary_items lvi
+JOIN curriculum_lessons l ON l.id = lvi.lesson_id
+WHERE lvi.vocabulary_item_id = ?
+LIMIT 1;
+
+-- Re-parents a word's origin to a surviving curriculum lesson so the impending delete of its old
+-- (document-derived) origin lesson no longer cascades it away.
+reassignItemOrigin:
+UPDATE vocabulary_items SET lesson_id = ? WHERE id = ?;
 
 -- Session queue assembly draws --------------------------------------------
 
 newItemsForLesson:
 SELECT vi.id FROM vocabulary_items vi
+JOIN lesson_vocabulary lv ON lv.vocabulary_item_id = vi.id
 LEFT JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
-WHERE vi.lesson_id = ? AND (vp.id IS NULL OR vp.status = 'unseen')
+WHERE lv.lesson_id = ? AND (vp.id IS NULL OR vp.status = 'unseen')
 ORDER BY vi.created_at ASC LIMIT ?;
 
 dueItemsInLesson:
 SELECT vi.id FROM vocabulary_items vi
+JOIN lesson_vocabulary lv ON lv.vocabulary_item_id = vi.id
 JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
-WHERE vi.lesson_id = ? AND vp.user_id = ? AND vp.status NOT IN ('unseen', 'introduced') AND vp.next_review_at <= ?
+WHERE lv.lesson_id = ? AND vp.user_id = ? AND vp.status NOT IN ('unseen', 'introduced') AND vp.next_review_at <= ?
 ORDER BY vp.next_review_at ASC LIMIT ?;
 
+-- "vi.lesson_id != ?" (origin only) replaced with a NOT IN over lesson_vocabulary (origin OR
+-- linked) - otherwise a word linked into "this" lesson but originating elsewhere would wrongly
+-- count as due "elsewhere" too, offering the same word from both queues in the same session.
 dueItemsElsewhere:
 SELECT vi.id FROM vocabulary_items vi
 JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
-WHERE vi.lesson_id != ? AND vp.user_id = ? AND vp.status NOT IN ('unseen', 'introduced') AND vp.next_review_at <= ?
+WHERE vi.id NOT IN (SELECT vocabulary_item_id FROM lesson_vocabulary WHERE lesson_id = ?)
+AND vp.user_id = ? AND vp.status NOT IN ('unseen', 'introduced') AND vp.next_review_at <= ?
 ORDER BY vp.next_review_at ASC LIMIT ?;
 
 masteredItems:
@@ -185,6 +307,19 @@ SELECT vi.id FROM vocabulary_items vi
 JOIN vocabulary_progress vp ON vi.id = vp.vocabulary_item_id
 WHERE vp.user_id = ? AND vp.status = 'mastered'
 LIMIT ?;
+
+-- Whole-account due-review count, for the reminder Worker/notification body (no lesson scoping -
+-- unlike dueItemsInLesson/dueItemsElsewhere, this is never shown in-app, only in the notification).
+dueCountForUser:
+SELECT COUNT(*) FROM vocabulary_progress WHERE user_id = ? AND status NOT IN ('unseen', 'introduced') AND next_review_at <= ?;
+
+-- Home's "Review words - Words to review: N" row - goal-scoped version of dueCountForUser above.
+dueCountForGoal:
+SELECT COUNT(DISTINCT vi.id) FROM vocabulary_items vi
+JOIN lesson_vocabulary lv ON lv.vocabulary_item_id = vi.id
+JOIN curriculum_lessons l ON l.id = lv.lesson_id
+JOIN vocabulary_progress vp ON vp.vocabulary_item_id = vi.id AND vp.user_id = ?
+WHERE l.goal_id = ? AND vp.status NOT IN ('unseen', 'introduced') AND vp.next_review_at <= ?;
 
 allUserVocab:
 SELECT vi.id, vi.term, vi.meaning, vi.native_meaning, vi.example_sentence, vi.example_sentence_translation
@@ -211,7 +346,16 @@ incrementSessionCounters:
 UPDATE vocabulary_sessions SET correct_count = correct_count + ?, incorrect_count = incorrect_count + ? WHERE id = ?;
 
 completeSession:
-UPDATE vocabulary_sessions SET completed_at = ? WHERE id = ?;
+UPDATE vocabulary_sessions SET completed_at = ?, local_date = ? WHERE id = ?;
+
+-- Per-day new/review counts across every completed session, for Home's stacked activity chart.
+-- Grouped by the caller's own stored local_date (see the column comment above), never derived from
+-- completed_at directly.
+dailyCounts:
+SELECT local_date, SUM(new_words_count) AS new_words, SUM(review_words_count) AS review_words
+FROM vocabulary_sessions
+WHERE user_id = ? AND completed_at IS NOT NULL AND local_date >= ?
+GROUP BY local_date;
 
 -- Queue ---------------------------------------------------------------------
 
@@ -230,6 +374,14 @@ VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL);
 
 answerQueueItem:
 UPDATE vocabulary_session_queue SET answered_at = ?, correct = ?, user_response = ? WHERE id = ?;
+
+-- Reword's per-card undo: reverts a graded queue row back to unanswered so it becomes the current
+-- card again (nextQueueItem picks the lowest-position unanswered row).
+unanswerQueueItem:
+UPDATE vocabulary_session_queue SET answered_at = NULL, correct = NULL, user_response = NULL WHERE id = ?;
+
+deleteQueueItem:
+DELETE FROM vocabulary_session_queue WHERE id = ?;
 
 wordsPracticedInSession:
 SELECT COUNT(DISTINCT vocabulary_item_id) FROM vocabulary_session_queue WHERE session_id = ?;

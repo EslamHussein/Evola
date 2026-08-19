@@ -36,7 +36,11 @@ object LessonSegmenter {
     const val MIN_HEADING_MARKERS = 2
 
     private val HEADING_PATTERNS = listOf(
-        Regex("""(?i)^(kapitel|chapter|lektion|lesson|unit|teil|einheit)\s+\d+.*"""),
+        // \(?...\)? tolerates both "Lesson 1" and "Lesson (1)" - the latter is a common numbering
+        // style (seen verbatim in real uploaded materials) that the bare \d+ version above missed
+        // entirely, silently falling through to a full LLM segmentation call for documents that
+        // otherwise have perfectly detectable headings.
+        Regex("""(?i)^(kapitel|chapter|lektion|lesson|unit|teil|einheit)\s+\(?\d+\)?.*"""),
         Regex("""^\d{1,3}[.)]\s+\S.*"""),
         Regex("""^[A-ZÄÖÜ0-9][A-ZÄÖÜ0-9 \-]{2,59}$"""),
     )

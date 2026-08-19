@@ -1,6 +1,6 @@
 CREATE TABLE grammar_topics (
     id TEXT NOT NULL PRIMARY KEY,
-    lesson_id TEXT NOT NULL,
+    lesson_id TEXT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     explanation TEXT NOT NULL,
     created_at INTEGER NOT NULL
@@ -8,7 +8,7 @@ CREATE TABLE grammar_topics (
 
 CREATE TABLE grammar_exercises (
     id TEXT NOT NULL PRIMARY KEY,
-    topic_id TEXT NOT NULL,
+    topic_id TEXT NOT NULL REFERENCES grammar_topics(id) ON DELETE CASCADE,
     type TEXT NOT NULL,
     prompt TEXT NOT NULL,
     answer_key TEXT NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE grammar_exercises (
 CREATE TABLE grammar_progress (
     id TEXT NOT NULL PRIMARY KEY,
     user_id TEXT NOT NULL,
-    topic_id TEXT NOT NULL,
+    topic_id TEXT NOT NULL REFERENCES grammar_topics(id) ON DELETE CASCADE,
     mastery_state TEXT NOT NULL,
     correct_streak INTEGER NOT NULL,
     interval_index INTEGER NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE grammar_progress (
 CREATE TABLE grammar_sessions (
     id TEXT NOT NULL PRIMARY KEY,
     user_id TEXT NOT NULL,
-    topic_id TEXT NOT NULL,
+    topic_id TEXT NOT NULL REFERENCES grammar_topics(id) ON DELETE CASCADE,
     started_at INTEGER NOT NULL,
     completed_at INTEGER,
     accuracy REAL
@@ -38,8 +38,8 @@ CREATE TABLE grammar_sessions (
 
 CREATE TABLE grammar_session_answers (
     id TEXT NOT NULL PRIMARY KEY,
-    session_id TEXT NOT NULL,
-    exercise_id TEXT NOT NULL,
+    session_id TEXT NOT NULL REFERENCES grammar_sessions(id) ON DELETE CASCADE,
+    exercise_id TEXT NOT NULL REFERENCES grammar_exercises(id) ON DELETE CASCADE,
     response TEXT,
     correct INTEGER NOT NULL,
     mastery_state_after TEXT NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE grammar_session_answers (
 
 CREATE TABLE grammar_extraction_jobs (
     id TEXT NOT NULL PRIMARY KEY,
-    lesson_id TEXT NOT NULL UNIQUE,
+    lesson_id TEXT NOT NULL UNIQUE REFERENCES lessons(id) ON DELETE CASCADE,
     status TEXT NOT NULL,
     error TEXT,
     created_at INTEGER NOT NULL,

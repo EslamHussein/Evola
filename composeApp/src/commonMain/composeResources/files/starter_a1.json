@@ -1,0 +1,5533 @@
+{
+  "id": "a1",
+  "title": "A1",
+  "subtitle": "Das Leben A1",
+  "lessons": [
+    {
+      "id": "a1_k0",
+      "title": "Willkommen",
+      "words": [
+        {
+          "term": "die Natur",
+          "meaning": "طبيعة"
+        },
+        {
+          "term": "der Transport",
+          "meaning": "نقل"
+        },
+        {
+          "term": "das Opernhaus",
+          "meaning": "دار الاوبرا"
+        },
+        {
+          "term": "das Museum",
+          "meaning": "متحف"
+        },
+        {
+          "term": "der Gruß",
+          "meaning": "تحية"
+        },
+        {
+          "term": "der Hafen",
+          "meaning": "ميناء"
+        },
+        {
+          "term": "der Garten",
+          "meaning": "حديقة"
+        },
+        {
+          "term": "der Wintersport",
+          "meaning": "رياضة شتائية"
+        },
+        {
+          "term": "grüezi",
+          "meaning": "مرحبا لهجة سويسرية"
+        },
+        {
+          "term": "aus",
+          "meaning": "من"
+        },
+        {
+          "term": "die Schweiz",
+          "meaning": "سويسرا"
+        },
+        {
+          "term": "die Schokolade",
+          "meaning": "شوكولاتة"
+        },
+        {
+          "term": "die Milch",
+          "meaning": "حليب"
+        },
+        {
+          "term": "das Taschenmesser",
+          "meaning": "سكين جيب"
+        },
+        {
+          "term": "die Technik",
+          "meaning": "تقنية"
+        },
+        {
+          "term": "die Musik",
+          "meaning": "موسيقى"
+        },
+        {
+          "term": "der Sport",
+          "meaning": "رياضة"
+        },
+        {
+          "term": "sein",
+          "meaning": "كان"
+        },
+        {
+          "term": "was",
+          "meaning": "ماذا/ما"
+        },
+        {
+          "term": "wo",
+          "meaning": "اين"
+        },
+        {
+          "term": "das Abc",
+          "meaning": "الابجدية"
+        },
+        {
+          "term": "komplett",
+          "meaning": "تام"
+        },
+        {
+          "term": "Guten Tag!",
+          "meaning": "نهار سعيد"
+        },
+        {
+          "term": "die Frau",
+          "meaning": "سيدة"
+        },
+        {
+          "term": "hier",
+          "meaning": "هنا"
+        },
+        {
+          "term": "denn",
+          "meaning": "إذن"
+        },
+        {
+          "term": "da sein",
+          "meaning": "موجود"
+        },
+        {
+          "term": "der Herr",
+          "meaning": "سيد"
+        },
+        {
+          "term": "danke",
+          "meaning": "شكرا"
+        },
+        {
+          "term": "der Moment",
+          "meaning": "لحظة"
+        },
+        {
+          "term": "bitte",
+          "meaning": "رجاءا"
+        },
+        {
+          "term": "und",
+          "meaning": "و"
+        },
+        {
+          "term": "telefonieren",
+          "meaning": "تلفن"
+        },
+        {
+          "term": "der Name",
+          "meaning": "اسم"
+        },
+        {
+          "term": "wie",
+          "meaning": "كيف"
+        },
+        {
+          "term": "schreiben",
+          "meaning": "كتب"
+        },
+        {
+          "term": "mit",
+          "meaning": "مع"
+        },
+        {
+          "term": "heißen",
+          "meaning": "سمى"
+        },
+        {
+          "term": "auf",
+          "meaning": "ب"
+        },
+        {
+          "term": "das Deutsch",
+          "meaning": "الماني"
+        },
+        {
+          "term": "Keine Ahnung!",
+          "meaning": "لااعلم"
+        },
+        {
+          "term": "kein",
+          "meaning": "ليس"
+        },
+        {
+          "term": "die Ahnung",
+          "meaning": "علم"
+        },
+        {
+          "term": "können",
+          "meaning": "استطاع"
+        },
+        {
+          "term": "buchstabieren",
+          "meaning": "تهجى"
+        },
+        {
+          "term": "die Tafel",
+          "meaning": "لوح"
+        },
+        {
+          "term": "klar",
+          "meaning": "واضح"
+        },
+        {
+          "term": "gern(e)",
+          "meaning": "بسرور"
+        },
+        {
+          "term": "wiederholen",
+          "meaning": "اعاد"
+        },
+        {
+          "term": "ja",
+          "meaning": "نعم"
+        },
+        {
+          "term": "die Frage",
+          "meaning": "سؤال"
+        },
+        {
+          "term": "die Bitte",
+          "meaning": "رجاء"
+        },
+        {
+          "term": "die Entschuldigung",
+          "meaning": "معذرة"
+        },
+        {
+          "term": "verstehen",
+          "meaning": "فهم"
+        },
+        {
+          "term": "nicht",
+          "meaning": "لا"
+        },
+        {
+          "term": "das Buch",
+          "meaning": "كتاب"
+        },
+        {
+          "term": "haben",
+          "meaning": "عند"
+        },
+        {
+          "term": "sprechen",
+          "meaning": "تكلم"
+        },
+        {
+          "term": "langsam",
+          "meaning": "ببطء"
+        },
+        {
+          "term": "lesen",
+          "meaning": "قرأ"
+        },
+        {
+          "term": "der Text",
+          "meaning": "نص"
+        },
+        {
+          "term": "ordnen",
+          "meaning": "رتّب"
+        },
+        {
+          "term": "das Wort",
+          "meaning": "كلمة"
+        },
+        {
+          "term": "die Uhr",
+          "meaning": "ساعة"
+        },
+        {
+          "term": "die Tür",
+          "meaning": "باب"
+        },
+        {
+          "term": "das Plakat",
+          "meaning": "ملصق"
+        },
+        {
+          "term": "der Bleistift",
+          "meaning": "قلم رصاص"
+        },
+        {
+          "term": "der Stuhl",
+          "meaning": "كرسي"
+        },
+        {
+          "term": "der Laptop",
+          "meaning": "لاب توب"
+        },
+        {
+          "term": "die Tasche",
+          "meaning": "شنطة"
+        },
+        {
+          "term": "das Brötchen",
+          "meaning": "خبز صغير"
+        },
+        {
+          "term": "der Textmarker",
+          "meaning": "معلم النص"
+        },
+        {
+          "term": "der Kuli",
+          "meaning": "قلم جاف"
+        },
+        {
+          "term": "der Tisch",
+          "meaning": "طاولة"
+        },
+        {
+          "term": "das Handy",
+          "meaning": "جوال"
+        },
+        {
+          "term": "das Heft",
+          "meaning": "كراس"
+        },
+        {
+          "term": "der Kaffee",
+          "meaning": "قهوة"
+        },
+        {
+          "term": "hören",
+          "meaning": "سمع"
+        },
+        {
+          "term": "die Pause",
+          "meaning": "استراحة"
+        },
+        {
+          "term": "machen",
+          "meaning": "فعل"
+        },
+        {
+          "term": "der Radiergummi",
+          "meaning": "ممحاة"
+        },
+        {
+          "term": "laut",
+          "meaning": "عال"
+        },
+        {
+          "term": "ergänzen",
+          "meaning": "اكمل"
+        },
+        {
+          "term": "zuordnen",
+          "meaning": "نظّم"
+        },
+        {
+          "term": "fragen",
+          "meaning": "سأل"
+        },
+        {
+          "term": "antworten",
+          "meaning": "اجاب"
+        },
+        {
+          "term": "markieren",
+          "meaning": "علّم"
+        },
+        {
+          "term": "der Dialog",
+          "meaning": "حوار"
+        },
+        {
+          "term": "sammeln",
+          "meaning": "جمع"
+        }
+      ]
+    },
+    {
+      "id": "a1_k1",
+      "title": "Kapitel 1: Sommerkurs in Leipzig",
+      "words": [
+        {
+          "term": "hallo",
+          "meaning": "مرحبا"
+        },
+        {
+          "term": "kommen",
+          "meaning": "جاء"
+        },
+        {
+          "term": "das Italienisch",
+          "meaning": "ايطالي"
+        },
+        {
+          "term": "das Französisch",
+          "meaning": "فرنسي"
+        },
+        {
+          "term": "das Englisch",
+          "meaning": "انكليزي"
+        },
+        {
+          "term": "viel",
+          "meaning": "كثير"
+        },
+        {
+          "term": "das Land",
+          "meaning": "بلد"
+        },
+        {
+          "term": "die Sprache",
+          "meaning": "لغة"
+        },
+        {
+          "term": "der/die Studierende",
+          "meaning": "دارسون,ات"
+        },
+        {
+          "term": "der Sommer",
+          "meaning": "صيف"
+        },
+        {
+          "term": "in",
+          "meaning": "في"
+        },
+        {
+          "term": "lernen",
+          "meaning": "تعلم"
+        },
+        {
+          "term": "international",
+          "meaning": "عالمي"
+        },
+        {
+          "term": "das Portugiesisch",
+          "meaning": "برتغالي"
+        },
+        {
+          "term": "das Spanisch",
+          "meaning": "اسباني"
+        },
+        {
+          "term": "das Farsi",
+          "meaning": "فارسي"
+        },
+        {
+          "term": "das Thai",
+          "meaning": "تايلندي"
+        },
+        {
+          "term": "die Begrüßung",
+          "meaning": "تحية"
+        },
+        {
+          "term": "woher",
+          "meaning": "من اين"
+        },
+        {
+          "term": "wohnen",
+          "meaning": "سكن"
+        },
+        {
+          "term": "die Muttersprache",
+          "meaning": "اللغة الام"
+        },
+        {
+          "term": "leben",
+          "meaning": "عاش"
+        },
+        {
+          "term": "jetzt",
+          "meaning": "الان"
+        },
+        {
+          "term": "wer",
+          "meaning": "من"
+        },
+        {
+          "term": "nein",
+          "meaning": "لا"
+        },
+        {
+          "term": "cool",
+          "meaning": "جميل"
+        },
+        {
+          "term": "welcher, welches, welche",
+          "meaning": "اي,اية"
+        },
+        {
+          "term": "das Kamtok",
+          "meaning": "لغة في الكاميرون"
+        },
+        {
+          "term": "auch",
+          "meaning": "ايضا"
+        },
+        {
+          "term": "das Japanisch",
+          "meaning": "ياباني"
+        },
+        {
+          "term": "das Indonesisch",
+          "meaning": "اندونيسي"
+        },
+        {
+          "term": "das Niederländisch",
+          "meaning": "هولندي"
+        },
+        {
+          "term": "das Chinesisch",
+          "meaning": "صيني"
+        },
+        {
+          "term": "das Vietnamesisch",
+          "meaning": "فيتنامي"
+        },
+        {
+          "term": "das Russisch",
+          "meaning": "روسي"
+        },
+        {
+          "term": "das Arabisch",
+          "meaning": "عربي"
+        },
+        {
+          "term": "das Norwegisch",
+          "meaning": "نرويجي"
+        },
+        {
+          "term": "der Vorname",
+          "meaning": "اسم"
+        },
+        {
+          "term": "die Stadt",
+          "meaning": "مدينة"
+        },
+        {
+          "term": "das Österreich",
+          "meaning": "النمسا"
+        },
+        {
+          "term": "das Türkisch",
+          "meaning": "تركي"
+        },
+        {
+          "term": "der Wohnort",
+          "meaning": "محل السكن"
+        }
+      ]
+    },
+    {
+      "id": "a1_k2",
+      "title": "Kapitel 2: Möller oder Müller?",
+      "words": [
+        {
+          "term": "die Klingel",
+          "meaning": "جرس"
+        },
+        {
+          "term": "das Paket",
+          "meaning": "حزمة"
+        },
+        {
+          "term": "der/die Absender/in",
+          "meaning": "مرسل,ة"
+        },
+        {
+          "term": "der/die Empfänger/in",
+          "meaning": "مستلم,ة"
+        },
+        {
+          "term": "die Adresse",
+          "meaning": "عنوان"
+        },
+        {
+          "term": "die Arbeit",
+          "meaning": "عمل"
+        },
+        {
+          "term": "wenig",
+          "meaning": "قليل"
+        },
+        {
+          "term": "so",
+          "meaning": "هكذا"
+        },
+        {
+          "term": "der Brief",
+          "meaning": "رسالة"
+        },
+        {
+          "term": "groß",
+          "meaning": "كبير"
+        },
+        {
+          "term": "der Hund",
+          "meaning": "كلب"
+        },
+        {
+          "term": "der/die Zusteller/in",
+          "meaning": "ساعي,ة البريد"
+        },
+        {
+          "term": "sagen",
+          "meaning": "قال"
+        },
+        {
+          "term": "das Tempo",
+          "meaning": "سرعة"
+        },
+        {
+          "term": "der Stress",
+          "meaning": "اجهاد"
+        },
+        {
+          "term": "mögen",
+          "meaning": "رغب"
+        },
+        {
+          "term": "aber",
+          "meaning": "لكن"
+        },
+        {
+          "term": "oder",
+          "meaning": "او"
+        },
+        {
+          "term": "deutsch",
+          "meaning": "المانى"
+        },
+        {
+          "term": "der Familienname",
+          "meaning": "لقب العائلة"
+        },
+        {
+          "term": "das Problem",
+          "meaning": "مشكلة"
+        },
+        {
+          "term": "für",
+          "meaning": "ل"
+        },
+        {
+          "term": "Guten Morgen!",
+          "meaning": "صباح الخير"
+        },
+        {
+          "term": "sorry",
+          "meaning": "عذرا"
+        },
+        {
+          "term": "tschüss",
+          "meaning": "الى اللقاء"
+        },
+        {
+          "term": "der Nachname",
+          "meaning": "لقب"
+        },
+        {
+          "term": "die Hausnummer",
+          "meaning": "رقم البيت"
+        },
+        {
+          "term": "die Straße",
+          "meaning": "شارع"
+        },
+        {
+          "term": "die Postleitzahl",
+          "meaning": "رقم المنطقة البريدية"
+        },
+        {
+          "term": "der Briefkasten",
+          "meaning": "صندوق بريد"
+        },
+        {
+          "term": "die Postkarte",
+          "meaning": "بطاقة بريدية"
+        },
+        {
+          "term": "die Antwort",
+          "meaning": "اجابة"
+        },
+        {
+          "term": "der/die Partner/in",
+          "meaning": "شريك,ة"
+        },
+        {
+          "term": "die Mannschaft",
+          "meaning": "فريق"
+        },
+        {
+          "term": "die Woche",
+          "meaning": "اسبوع"
+        },
+        {
+          "term": "der Profi-Fußball",
+          "meaning": "كرة قدم للمحترفين"
+        },
+        {
+          "term": "typisch",
+          "meaning": "خاص"
+        },
+        {
+          "term": "die Profimannschaft",
+          "meaning": "فريق محترفين"
+        },
+        {
+          "term": "der/die Torwart/in",
+          "meaning": "حامي هدف"
+        },
+        {
+          "term": "das Dorf",
+          "meaning": "قرية"
+        },
+        {
+          "term": "bei",
+          "meaning": "بالقرب من"
+        },
+        {
+          "term": "der/die Trainer/in",
+          "meaning": "مدرب,ة"
+        },
+        {
+          "term": "geben",
+          "meaning": "اعطى"
+        },
+        {
+          "term": "der/die Spieler/in",
+          "meaning": "لاعب,ة"
+        },
+        {
+          "term": "das Training",
+          "meaning": "تدريب"
+        },
+        {
+          "term": "oft",
+          "meaning": "غالبا"
+        },
+        {
+          "term": "nur",
+          "meaning": "فقط"
+        },
+        {
+          "term": "seit",
+          "meaning": "منذ"
+        },
+        {
+          "term": "der/die Nationalspieler/in",
+          "meaning": "لاعب شعبي"
+        },
+        {
+          "term": "die Heimat",
+          "meaning": "وطن"
+        },
+        {
+          "term": "die Region",
+          "meaning": "منطقة"
+        },
+        {
+          "term": "der Mensch",
+          "meaning": "انسان"
+        },
+        {
+          "term": "Herzlich willkommen!",
+          "meaning": "اهلا وسهلا"
+        },
+        {
+          "term": "herzlich",
+          "meaning": "ودي"
+        },
+        {
+          "term": "willkommen",
+          "meaning": "أهلا وسهلا"
+        },
+        {
+          "term": "der/die Lehrer/in",
+          "meaning": "معلم,ة"
+        },
+        {
+          "term": "die Handynummer",
+          "meaning": "رقم الجوال"
+        }
+      ]
+    },
+    {
+      "id": "a1_k3",
+      "title": "Kapitel 3: Arbeiten im Café",
+      "words": [
+        {
+          "term": "der Latte Macchiato",
+          "meaning": "قهوة بحليب"
+        },
+        {
+          "term": "der Kakao",
+          "meaning": "كاكاو"
+        },
+        {
+          "term": "der Tee",
+          "meaning": "شاي"
+        },
+        {
+          "term": "der Cappuccino",
+          "meaning": "كابتشينو"
+        },
+        {
+          "term": "der Espresso",
+          "meaning": "اسبرسو"
+        },
+        {
+          "term": "der Orangensaft",
+          "meaning": "عصير برتقال"
+        },
+        {
+          "term": "das Wasser",
+          "meaning": "ماء"
+        },
+        {
+          "term": "der Eistee",
+          "meaning": "شاي مثلج"
+        },
+        {
+          "term": "der Arbeitsplatz",
+          "meaning": "مكان العمل"
+        },
+        {
+          "term": "das Café",
+          "meaning": "مقهى"
+        },
+        {
+          "term": "arbeiten",
+          "meaning": "عمل"
+        },
+        {
+          "term": "in sein",
+          "meaning": "صرعة"
+        },
+        {
+          "term": "die Leute",
+          "meaning": "ناس"
+        },
+        {
+          "term": "studieren",
+          "meaning": "درس"
+        },
+        {
+          "term": "das Marketing",
+          "meaning": "تسوق"
+        },
+        {
+          "term": "als",
+          "meaning": "ك"
+        },
+        {
+          "term": "der/die Kellner/in",
+          "meaning": "نادل,ة"
+        },
+        {
+          "term": "der/die Grafikdesigner/in",
+          "meaning": "مصمم,ة غرافيك"
+        },
+        {
+          "term": "die Brille",
+          "meaning": "نظارة"
+        },
+        {
+          "term": "kennen lernen",
+          "meaning": "تعارف"
+        },
+        {
+          "term": "ein bisschen",
+          "meaning": "قليلا"
+        },
+        {
+          "term": "toll",
+          "meaning": "رائع"
+        },
+        {
+          "term": "überall",
+          "meaning": "كل مكان"
+        },
+        {
+          "term": "der Park",
+          "meaning": "منتزه"
+        },
+        {
+          "term": "das Restaurant",
+          "meaning": "مطعم"
+        },
+        {
+          "term": "brauchen",
+          "meaning": "احتاج"
+        },
+        {
+          "term": "das Internet",
+          "meaning": "انترنت"
+        },
+        {
+          "term": "warum",
+          "meaning": "لماذا"
+        },
+        {
+          "term": "gehen",
+          "meaning": "ذهب"
+        },
+        {
+          "term": "die Atmosphäre",
+          "meaning": "جو"
+        },
+        {
+          "term": "lecker",
+          "meaning": "لذيذ"
+        },
+        {
+          "term": "der Kopfhörer",
+          "meaning": "سماعة"
+        },
+        {
+          "term": "möchten",
+          "meaning": "رغب"
+        },
+        {
+          "term": "trinken",
+          "meaning": "شرب"
+        },
+        {
+          "term": "nehmen",
+          "meaning": "اخذ"
+        },
+        {
+          "term": "bestellen",
+          "meaning": "طلب"
+        },
+        {
+          "term": "der Saft",
+          "meaning": "عصير"
+        },
+        {
+          "term": "lieber",
+          "meaning": "افضل"
+        },
+        {
+          "term": "das Mineralwasser",
+          "meaning": "ماء معدني"
+        },
+        {
+          "term": "ohne",
+          "meaning": "دون"
+        },
+        {
+          "term": "der Zucker",
+          "meaning": "سكر"
+        },
+        {
+          "term": "schwarz",
+          "meaning": "اسود"
+        },
+        {
+          "term": "das Eis",
+          "meaning": "ثلج"
+        },
+        {
+          "term": "von",
+          "meaning": "من"
+        },
+        {
+          "term": "das Portemonnaie",
+          "meaning": "محفظة نقود"
+        },
+        {
+          "term": "die/das Cola",
+          "meaning": "كولا"
+        },
+        {
+          "term": "der Apfelsaft",
+          "meaning": "عصير تفاح"
+        },
+        {
+          "term": "die Limonade",
+          "meaning": "ليموندة"
+        },
+        {
+          "term": "der Chai",
+          "meaning": "شاي"
+        },
+        {
+          "term": "heute",
+          "meaning": "اليوم"
+        },
+        {
+          "term": "das Konzert",
+          "meaning": "حفلة موسيقية"
+        },
+        {
+          "term": "die Lust",
+          "meaning": "رغبة"
+        },
+        {
+          "term": "die Band",
+          "meaning": "فرقة"
+        },
+        {
+          "term": "die Karte",
+          "meaning": "تذكرة"
+        },
+        {
+          "term": "Kein Problem!",
+          "meaning": "ليس بالمشكلة"
+        },
+        {
+          "term": "super",
+          "meaning": "رائع"
+        },
+        {
+          "term": "die Bar",
+          "meaning": "حانوت"
+        },
+        {
+          "term": "schicken",
+          "meaning": "ارسل"
+        },
+        {
+          "term": "perfekt",
+          "meaning": "تمام"
+        },
+        {
+          "term": "Bis dann!",
+          "meaning": "الى بعد"
+        },
+        {
+          "term": "zahlen",
+          "meaning": "دفع الحساب"
+        },
+        {
+          "term": "der Milchkaffee",
+          "meaning": "قهوة بالحليب"
+        },
+        {
+          "term": "das Croissant",
+          "meaning": "كروسانت"
+        },
+        {
+          "term": "zurück",
+          "meaning": "ترجيع"
+        },
+        {
+          "term": "hey",
+          "meaning": "هالو"
+        },
+        {
+          "term": "freuen (sich)",
+          "meaning": "فرح"
+        },
+        {
+          "term": "Bis gleich!",
+          "meaning": "الى قريب"
+        },
+        {
+          "term": "Bis morgen!",
+          "meaning": "الى الغد"
+        },
+        {
+          "term": "sehr",
+          "meaning": "جدا"
+        },
+        {
+          "term": "Bis später!",
+          "meaning": "الى بعد"
+        },
+        {
+          "term": "der Fußball",
+          "meaning": "كرة قدم"
+        }
+      ]
+    },
+    {
+      "id": "a1_k4",
+      "title": "Kapitel 4: Lecker Essen!",
+      "words": [
+        {
+          "term": "endlich",
+          "meaning": "اخيرا"
+        },
+        {
+          "term": "das Essen",
+          "meaning": "طعام"
+        },
+        {
+          "term": "total",
+          "meaning": "تماما"
+        },
+        {
+          "term": "essen",
+          "meaning": "اكل"
+        },
+        {
+          "term": "das Sushi",
+          "meaning": "سوشي"
+        },
+        {
+          "term": "der Fisch",
+          "meaning": "سمك"
+        },
+        {
+          "term": "doch",
+          "meaning": "بالفعل"
+        },
+        {
+          "term": "das Tier",
+          "meaning": "حيوان"
+        },
+        {
+          "term": "vegetarisch",
+          "meaning": "نباتي"
+        },
+        {
+          "term": "aussehen",
+          "meaning": "شكل"
+        },
+        {
+          "term": "wann",
+          "meaning": "متى"
+        },
+        {
+          "term": "noch einmal",
+          "meaning": "مرة أخرى"
+        },
+        {
+          "term": "das Fleisch",
+          "meaning": "لحم"
+        },
+        {
+          "term": "der/die Food Blogger/in",
+          "meaning": "مُدَوَن,ة"
+        },
+        {
+          "term": "fotografieren",
+          "meaning": "صوّر"
+        },
+        {
+          "term": "das Getränk",
+          "meaning": "مشروب"
+        },
+        {
+          "term": "posten",
+          "meaning": "نشر في"
+        },
+        {
+          "term": "das Foto",
+          "meaning": "صورة"
+        },
+        {
+          "term": "der Kommentar",
+          "meaning": "تعليق"
+        },
+        {
+          "term": "anderer, anderes, andere",
+          "meaning": "اخر,اخرى"
+        },
+        {
+          "term": "nerven",
+          "meaning": "مثير للاعصاب"
+        },
+        {
+          "term": "die Kultur",
+          "meaning": "ثقافة"
+        },
+        {
+          "term": "das Leben",
+          "meaning": "حياة"
+        },
+        {
+          "term": "interessant",
+          "meaning": "مشوق"
+        },
+        {
+          "term": "das Thema",
+          "meaning": "موضوع"
+        },
+        {
+          "term": "finden",
+          "meaning": "وجد"
+        },
+        {
+          "term": "der/die Freund/in",
+          "meaning": "صديق,ة"
+        },
+        {
+          "term": "pro",
+          "meaning": "مع"
+        },
+        {
+          "term": "kontra",
+          "meaning": "ضد"
+        },
+        {
+          "term": "die Speisekarte",
+          "meaning": "قائمة الطعام"
+        },
+        {
+          "term": "die Vorspeise",
+          "meaning": "مقبلات"
+        },
+        {
+          "term": "die Tomatensuppe",
+          "meaning": "شوربة طماطم"
+        },
+        {
+          "term": "das Baguette",
+          "meaning": "خبز فرنسي"
+        },
+        {
+          "term": "der Salat",
+          "meaning": "سلطة"
+        },
+        {
+          "term": "der Käse",
+          "meaning": "جبنة"
+        },
+        {
+          "term": "die Tomate",
+          "meaning": "طماطم"
+        },
+        {
+          "term": "die Olive",
+          "meaning": "زيتونة"
+        },
+        {
+          "term": "das Hauptgericht",
+          "meaning": "وجبة رئيسية"
+        },
+        {
+          "term": "das Steak",
+          "meaning": "شريحة لحم"
+        },
+        {
+          "term": "die Kartoffel",
+          "meaning": "بطاطا"
+        },
+        {
+          "term": "das Schnitzel",
+          "meaning": "شريحة لحم مقلية"
+        },
+        {
+          "term": "der Kartoffelsalat",
+          "meaning": "سلطة بطاط"
+        },
+        {
+          "term": "das Hähnchen",
+          "meaning": "دجاج"
+        },
+        {
+          "term": "das Gemüse",
+          "meaning": "خضرة"
+        },
+        {
+          "term": "der Hamburger",
+          "meaning": "همبرغر"
+        },
+        {
+          "term": "die Pommes (Frites)",
+          "meaning": "بطاطا مقلية"
+        },
+        {
+          "term": "das Gemüsecurry",
+          "meaning": "خضرة بالكاري"
+        },
+        {
+          "term": "das Tofu",
+          "meaning": "طوفو"
+        },
+        {
+          "term": "der Reis",
+          "meaning": "رز"
+        },
+        {
+          "term": "das Rind",
+          "meaning": "لحم بقر"
+        },
+        {
+          "term": "scharf",
+          "meaning": "متبل"
+        },
+        {
+          "term": "das Schwein",
+          "meaning": "خنزير"
+        },
+        {
+          "term": "das Huhn",
+          "meaning": "ديك"
+        },
+        {
+          "term": "süß",
+          "meaning": "حلو"
+        },
+        {
+          "term": "der Kuchen",
+          "meaning": "فطيرة"
+        },
+        {
+          "term": "die Currywurst",
+          "meaning": "سجق بالكاري"
+        },
+        {
+          "term": "das Schweinefleisch",
+          "meaning": "لحم خنزير"
+        },
+        {
+          "term": "glauben",
+          "meaning": "اعتقد"
+        },
+        {
+          "term": "fast",
+          "meaning": "تقريبا"
+        },
+        {
+          "term": "alles",
+          "meaning": "كل"
+        },
+        {
+          "term": "wissen",
+          "meaning": "عرف"
+        },
+        {
+          "term": "stimmen",
+          "meaning": "وافق"
+        },
+        {
+          "term": "vielleicht",
+          "meaning": "ربما"
+        },
+        {
+          "term": "die Suppe",
+          "meaning": "شوربة"
+        },
+        {
+          "term": "gut",
+          "meaning": "جيد"
+        },
+        {
+          "term": "die Pizza",
+          "meaning": "بيتسا"
+        },
+        {
+          "term": "die Ananas",
+          "meaning": "اناناس"
+        },
+        {
+          "term": "kennen",
+          "meaning": "عرف"
+        },
+        {
+          "term": "der Schinken",
+          "meaning": "لحم فخد الخنزير"
+        },
+        {
+          "term": "der Hunger",
+          "meaning": "جوع"
+        },
+        {
+          "term": "Gute Idee!",
+          "meaning": "فكرة جيدة"
+        },
+        {
+          "term": "die Idee",
+          "meaning": "فكرة"
+        },
+        {
+          "term": "das Rösti",
+          "meaning": "روستي"
+        },
+        {
+          "term": "die Spezialität",
+          "meaning": "طبخة"
+        },
+        {
+          "term": "das Kalbfleisch",
+          "meaning": "لحم عجل"
+        },
+        {
+          "term": "der Blog",
+          "meaning": "مدونة الكترونية"
+        },
+        {
+          "term": "das Rezept",
+          "meaning": "وصفة"
+        },
+        {
+          "term": "die Reisnudel",
+          "meaning": "معكرونة رز"
+        },
+        {
+          "term": "Vielen Dank!",
+          "meaning": "شكرا جزيلا"
+        },
+        {
+          "term": "der Dank",
+          "meaning": "شكر"
+        },
+        {
+          "term": "echt",
+          "meaning": "فعلا"
+        },
+        {
+          "term": "lieben",
+          "meaning": "رغب"
+        },
+        {
+          "term": "Zum Glück!",
+          "meaning": "للحظ"
+        },
+        {
+          "term": "das Glück",
+          "meaning": "سعادة"
+        },
+        {
+          "term": "leider",
+          "meaning": "مع الاسف"
+        },
+        {
+          "term": "zum Beispiel",
+          "meaning": "مثلا"
+        },
+        {
+          "term": "das Beispiel",
+          "meaning": "مثل"
+        },
+        {
+          "term": "probieren",
+          "meaning": "جرّب"
+        },
+        {
+          "term": "mal",
+          "meaning": "مرة"
+        },
+        {
+          "term": "das Streetfood",
+          "meaning": "اكل بالخارج"
+        },
+        {
+          "term": "der Hobbykoch/die Hobbyköchin",
+          "meaning": "طباخ هاو"
+        }
+      ]
+    },
+    {
+      "id": "a1_k5",
+      "title": "Kapitel 5: Hast du Zeit?",
+      "words": [
+        {
+          "term": "der/die Sieger/in",
+          "meaning": "فائز,ة"
+        },
+        {
+          "term": "der Marathon",
+          "meaning": "مرثون"
+        },
+        {
+          "term": "siegen",
+          "meaning": "فوز"
+        },
+        {
+          "term": "über",
+          "meaning": "على"
+        },
+        {
+          "term": "die Distanz",
+          "meaning": "مسافة"
+        },
+        {
+          "term": "an",
+          "meaning": "في"
+        },
+        {
+          "term": "der Sonntag",
+          "meaning": "يوم الاحد"
+        },
+        {
+          "term": "bei",
+          "meaning": "ل"
+        },
+        {
+          "term": "der Mann",
+          "meaning": "رجل"
+        },
+        {
+          "term": "stattfinden",
+          "meaning": "حدث"
+        },
+        {
+          "term": "der Kilometer",
+          "meaning": "كلومتر"
+        },
+        {
+          "term": "führen",
+          "meaning": "تمر"
+        },
+        {
+          "term": "durch",
+          "meaning": "عبر"
+        },
+        {
+          "term": "die Zeit",
+          "meaning": "وقت"
+        },
+        {
+          "term": "das Quiz",
+          "meaning": "فزورة"
+        },
+        {
+          "term": "dauern",
+          "meaning": "استغرق"
+        },
+        {
+          "term": "die Minute",
+          "meaning": "دقيقة"
+        },
+        {
+          "term": "die Spaghetti",
+          "meaning": "سباغيتي"
+        },
+        {
+          "term": "kochen",
+          "meaning": "طبخ"
+        },
+        {
+          "term": "das Ei",
+          "meaning": "بيضة"
+        },
+        {
+          "term": "das Jahr",
+          "meaning": "سنة"
+        },
+        {
+          "term": "schlafen",
+          "meaning": "نام"
+        },
+        {
+          "term": "der/die Deutsche",
+          "meaning": "الالمان"
+        },
+        {
+          "term": "fernsehen",
+          "meaning": "تلفز"
+        },
+        {
+          "term": "lang(e)",
+          "meaning": "مدة"
+        },
+        {
+          "term": "einkaufen",
+          "meaning": "شراء"
+        },
+        {
+          "term": "der Monat",
+          "meaning": "شهر"
+        },
+        {
+          "term": "der Tag",
+          "meaning": "يوم"
+        },
+        {
+          "term": "die Stunde",
+          "meaning": "ساعة"
+        },
+        {
+          "term": "nutzen",
+          "meaning": "استخدم"
+        },
+        {
+          "term": "das Interview",
+          "meaning": "لقاء صحفي"
+        },
+        {
+          "term": "die Armbanduhr",
+          "meaning": "ساعة يد"
+        },
+        {
+          "term": "die Sekunde",
+          "meaning": "ثانية"
+        },
+        {
+          "term": "um",
+          "meaning": "تمام"
+        },
+        {
+          "term": "der Termin",
+          "meaning": "موعد"
+        },
+        {
+          "term": "leidtun",
+          "meaning": "تأسف"
+        },
+        {
+          "term": "die S-Bahn",
+          "meaning": "قطار داخلي"
+        },
+        {
+          "term": "ausfallen",
+          "meaning": "الغى"
+        },
+        {
+          "term": "der Bus",
+          "meaning": "باص"
+        },
+        {
+          "term": "halb",
+          "meaning": "نصف"
+        },
+        {
+          "term": "o.k.",
+          "meaning": "طيب"
+        },
+        {
+          "term": "dann",
+          "meaning": "اذن"
+        },
+        {
+          "term": "Auf Wiederhören!",
+          "meaning": "سلام بالتلفون"
+        },
+        {
+          "term": "abfahren",
+          "meaning": "انطلق"
+        },
+        {
+          "term": "die Linie",
+          "meaning": "خط"
+        },
+        {
+          "term": "kurz",
+          "meaning": "تقريبا"
+        },
+        {
+          "term": "das Viertel",
+          "meaning": "ربع"
+        },
+        {
+          "term": "vor",
+          "meaning": "قبل"
+        },
+        {
+          "term": "nach",
+          "meaning": "بعد"
+        },
+        {
+          "term": "spät",
+          "meaning": "متاخر"
+        },
+        {
+          "term": "der Montag",
+          "meaning": "الاثنين"
+        },
+        {
+          "term": "der Dienstag",
+          "meaning": "الثلاثاء"
+        },
+        {
+          "term": "der Mittwoch",
+          "meaning": "الاربعاء"
+        },
+        {
+          "term": "der Donnerstag",
+          "meaning": "الخميس"
+        },
+        {
+          "term": "der Freitag",
+          "meaning": "الجمعة"
+        },
+        {
+          "term": "der Samstag",
+          "meaning": "السبت"
+        },
+        {
+          "term": "ausschlafen",
+          "meaning": "شبع نوما"
+        },
+        {
+          "term": "das Auto",
+          "meaning": "سيارة"
+        },
+        {
+          "term": "abholen",
+          "meaning": "استلم"
+        },
+        {
+          "term": "anrufen",
+          "meaning": "تكلم بالتلفون"
+        },
+        {
+          "term": "die Telefonkonferenz",
+          "meaning": "كونفرنس تلفوني"
+        },
+        {
+          "term": "der Computer",
+          "meaning": "كمبيوتر"
+        },
+        {
+          "term": "ausschalten",
+          "meaning": "اطفأ"
+        },
+        {
+          "term": "das Wochenende",
+          "meaning": "نهاية اسبوع"
+        },
+        {
+          "term": "der Morgen",
+          "meaning": "صباح"
+        },
+        {
+          "term": "der Vormittag",
+          "meaning": "قبل الظهر"
+        },
+        {
+          "term": "der Mittag",
+          "meaning": "ظهر"
+        },
+        {
+          "term": "der Nachmittag",
+          "meaning": "بعد الظهر"
+        },
+        {
+          "term": "der Abend",
+          "meaning": "مساء"
+        },
+        {
+          "term": "die Nacht",
+          "meaning": "ليل"
+        },
+        {
+          "term": "Guten Abend!",
+          "meaning": "مساء الخير"
+        },
+        {
+          "term": "Gute Nacht!",
+          "meaning": "ليلة سعيدة"
+        },
+        {
+          "term": "passen",
+          "meaning": "مناسب"
+        },
+        {
+          "term": "morgen",
+          "meaning": "غدا"
+        },
+        {
+          "term": "der Dienstagnachmittag",
+          "meaning": "الثلاثاء بعد الظهر"
+        },
+        {
+          "term": "frei",
+          "meaning": "شاغر"
+        },
+        {
+          "term": "prima",
+          "meaning": "ممتاز"
+        },
+        {
+          "term": "der/die Bäcker/in",
+          "meaning": "خباز,ة"
+        },
+        {
+          "term": "zu",
+          "meaning": "الى"
+        },
+        {
+          "term": "die Uni",
+          "meaning": "جامعة"
+        },
+        {
+          "term": "frühstücken",
+          "meaning": "فطر"
+        },
+        {
+          "term": "das Bett",
+          "meaning": "سرير"
+        },
+        {
+          "term": "aufstehen",
+          "meaning": "قام"
+        },
+        {
+          "term": "weggehen",
+          "meaning": "راح"
+        },
+        {
+          "term": "backen",
+          "meaning": "خبز"
+        },
+        {
+          "term": "spielen",
+          "meaning": "لعب"
+        },
+        {
+          "term": "der Test",
+          "meaning": "اختبار"
+        },
+        {
+          "term": "vorbereiten",
+          "meaning": "حضّر"
+        },
+        {
+          "term": "da",
+          "meaning": "حينها"
+        },
+        {
+          "term": "die Pasta",
+          "meaning": "باستا"
+        },
+        {
+          "term": "egal",
+          "meaning": "سواسية"
+        },
+        {
+          "term": "einladen",
+          "meaning": "دعا"
+        },
+        {
+          "term": "die Buslinie",
+          "meaning": "رقم خط"
+        },
+        {
+          "term": "der Wein",
+          "meaning": "نبيذ"
+        },
+        {
+          "term": "mitbringen",
+          "meaning": "احضر"
+        },
+        {
+          "term": "schnell",
+          "meaning": "بسرعة"
+        },
+        {
+          "term": "fahren",
+          "meaning": "مشى"
+        },
+        {
+          "term": "der Gast",
+          "meaning": "ضيف"
+        }
+      ]
+    },
+    {
+      "id": "a1_k6",
+      "title": "Kapitel 6: Meine Stadt",
+      "words": [
+        {
+          "term": "der/die Fotojournalist/in",
+          "meaning": "مصور صحفي"
+        },
+        {
+          "term": "der/die Reiseführer/in",
+          "meaning": "مرشد سياحي"
+        },
+        {
+          "term": "unterwegs",
+          "meaning": "في الطريق"
+        },
+        {
+          "term": "der Zug",
+          "meaning": "قطار"
+        },
+        {
+          "term": "pünktlich",
+          "meaning": "مظبوط"
+        },
+        {
+          "term": "der Hauptbahnhof",
+          "meaning": "محطة رئيسية"
+        },
+        {
+          "term": "treffen (sich)",
+          "meaning": "التقى"
+        },
+        {
+          "term": "die Universität",
+          "meaning": "جامعة"
+        },
+        {
+          "term": "die Tour",
+          "meaning": "جولة"
+        },
+        {
+          "term": "das Fahrrad",
+          "meaning": "دراجة"
+        },
+        {
+          "term": "die Sehenswürdigkeit",
+          "meaning": "معالم سياحية"
+        },
+        {
+          "term": "an",
+          "meaning": "عند"
+        },
+        {
+          "term": "der/die Tourist/in",
+          "meaning": "سائح,ة"
+        },
+        {
+          "term": "das Selfie",
+          "meaning": "صورة ذاتية"
+        },
+        {
+          "term": "zu Fuß",
+          "meaning": "على الاقدام"
+        },
+        {
+          "term": "dort",
+          "meaning": "هناك"
+        },
+        {
+          "term": "der Aufzug",
+          "meaning": "مصعد"
+        },
+        {
+          "term": "die Kuppel",
+          "meaning": "قبة"
+        },
+        {
+          "term": "nie",
+          "meaning": "ابدا"
+        },
+        {
+          "term": "das Panorama",
+          "meaning": "بانوراما"
+        },
+        {
+          "term": "sehen",
+          "meaning": "شاف"
+        },
+        {
+          "term": "ganz",
+          "meaning": "كل"
+        },
+        {
+          "term": "die Gruppe",
+          "meaning": "مجموعة"
+        },
+        {
+          "term": "der Zoo",
+          "meaning": "حديقة حيوانات"
+        },
+        {
+          "term": "der Tipp",
+          "meaning": "نصيحة"
+        },
+        {
+          "term": "modern",
+          "meaning": "حديث"
+        },
+        {
+          "term": "der Treffpunkt",
+          "meaning": "ملتقى"
+        },
+        {
+          "term": "besuchen",
+          "meaning": "زار"
+        },
+        {
+          "term": "berichten",
+          "meaning": "اخبر"
+        },
+        {
+          "term": "der Favorit",
+          "meaning": "محبذ"
+        },
+        {
+          "term": "total",
+          "meaning": "تماما"
+        },
+        {
+          "term": "absolut",
+          "meaning": "اطلاقا"
+        },
+        {
+          "term": "klasse",
+          "meaning": "ممتاز"
+        },
+        {
+          "term": "die Info",
+          "meaning": "معلومة"
+        },
+        {
+          "term": "das Rad",
+          "meaning": "عجلة"
+        },
+        {
+          "term": "ab",
+          "meaning": "ابتداءا"
+        },
+        {
+          "term": "der März",
+          "meaning": "مارس"
+        },
+        {
+          "term": "bis",
+          "meaning": "حتى"
+        },
+        {
+          "term": "der Oktober",
+          "meaning": "اكتوبر"
+        },
+        {
+          "term": "das Polnisch",
+          "meaning": "بولوني"
+        },
+        {
+          "term": "die Reservierung",
+          "meaning": "حجز"
+        },
+        {
+          "term": "das Telefon (Tel.)",
+          "meaning": "تلفون"
+        },
+        {
+          "term": "der Start",
+          "meaning": "انطلاق"
+        },
+        {
+          "term": "der Fotostopp",
+          "meaning": "توقف للصورة"
+        },
+        {
+          "term": "das Ende",
+          "meaning": "نهاية"
+        },
+        {
+          "term": "die U-Bahn",
+          "meaning": "محطة مترو"
+        },
+        {
+          "term": "der Deutschkurs",
+          "meaning": "دورة لغة المانية"
+        },
+        {
+          "term": "manchmal",
+          "meaning": "احيانا"
+        },
+        {
+          "term": "immer",
+          "meaning": "دائما"
+        },
+        {
+          "term": "das Motorrad",
+          "meaning": "عجلة نارية"
+        },
+        {
+          "term": "der E-Roller",
+          "meaning": "سكوتر الكتروني"
+        },
+        {
+          "term": "die Haltestelle",
+          "meaning": "موقف"
+        },
+        {
+          "term": "abfahren",
+          "meaning": "انطلاق"
+        },
+        {
+          "term": "ankommen",
+          "meaning": "وصول"
+        },
+        {
+          "term": "umsteigen",
+          "meaning": "تبديل محطة"
+        },
+        {
+          "term": "die Direktverbindung",
+          "meaning": "ارتباط مباشر"
+        },
+        {
+          "term": "helfen",
+          "meaning": "ساعد"
+        },
+        {
+          "term": "nachsehen",
+          "meaning": "تأكد"
+        },
+        {
+          "term": "also",
+          "meaning": "اذن"
+        },
+        {
+          "term": "weiterfahren",
+          "meaning": "تابع الرحلة"
+        },
+        {
+          "term": "der Stadtpark",
+          "meaning": "منتزه المدينة"
+        },
+        {
+          "term": "rechts",
+          "meaning": "يمينا"
+        },
+        {
+          "term": "das Theater",
+          "meaning": "مسرح"
+        },
+        {
+          "term": "der Eingang",
+          "meaning": "مدخل"
+        },
+        {
+          "term": "abbiegen",
+          "meaning": "انعطف"
+        },
+        {
+          "term": "links",
+          "meaning": "يسارا"
+        },
+        {
+          "term": "geradeaus",
+          "meaning": "الى الامام"
+        },
+        {
+          "term": "die Richtung",
+          "meaning": "اتجاه"
+        },
+        {
+          "term": "der Bahnhof",
+          "meaning": "محطة"
+        },
+        {
+          "term": "schön",
+          "meaning": "جميل"
+        },
+        {
+          "term": "weit",
+          "meaning": "بعيد"
+        },
+        {
+          "term": "dann",
+          "meaning": "بعد ذلك"
+        },
+        {
+          "term": "der Supermarkt",
+          "meaning": "سوبر ماركت"
+        },
+        {
+          "term": "der USB-Stick",
+          "meaning": "جهاز تخزين يواس بي"
+        },
+        {
+          "term": "der Schlüssel",
+          "meaning": "مفتاح"
+        },
+        {
+          "term": "gehören",
+          "meaning": "يعود ل"
+        }
+      ]
+    },
+    {
+      "id": "a1_k7",
+      "title": "Kapitel 7: Der neue Job",
+      "words": [
+        {
+          "term": "die Bibliothek",
+          "meaning": "مكتبة"
+        },
+        {
+          "term": "die Küche",
+          "meaning": "مطبخ"
+        },
+        {
+          "term": "das Büro",
+          "meaning": "مكتب"
+        },
+        {
+          "term": "die Empfangshalle",
+          "meaning": "قاعة استقبال"
+        },
+        {
+          "term": "der Kopierraum",
+          "meaning": "غرفة استنساخ"
+        },
+        {
+          "term": "der Konferenzraum",
+          "meaning": "غرفة المؤتمر"
+        },
+        {
+          "term": "die Kantine",
+          "meaning": "حانوت"
+        },
+        {
+          "term": "die Agentur",
+          "meaning": "وكالة"
+        },
+        {
+          "term": "die Design-Agentur",
+          "meaning": "وكالة تصميم"
+        },
+        {
+          "term": "der/die Mitarbeiter/in",
+          "meaning": "موظف,ة"
+        },
+        {
+          "term": "der/die Assistent/in",
+          "meaning": "مساعد,ة"
+        },
+        {
+          "term": "tun",
+          "meaning": "فعل"
+        },
+        {
+          "term": "die Aufgabe",
+          "meaning": "واجب"
+        },
+        {
+          "term": "organisieren",
+          "meaning": "نظم"
+        },
+        {
+          "term": "die E-Mail",
+          "meaning": "إيميل"
+        },
+        {
+          "term": "begrüßen",
+          "meaning": "حيى"
+        },
+        {
+          "term": "neu",
+          "meaning": "جديد"
+        },
+        {
+          "term": "zeigen",
+          "meaning": "اشار"
+        },
+        {
+          "term": "das Gebäude",
+          "meaning": "مبنى"
+        },
+        {
+          "term": "der Arbeitstag",
+          "meaning": "يوم عمل"
+        },
+        {
+          "term": "wichtig",
+          "meaning": "مهم"
+        },
+        {
+          "term": "der/die Programmierer/in",
+          "meaning": "مبرمج,ة"
+        },
+        {
+          "term": "die Firma",
+          "meaning": "شركة"
+        },
+        {
+          "term": "die Etage",
+          "meaning": "طابق"
+        },
+        {
+          "term": "entschuldigen (sich)",
+          "meaning": "اعتذر"
+        },
+        {
+          "term": "die Toilette",
+          "meaning": "تواليت"
+        },
+        {
+          "term": "der Ausgang",
+          "meaning": "مخرج"
+        },
+        {
+          "term": "das Erdgeschoss",
+          "meaning": "طابق ارضي"
+        },
+        {
+          "term": "das Lehrerzimmer",
+          "meaning": "حجرة المدرسين"
+        },
+        {
+          "term": "der Fahrstuhl",
+          "meaning": "مصعد"
+        },
+        {
+          "term": "das Sekretariat",
+          "meaning": "سكرتارية"
+        },
+        {
+          "term": "der Podcast",
+          "meaning": "بودكاست"
+        },
+        {
+          "term": "der April",
+          "meaning": "ابريل"
+        },
+        {
+          "term": "die Organisation",
+          "meaning": "تنظيم"
+        },
+        {
+          "term": "die Konferenz",
+          "meaning": "كونفرنس"
+        },
+        {
+          "term": "mehr",
+          "meaning": "اكثر"
+        },
+        {
+          "term": "die Information",
+          "meaning": "معلومة"
+        },
+        {
+          "term": "das Intranet",
+          "meaning": "انترانت"
+        },
+        {
+          "term": "erklären",
+          "meaning": "اوضح"
+        },
+        {
+          "term": "kaufen",
+          "meaning": "اشترى"
+        },
+        {
+          "term": "das Projekt",
+          "meaning": "مشروع"
+        },
+        {
+          "term": "vorbereiten",
+          "meaning": "حضّر"
+        },
+        {
+          "term": "das Dokument",
+          "meaning": "وثيقة"
+        },
+        {
+          "term": "kopieren",
+          "meaning": "استنسخ"
+        },
+        {
+          "term": "beantworten",
+          "meaning": "اجاب"
+        },
+        {
+          "term": "die Präsentation",
+          "meaning": "عرض"
+        },
+        {
+          "term": "formell",
+          "meaning": "رسمي"
+        },
+        {
+          "term": "informell",
+          "meaning": "غير رسمي"
+        },
+        {
+          "term": "bisher",
+          "meaning": "لحد الان"
+        },
+        {
+          "term": "der/die Entwickler/in",
+          "meaning": "مطور,ة"
+        },
+        {
+          "term": "der/die Kollege/Kollegin",
+          "meaning": "زميل,ة"
+        },
+        {
+          "term": "die Hand",
+          "meaning": "يد"
+        },
+        {
+          "term": "die Maus",
+          "meaning": "فأر"
+        },
+        {
+          "term": "die Tastatur",
+          "meaning": "لوحة المفاتيح"
+        },
+        {
+          "term": "der Notizblock",
+          "meaning": "مذكرة"
+        },
+        {
+          "term": "der Stift",
+          "meaning": "قلم"
+        },
+        {
+          "term": "die Pflanze",
+          "meaning": "نبتة"
+        },
+        {
+          "term": "der Ordner",
+          "meaning": "ملف"
+        },
+        {
+          "term": "die Lampe",
+          "meaning": "مصباح"
+        },
+        {
+          "term": "das Bild",
+          "meaning": "صورة"
+        },
+        {
+          "term": "das Magazin",
+          "meaning": "مجلة مصورة"
+        },
+        {
+          "term": "der Papierkorb",
+          "meaning": "سلة المهملات"
+        },
+        {
+          "term": "das Fenster",
+          "meaning": "شباك"
+        },
+        {
+          "term": "das Tablet",
+          "meaning": "كمبيوتر لوحي"
+        },
+        {
+          "term": "das Regal",
+          "meaning": "رف"
+        },
+        {
+          "term": "neben",
+          "meaning": "جنب"
+        },
+        {
+          "term": "stehen",
+          "meaning": "وقف"
+        },
+        {
+          "term": "liegen",
+          "meaning": "مرقود"
+        },
+        {
+          "term": "unter",
+          "meaning": "تحت"
+        },
+        {
+          "term": "die Wand",
+          "meaning": "جدار"
+        },
+        {
+          "term": "hängen",
+          "meaning": "علّق"
+        },
+        {
+          "term": "zwischen",
+          "meaning": "بين"
+        },
+        {
+          "term": "über",
+          "meaning": "فوق"
+        }
+      ]
+    },
+    {
+      "id": "a1_k8",
+      "title": "Kapitel 8: Freizeit und Hobbys",
+      "words": [
+        {
+          "term": "der Ski",
+          "meaning": "تزلج"
+        },
+        {
+          "term": "Ski fahren",
+          "meaning": "تزلج"
+        },
+        {
+          "term": "der September",
+          "meaning": "سبتمبر"
+        },
+        {
+          "term": "die Mensa",
+          "meaning": "مطعم طلبة"
+        },
+        {
+          "term": "der Tanzkurs",
+          "meaning": "دورة رقص"
+        },
+        {
+          "term": "der Kletterkurs",
+          "meaning": "دورة تسلق"
+        },
+        {
+          "term": "der Campus",
+          "meaning": "حرم جامعي"
+        },
+        {
+          "term": "das Handlettering",
+          "meaning": "حروف اليد"
+        },
+        {
+          "term": "klettern",
+          "meaning": "تسلق"
+        },
+        {
+          "term": "tanzen (gehen)",
+          "meaning": "رقص"
+        },
+        {
+          "term": "die Gitarre",
+          "meaning": "قيثارة"
+        },
+        {
+          "term": "das Yoga",
+          "meaning": "يوغا"
+        },
+        {
+          "term": "der Berg",
+          "meaning": "جبل"
+        },
+        {
+          "term": "die Freizeit",
+          "meaning": "وقت الفراغ"
+        },
+        {
+          "term": "die Bergbahn",
+          "meaning": "قطار جبال"
+        },
+        {
+          "term": "das Stadtzentrum",
+          "meaning": "مركز مدينة"
+        },
+        {
+          "term": "der/die Student/in",
+          "meaning": "طالب,ة"
+        },
+        {
+          "term": "attraktiv",
+          "meaning": "جذاب"
+        },
+        {
+          "term": "alt",
+          "meaning": "عمر"
+        },
+        {
+          "term": "der/die Professor/in",
+          "meaning": "استاذ,ة"
+        },
+        {
+          "term": "das Ausland",
+          "meaning": "خارج"
+        },
+        {
+          "term": "ideal",
+          "meaning": "مثالي"
+        },
+        {
+          "term": "die Kombination",
+          "meaning": "دمج"
+        },
+        {
+          "term": "das Studium",
+          "meaning": "دراسة"
+        },
+        {
+          "term": "das Hobby",
+          "meaning": "هواية"
+        },
+        {
+          "term": "das Tennis",
+          "meaning": "تنس"
+        },
+        {
+          "term": "der Winter",
+          "meaning": "شتاء"
+        },
+        {
+          "term": "snowboarden",
+          "meaning": "تزلج على الجليد"
+        },
+        {
+          "term": "das Eisklettern",
+          "meaning": "تسلق على الجليد"
+        },
+        {
+          "term": "der/die Sportstudierende",
+          "meaning": "دارسو رياضة"
+        },
+        {
+          "term": "wandern (gehen)",
+          "meaning": "تجوال"
+        },
+        {
+          "term": "die Volkshochschule",
+          "meaning": "مدرسة شعبية"
+        },
+        {
+          "term": "der Hobbykurs",
+          "meaning": "دورة هواة"
+        },
+        {
+          "term": "malen",
+          "meaning": "رسم"
+        },
+        {
+          "term": "das Angebot",
+          "meaning": "عرض"
+        },
+        {
+          "term": "die Altstadt",
+          "meaning": "مدينة قديمة"
+        },
+        {
+          "term": "das Campusradio",
+          "meaning": "راديو الحرم الجامعي"
+        },
+        {
+          "term": "das Radio",
+          "meaning": "راديو"
+        },
+        {
+          "term": "der/die Moderator/in",
+          "meaning": "مذيع,ة"
+        },
+        {
+          "term": "das Semester",
+          "meaning": "فصل دراسي"
+        },
+        {
+          "term": "schon",
+          "meaning": "قد"
+        },
+        {
+          "term": "der Wintersportfan",
+          "meaning": "مشجعي الرياضة الشتوية"
+        },
+        {
+          "term": "die Biologie",
+          "meaning": "احياء"
+        },
+        {
+          "term": "der Kontakt",
+          "meaning": "صلة"
+        },
+        {
+          "term": "die Germanistik",
+          "meaning": "علم اللغة الالمانية"
+        },
+        {
+          "term": "die Club-Szene",
+          "meaning": "النوادي الشائعة"
+        },
+        {
+          "term": "ausgehen",
+          "meaning": "تفسح"
+        },
+        {
+          "term": "zusammen",
+          "meaning": "سوية"
+        },
+        {
+          "term": "ziemlich",
+          "meaning": "نوعا ما"
+        },
+        {
+          "term": "kombinieren",
+          "meaning": "ركب"
+        },
+        {
+          "term": "alle",
+          "meaning": "كل"
+        },
+        {
+          "term": "der Wintersport",
+          "meaning": "رياضة شتوية"
+        },
+        {
+          "term": "rodeln",
+          "meaning": "تزحلق"
+        },
+        {
+          "term": "eislaufen",
+          "meaning": "تزلج على الجليد"
+        },
+        {
+          "term": "normal",
+          "meaning": "عاد"
+        },
+        {
+          "term": "das Sport-Angebot",
+          "meaning": "عروض رياضية"
+        },
+        {
+          "term": "das Zentrum",
+          "meaning": "مركز"
+        },
+        {
+          "term": "das Sportprogramm",
+          "meaning": "برنامج رياضي"
+        },
+        {
+          "term": "das Programm",
+          "meaning": "برنامج"
+        },
+        {
+          "term": "die Fitness",
+          "meaning": "لياقة"
+        },
+        {
+          "term": "trainieren",
+          "meaning": "تدريب"
+        },
+        {
+          "term": "das Figln",
+          "meaning": "نوع من انواع التزلج"
+        },
+        {
+          "term": "warm",
+          "meaning": "دافئ"
+        },
+        {
+          "term": "der Schnee",
+          "meaning": "ثلج"
+        },
+        {
+          "term": "nass",
+          "meaning": "مبلل"
+        },
+        {
+          "term": "der Kurz-Ski",
+          "meaning": "تزلج"
+        },
+        {
+          "term": "das Snowboard",
+          "meaning": "سنوبورد"
+        },
+        {
+          "term": "gestern",
+          "meaning": "امس"
+        },
+        {
+          "term": "das Seminar",
+          "meaning": "حلقة دراسية"
+        },
+        {
+          "term": "der Geburtstag",
+          "meaning": "عيد ميلاد"
+        },
+        {
+          "term": "frei haben",
+          "meaning": "فراغ"
+        },
+        {
+          "term": "zu Hause",
+          "meaning": "في البيت"
+        },
+        {
+          "term": "kaputt",
+          "meaning": "عاطل"
+        }
+      ]
+    },
+    {
+      "id": "a1_k9",
+      "title": "Kapitel 9: Zuhause",
+      "words": [
+        {
+          "term": "die Tochter",
+          "meaning": "ابنة"
+        },
+        {
+          "term": "das Haus",
+          "meaning": "بيت"
+        },
+        {
+          "term": "die Wohnung",
+          "meaning": "سكن"
+        },
+        {
+          "term": "zu",
+          "meaning": "جدا"
+        },
+        {
+          "term": "klein",
+          "meaning": "صغير"
+        },
+        {
+          "term": "das Zimmer",
+          "meaning": "حجرة"
+        },
+        {
+          "term": "das Arbeitszimmer",
+          "meaning": "حجرة عمل"
+        },
+        {
+          "term": "das Kinderzimmer",
+          "meaning": "حجرة طفل"
+        },
+        {
+          "term": "draußen",
+          "meaning": "عراء"
+        },
+        {
+          "term": "das Wohnzimmer",
+          "meaning": "غرفة جلوس"
+        },
+        {
+          "term": "gemütlich",
+          "meaning": "مريح"
+        },
+        {
+          "term": "hell",
+          "meaning": "ساطع"
+        },
+        {
+          "term": "das Sofa",
+          "meaning": "صفة"
+        },
+        {
+          "term": "der Teppich",
+          "meaning": "سجاد"
+        },
+        {
+          "term": "reden",
+          "meaning": "تكلم"
+        },
+        {
+          "term": "das Badezimmer",
+          "meaning": "حمام"
+        },
+        {
+          "term": "der Balkon",
+          "meaning": "بلكون"
+        },
+        {
+          "term": "das Homeoffice",
+          "meaning": "المكتب المنزلي"
+        },
+        {
+          "term": "der/die Nachbar/in",
+          "meaning": "جار,ة"
+        },
+        {
+          "term": "nett",
+          "meaning": "لطيف"
+        },
+        {
+          "term": "entspannen (sich)",
+          "meaning": "مسترخ"
+        },
+        {
+          "term": "renoviert",
+          "meaning": "مُصَلَح"
+        },
+        {
+          "term": "der Schreibtisch",
+          "meaning": "مكتب"
+        },
+        {
+          "term": "der Fernseher",
+          "meaning": "تلفزيون"
+        },
+        {
+          "term": "die Wohngemeinschaft",
+          "meaning": "سكن جماعي"
+        },
+        {
+          "term": "die WG",
+          "meaning": "مختصر سكن جماعي"
+        },
+        {
+          "term": "teilen",
+          "meaning": "تشاطر"
+        },
+        {
+          "term": "jeder, jedes, jede",
+          "meaning": "كل"
+        },
+        {
+          "term": "der Sessel",
+          "meaning": "كرسي"
+        },
+        {
+          "term": "der Film",
+          "meaning": "فلم"
+        },
+        {
+          "term": "die Party",
+          "meaning": "حفلة"
+        },
+        {
+          "term": "das Schlafzimmer",
+          "meaning": "حجرة نوم"
+        },
+        {
+          "term": "der Flur",
+          "meaning": "مجاز"
+        },
+        {
+          "term": "das Möbel",
+          "meaning": "اثاث"
+        },
+        {
+          "term": "das Bücherregal",
+          "meaning": "رف كتب"
+        },
+        {
+          "term": "der Schrank",
+          "meaning": "خزانة"
+        },
+        {
+          "term": "die Kommode",
+          "meaning": "صوان"
+        },
+        {
+          "term": "der Herd",
+          "meaning": "فرن"
+        },
+        {
+          "term": "der Kühlschrank",
+          "meaning": "براد"
+        },
+        {
+          "term": "die Spüle",
+          "meaning": "جلاية"
+        },
+        {
+          "term": "die Küchenuhr",
+          "meaning": "ساعة مطبخية"
+        },
+        {
+          "term": "die Katze",
+          "meaning": "قطة"
+        },
+        {
+          "term": "hinter",
+          "meaning": "خلف"
+        },
+        {
+          "term": "die Zeitung",
+          "meaning": "جريدة"
+        },
+        {
+          "term": "leicht",
+          "meaning": "خفيف"
+        },
+        {
+          "term": "günstig",
+          "meaning": "مناسب"
+        },
+        {
+          "term": "teuer",
+          "meaning": "غال"
+        },
+        {
+          "term": "dunkel",
+          "meaning": "مظلم"
+        },
+        {
+          "term": "schwer",
+          "meaning": "ثقيل"
+        },
+        {
+          "term": "das Tiny House",
+          "meaning": "سكن صغير"
+        },
+        {
+          "term": "mobil",
+          "meaning": "متنقل"
+        },
+        {
+          "term": "elegant",
+          "meaning": "انيق"
+        },
+        {
+          "term": "der Trend",
+          "meaning": "صرعة"
+        }
+      ]
+    },
+    {
+      "id": "a1_k10",
+      "title": "Kapitel 10: Familie Schuhmann",
+      "words": [
+        {
+          "term": "die Großeltern",
+          "meaning": "الجدين"
+        },
+        {
+          "term": "der Onkel",
+          "meaning": "خال/عم"
+        },
+        {
+          "term": "die Tante",
+          "meaning": "خالة/عمة"
+        },
+        {
+          "term": "die Eltern",
+          "meaning": "ابوين"
+        },
+        {
+          "term": "die Schwester",
+          "meaning": "اخت"
+        },
+        {
+          "term": "der Bruder",
+          "meaning": "اخ"
+        },
+        {
+          "term": "der/die Cousin/Cousine",
+          "meaning": "ابن,ة عم"
+        },
+        {
+          "term": "der Sohn",
+          "meaning": "ابن"
+        },
+        {
+          "term": "die Nichte",
+          "meaning": "بنت الاخ"
+        },
+        {
+          "term": "der Neffe",
+          "meaning": "ابن الاخ"
+        },
+        {
+          "term": "das Alter",
+          "meaning": "عمر"
+        },
+        {
+          "term": "Geschwister",
+          "meaning": "اخوة"
+        },
+        {
+          "term": "der Familienstand",
+          "meaning": "حالة اجتماعية"
+        },
+        {
+          "term": "geschieden",
+          "meaning": "مطلق"
+        },
+        {
+          "term": "das Kind",
+          "meaning": "طفل"
+        },
+        {
+          "term": "verheiratet",
+          "meaning": "متزوج"
+        },
+        {
+          "term": "das Enkelkind",
+          "meaning": "حفيد"
+        },
+        {
+          "term": "der/die Enkel/in",
+          "meaning": "حفيد,ة"
+        },
+        {
+          "term": "der Vater",
+          "meaning": "أباء"
+        },
+        {
+          "term": "der/die Urenkel/in",
+          "meaning": "حفيد,ة"
+        },
+        {
+          "term": "die Großmutter",
+          "meaning": "جدة"
+        },
+        {
+          "term": "ledig",
+          "meaning": "عازب/ة"
+        },
+        {
+          "term": "die Bäckerei",
+          "meaning": "مخبز"
+        },
+        {
+          "term": "die Generation",
+          "meaning": "جيل"
+        },
+        {
+          "term": "der Beruf",
+          "meaning": "مهنة"
+        },
+        {
+          "term": "wählen",
+          "meaning": "انتخب"
+        },
+        {
+          "term": "der Großvater",
+          "meaning": "جد"
+        },
+        {
+          "term": "heiraten",
+          "meaning": "تزوج"
+        },
+        {
+          "term": "die Großbäckerei",
+          "meaning": "سلسلة مخابز"
+        },
+        {
+          "term": "bauen",
+          "meaning": "بنى"
+        },
+        {
+          "term": "der Betrieb",
+          "meaning": "معمل"
+        },
+        {
+          "term": "leiten",
+          "meaning": "أدار"
+        },
+        {
+          "term": "der Backshop",
+          "meaning": "اسواق مخابز"
+        },
+        {
+          "term": "gründen",
+          "meaning": "أسس"
+        },
+        {
+          "term": "genau",
+          "meaning": "بالضبط"
+        },
+        {
+          "term": "der/die Angestellte",
+          "meaning": "موظفون"
+        },
+        {
+          "term": "das Erfolgsrezept",
+          "meaning": "وصفة نجاح"
+        },
+        {
+          "term": "die Familie",
+          "meaning": "عائلة"
+        },
+        {
+          "term": "privat",
+          "meaning": "بصفة خاصة"
+        },
+        {
+          "term": "lachen",
+          "meaning": "ضحك"
+        },
+        {
+          "term": "der/die Bankkaufmann/frau",
+          "meaning": "موظف بنك"
+        },
+        {
+          "term": "mieten",
+          "meaning": "استأجر"
+        },
+        {
+          "term": "der/die Blogger/in",
+          "meaning": "مدون,ة الكتروني"
+        },
+        {
+          "term": "die Mutter",
+          "meaning": "ام"
+        },
+        {
+          "term": "der Job",
+          "meaning": "عمل"
+        },
+        {
+          "term": "der Kaffeeklatsch",
+          "meaning": "جلسة النميمة"
+        },
+        {
+          "term": "der Haushalt",
+          "meaning": "ادارة منزلية"
+        },
+        {
+          "term": "stressig",
+          "meaning": "مجهد"
+        },
+        {
+          "term": "die Oma",
+          "meaning": "جدة"
+        },
+        {
+          "term": "die Mutti",
+          "meaning": "ماما"
+        },
+        {
+          "term": "die Mama",
+          "meaning": "ماما"
+        },
+        {
+          "term": "der Papa",
+          "meaning": "بابا"
+        },
+        {
+          "term": "der Opa",
+          "meaning": "جد"
+        },
+        {
+          "term": "der Papi",
+          "meaning": "بابي"
+        },
+        {
+          "term": "nennen",
+          "meaning": "اطلق اسم"
+        }
+      ]
+    },
+    {
+      "id": "a1_k11",
+      "title": "Kapitel 11: Viel Arbeit",
+      "words": [
+        {
+          "term": "reparieren",
+          "meaning": "صلّح"
+        },
+        {
+          "term": "verkaufen",
+          "meaning": "باع"
+        },
+        {
+          "term": "der Check",
+          "meaning": "تفتيش"
+        },
+        {
+          "term": "der/die Automobilkaufmann/frau",
+          "meaning": "بائع سيارات"
+        },
+        {
+          "term": "der/die Mechatroniker/in",
+          "meaning": "ميكاترونيكي,ة"
+        },
+        {
+          "term": "die Werkstatt",
+          "meaning": "ورشة"
+        },
+        {
+          "term": "der/die Informatikkaufmann/frau",
+          "meaning": "بائع كمبيوترات"
+        },
+        {
+          "term": "die Ausbildung",
+          "meaning": "تأهيل"
+        },
+        {
+          "term": "der Leserbrief",
+          "meaning": "رسائل القراء"
+        },
+        {
+          "term": "das Treffen",
+          "meaning": "لقاء"
+        },
+        {
+          "term": "die Redaktion",
+          "meaning": "رئاسة تحرير"
+        },
+        {
+          "term": "meinen",
+          "meaning": "ادعى"
+        },
+        {
+          "term": "beruflich",
+          "meaning": "مهني"
+        },
+        {
+          "term": "als",
+          "meaning": "ك"
+        },
+        {
+          "term": "der/die Journalist/in",
+          "meaning": "صحفي,ة"
+        },
+        {
+          "term": "das Interesse",
+          "meaning": "اهتمام"
+        },
+        {
+          "term": "der Arbeitsort",
+          "meaning": "مكان العمل"
+        },
+        {
+          "term": "die Person",
+          "meaning": "شخص"
+        },
+        {
+          "term": "mitmachen",
+          "meaning": "شارك"
+        },
+        {
+          "term": "eigentlich",
+          "meaning": "بالاحرى"
+        },
+        {
+          "term": "der/die Altenpfleger/in",
+          "meaning": "مرافق كبار السن"
+        },
+        {
+          "term": "die Berufsfachschule",
+          "meaning": "مدرسة مهنية متخصصة"
+        },
+        {
+          "term": "das Seniorenheim",
+          "meaning": "ملاجئ كبار السن"
+        },
+        {
+          "term": "der/die Senior/Seniorin",
+          "meaning": "كبار السن"
+        },
+        {
+          "term": "der Alltag",
+          "meaning": "حياة يومية"
+        },
+        {
+          "term": "duschen",
+          "meaning": "يأخذ دش"
+        },
+        {
+          "term": "anziehen (sich)",
+          "meaning": "لبس ملابس"
+        },
+        {
+          "term": "das Frühstück",
+          "meaning": "فطور"
+        },
+        {
+          "term": "ausziehen (sich)",
+          "meaning": "خلع ملابس"
+        },
+        {
+          "term": "waschen",
+          "meaning": "غسل"
+        },
+        {
+          "term": "bringen",
+          "meaning": "جلب"
+        },
+        {
+          "term": "der/die Arzt/Ärztin",
+          "meaning": "طبيب,ة"
+        },
+        {
+          "term": "das Medikament",
+          "meaning": "ادوية"
+        },
+        {
+          "term": "früher",
+          "meaning": "سابقا"
+        },
+        {
+          "term": "die App",
+          "meaning": "تطبيق"
+        },
+        {
+          "term": "installieren",
+          "meaning": "تثبيت"
+        },
+        {
+          "term": "das Computerspiel",
+          "meaning": "لعب الكمبيوتر"
+        },
+        {
+          "term": "ausprobieren",
+          "meaning": "جرّب"
+        },
+        {
+          "term": "der/die Maurer/in",
+          "meaning": "بنّاء,ة"
+        },
+        {
+          "term": "der/die Kosmetiker/in",
+          "meaning": "خبير,ة تجميل"
+        },
+        {
+          "term": "der Kosmetiksalon",
+          "meaning": "صالون تجميل"
+        },
+        {
+          "term": "die Baustelle",
+          "meaning": "موقع بناء"
+        },
+        {
+          "term": "beobachten",
+          "meaning": "راقب"
+        },
+        {
+          "term": "überlegen",
+          "meaning": "فكّر"
+        },
+        {
+          "term": "das Praktikum",
+          "meaning": "تطبيق"
+        },
+        {
+          "term": "danach",
+          "meaning": "بعد ذلك"
+        },
+        {
+          "term": "die Bewerbung",
+          "meaning": "طلب عمل"
+        },
+        {
+          "term": "verschicken",
+          "meaning": "ارسل"
+        },
+        {
+          "term": "der Erfolg",
+          "meaning": "نجاح"
+        },
+        {
+          "term": "die Berufsschule",
+          "meaning": "مدرسة تأهيل مهني"
+        },
+        {
+          "term": "langweilig",
+          "meaning": "ممل"
+        },
+        {
+          "term": "der Stein",
+          "meaning": "حجر"
+        },
+        {
+          "term": "der Beton",
+          "meaning": "خرسانة"
+        },
+        {
+          "term": "das Eisen",
+          "meaning": "حديد"
+        },
+        {
+          "term": "die Hilfe",
+          "meaning": "مساعدة"
+        },
+        {
+          "term": "beenden",
+          "meaning": "انهى"
+        },
+        {
+          "term": "die Altenpflege",
+          "meaning": "عناية بكبار السن"
+        },
+        {
+          "term": "anschauen",
+          "meaning": "تأمل"
+        },
+        {
+          "term": "der Schichtdienst",
+          "meaning": "وردية"
+        },
+        {
+          "term": "die Frühschicht",
+          "meaning": "وردية صباحية"
+        },
+        {
+          "term": "die Spätschicht",
+          "meaning": "وردية مسائية"
+        },
+        {
+          "term": "die Nachtschicht",
+          "meaning": "وردية ليلية"
+        },
+        {
+          "term": "das Ding",
+          "meaning": "شيء"
+        },
+        {
+          "term": "der/die Architekt/in",
+          "meaning": "مهندس معماري,ة"
+        },
+        {
+          "term": "betreuen",
+          "meaning": "رافق"
+        },
+        {
+          "term": "der/die Patient/in",
+          "meaning": "مريض,ة"
+        },
+        {
+          "term": "untersuchen",
+          "meaning": "كشف"
+        },
+        {
+          "term": "planen",
+          "meaning": "خطط"
+        },
+        {
+          "term": "das Autohaus",
+          "meaning": "معرض سيارات"
+        },
+        {
+          "term": "das Krankenhaus",
+          "meaning": "مستشفى"
+        },
+        {
+          "term": "das Planungsbüro",
+          "meaning": "مكتب تخطيط"
+        },
+        {
+          "term": "der/die Physiotherapeut/in",
+          "meaning": "معالج طبيعي,ة"
+        },
+        {
+          "term": "informieren (sich)",
+          "meaning": "استعلم"
+        },
+        {
+          "term": "der Gymnastik-Kurs",
+          "meaning": "دورة جمناستك"
+        },
+        {
+          "term": "früh",
+          "meaning": "مبكر"
+        },
+        {
+          "term": "die Übung",
+          "meaning": "تدريب"
+        },
+        {
+          "term": "massieren",
+          "meaning": "دلّك"
+        },
+        {
+          "term": "aufschreiben",
+          "meaning": "دوّن"
+        },
+        {
+          "term": "der/die Kunde/Kundin",
+          "meaning": "زبون,ة"
+        },
+        {
+          "term": "beraten",
+          "meaning": "قدم استشارة"
+        },
+        {
+          "term": "der/die Schüler/in",
+          "meaning": "تلميذ,ة"
+        },
+        {
+          "term": "das Sportprogramm",
+          "meaning": "برنامج رياضة"
+        },
+        {
+          "term": "die Mittagspause",
+          "meaning": "استراحة ظهيرة"
+        },
+        {
+          "term": "der/die Chef/in",
+          "meaning": "رئيس,ة"
+        },
+        {
+          "term": "das Gespräch",
+          "meaning": "محادثة"
+        }
+      ]
+    },
+    {
+      "id": "a1_k12",
+      "title": "Kapitel 12: Essen und Trinken",
+      "words": [
+        {
+          "term": "das Lebensmittel",
+          "meaning": "مواد غذائية"
+        },
+        {
+          "term": "die Nudel",
+          "meaning": "معكرونة"
+        },
+        {
+          "term": "das Obst",
+          "meaning": "فواكه"
+        },
+        {
+          "term": "die Wurst",
+          "meaning": "صوصج"
+        },
+        {
+          "term": "das Milchprodukt",
+          "meaning": "منتجات البان"
+        },
+        {
+          "term": "das Brot",
+          "meaning": "خبز"
+        },
+        {
+          "term": "der Apfel",
+          "meaning": "تفاح"
+        },
+        {
+          "term": "das Kilo(gramm)",
+          "meaning": "كيلوغرام"
+        },
+        {
+          "term": "die Erdnuss",
+          "meaning": "فول سوداني"
+        },
+        {
+          "term": "das Gramm",
+          "meaning": "غرام"
+        },
+        {
+          "term": "die Dose",
+          "meaning": "علبة"
+        },
+        {
+          "term": "das Vollkornbrot",
+          "meaning": "خبز اسود"
+        },
+        {
+          "term": "die Salami",
+          "meaning": "باسطرما"
+        },
+        {
+          "term": "die Butter",
+          "meaning": "زبدة"
+        },
+        {
+          "term": "das Stück",
+          "meaning": "قطعة"
+        },
+        {
+          "term": "shoppen",
+          "meaning": "تسوق"
+        },
+        {
+          "term": "schleppen",
+          "meaning": "حمل"
+        },
+        {
+          "term": "nach Hause",
+          "meaning": "الى البيت"
+        },
+        {
+          "term": "das Deutschland",
+          "meaning": "المانيا"
+        },
+        {
+          "term": "die Million",
+          "meaning": "مليون"
+        },
+        {
+          "term": "der Vorteil",
+          "meaning": "امتياز"
+        },
+        {
+          "term": "der Online-Supermarkt",
+          "meaning": "سوبرماركت اونلاين"
+        },
+        {
+          "term": "geöffnet",
+          "meaning": "مفتوح"
+        },
+        {
+          "term": "müssen",
+          "meaning": "وجب"
+        },
+        {
+          "term": "nichts",
+          "meaning": "لاشيئ"
+        },
+        {
+          "term": "suchen",
+          "meaning": "بحث"
+        },
+        {
+          "term": "die Foodbox",
+          "meaning": "فوديبوكس"
+        },
+        {
+          "term": "auswählen",
+          "meaning": "انتقى"
+        },
+        {
+          "term": "angeben",
+          "meaning": "اعطى"
+        },
+        {
+          "term": "die Personenanzahl",
+          "meaning": "عدد اشخاص"
+        },
+        {
+          "term": "die Zutat",
+          "meaning": "مكونة"
+        },
+        {
+          "term": "das Gericht",
+          "meaning": "صنف"
+        },
+        {
+          "term": "frisch",
+          "meaning": "طازج"
+        },
+        {
+          "term": "die Marmelade",
+          "meaning": "مربى"
+        },
+        {
+          "term": "der Honig",
+          "meaning": "عسل"
+        },
+        {
+          "term": "der Snack",
+          "meaning": "وجبة صغيرة"
+        },
+        {
+          "term": "die Packung",
+          "meaning": "شدة"
+        },
+        {
+          "term": "die Paprika",
+          "meaning": "فلفل"
+        },
+        {
+          "term": "die Weißwurst",
+          "meaning": "سجق ابيض"
+        },
+        {
+          "term": "naturell",
+          "meaning": "طبيعي"
+        },
+        {
+          "term": "der Liter",
+          "meaning": "لتر"
+        },
+        {
+          "term": "die Flasche",
+          "meaning": "زجاجة"
+        },
+        {
+          "term": "die Erdbeermarmelade",
+          "meaning": "مربى فريز"
+        },
+        {
+          "term": "das Glas",
+          "meaning": "علبة زجاجية"
+        },
+        {
+          "term": "die Orange",
+          "meaning": "برتقالة"
+        },
+        {
+          "term": "die Birne",
+          "meaning": "كمثرى"
+        },
+        {
+          "term": "die Feige",
+          "meaning": "تين"
+        },
+        {
+          "term": "die Weintraube",
+          "meaning": "عنب"
+        },
+        {
+          "term": "die Mandarine",
+          "meaning": "يوسف افندي"
+        },
+        {
+          "term": "die Zwiebel",
+          "meaning": "بصل"
+        },
+        {
+          "term": "die Mini-Tomate",
+          "meaning": "طماطم صغيرة"
+        },
+        {
+          "term": "die Gurke",
+          "meaning": "خيارة"
+        },
+        {
+          "term": "die Zucchini",
+          "meaning": "كوسا"
+        },
+        {
+          "term": "der Pilz",
+          "meaning": "فطر"
+        },
+        {
+          "term": "die Möhre",
+          "meaning": "جزر"
+        },
+        {
+          "term": "die Limette",
+          "meaning": "ليمون"
+        },
+        {
+          "term": "viertel",
+          "meaning": "ربع"
+        },
+        {
+          "term": "der Marktstand",
+          "meaning": "كشك السوق"
+        },
+        {
+          "term": "kosten",
+          "meaning": "سعر"
+        },
+        {
+          "term": "dieser, dieses, diese",
+          "meaning": "هذا,هذه"
+        },
+        {
+          "term": "der Wunsch",
+          "meaning": "امنية"
+        },
+        {
+          "term": "der/die Verkäufer/in",
+          "meaning": "بائع,ة"
+        },
+        {
+          "term": "wünschen",
+          "meaning": "تمنى"
+        },
+        {
+          "term": "das Weißbrot",
+          "meaning": "خبز ابيض"
+        },
+        {
+          "term": "der Gurkensalat",
+          "meaning": "سلطة خيار"
+        },
+        {
+          "term": "der Kopfsalat",
+          "meaning": "رأس سلطة"
+        },
+        {
+          "term": "der/die Koch/Köchin",
+          "meaning": "طباخ"
+        },
+        {
+          "term": "der Kochkurs",
+          "meaning": "دورة طبخ"
+        },
+        {
+          "term": "die Show-Küche",
+          "meaning": "طبخ استعراضي"
+        },
+        {
+          "term": "die Tischdekoration",
+          "meaning": "زينة طاولة"
+        },
+        {
+          "term": "am liebsten",
+          "meaning": "من الافضل"
+        },
+        {
+          "term": "indisch",
+          "meaning": "هندي"
+        },
+        {
+          "term": "bekommen",
+          "meaning": "حصل"
+        },
+        {
+          "term": "die Bandnudel",
+          "meaning": "معكرونة شريطية"
+        },
+        {
+          "term": "die Sahne",
+          "meaning": "قشطة"
+        },
+        {
+          "term": "gießen",
+          "meaning": "صب"
+        },
+        {
+          "term": "braten",
+          "meaning": "قلي"
+        },
+        {
+          "term": "schneiden",
+          "meaning": "قطع"
+        },
+        {
+          "term": "putzen",
+          "meaning": "مسح"
+        },
+        {
+          "term": "der Steinpilz",
+          "meaning": "فطر حجري"
+        },
+        {
+          "term": "der Pfeffer",
+          "meaning": "فلفل"
+        },
+        {
+          "term": "das Salz",
+          "meaning": "ملح"
+        },
+        {
+          "term": "dazu",
+          "meaning": "اضافة"
+        },
+        {
+          "term": "rühren",
+          "meaning": "خلط"
+        },
+        {
+          "term": "etwas",
+          "meaning": "شيئ"
+        },
+        {
+          "term": "dazutun",
+          "meaning": "اضاف الى"
+        },
+        {
+          "term": "zuerst",
+          "meaning": "اولا"
+        },
+        {
+          "term": "zum Schluss",
+          "meaning": "في الاخير"
+        },
+        {
+          "term": "der Bigos",
+          "meaning": "بيغوز"
+        }
+      ]
+    },
+    {
+      "id": "a1_k13",
+      "title": "Kapitel 13: Fit und Gesund",
+      "words": [
+        {
+          "term": "slacken",
+          "meaning": "الرقص على الحبل"
+        },
+        {
+          "term": "der Trendsport",
+          "meaning": "صرعة رياضية"
+        },
+        {
+          "term": "der Baum",
+          "meaning": "شجرة"
+        },
+        {
+          "term": "das Band",
+          "meaning": "شريط"
+        },
+        {
+          "term": "die Slackline",
+          "meaning": "راقص الحبل"
+        },
+        {
+          "term": "elastisch",
+          "meaning": "مرن"
+        },
+        {
+          "term": "der Zentimeter",
+          "meaning": "سنتمتر"
+        },
+        {
+          "term": "breit",
+          "meaning": "عريض"
+        },
+        {
+          "term": "der/die Sportler/in",
+          "meaning": "رياضي,ة"
+        },
+        {
+          "term": "laufen",
+          "meaning": "مشى"
+        },
+        {
+          "term": "der Trick",
+          "meaning": "حيلة"
+        },
+        {
+          "term": "einfach",
+          "meaning": "ببساطة"
+        },
+        {
+          "term": "der Arm",
+          "meaning": "ذراع"
+        },
+        {
+          "term": "das Bein",
+          "meaning": "ساق"
+        },
+        {
+          "term": "der Bauch",
+          "meaning": "بطن"
+        },
+        {
+          "term": "der Rücken",
+          "meaning": "ظهر"
+        },
+        {
+          "term": "kontrollieren",
+          "meaning": "راقب"
+        },
+        {
+          "term": "üben",
+          "meaning": "تدريب"
+        },
+        {
+          "term": "der Spaß",
+          "meaning": "مرح"
+        },
+        {
+          "term": "die Balance",
+          "meaning": "توازن"
+        },
+        {
+          "term": "die Konzentration",
+          "meaning": "تركيز"
+        },
+        {
+          "term": "die Koordination",
+          "meaning": "توفيق"
+        },
+        {
+          "term": "der/die Läufer/in",
+          "meaning": "عداء,ة"
+        },
+        {
+          "term": "tragen",
+          "meaning": "حمل"
+        },
+        {
+          "term": "weiß",
+          "meaning": "ابيض"
+        },
+        {
+          "term": "das T-Shirt",
+          "meaning": "تشرت"
+        },
+        {
+          "term": "der/die Zuschauer/in",
+          "meaning": "مشاهد,ة"
+        },
+        {
+          "term": "werfen",
+          "meaning": "رمى"
+        },
+        {
+          "term": "die Farbe",
+          "meaning": "لون"
+        },
+        {
+          "term": "das Ziel",
+          "meaning": "هدف"
+        },
+        {
+          "term": "wollen",
+          "meaning": "اراد"
+        },
+        {
+          "term": "das Herz",
+          "meaning": "قلب"
+        },
+        {
+          "term": "die Lunge",
+          "meaning": "رئة"
+        },
+        {
+          "term": "fit",
+          "meaning": "محافظ على اللياقة"
+        },
+        {
+          "term": "die Ballettstange",
+          "meaning": "عمود باليه"
+        },
+        {
+          "term": "der Fan",
+          "meaning": "مشجع"
+        },
+        {
+          "term": "die Bewegung",
+          "meaning": "حركة"
+        },
+        {
+          "term": "intensiv",
+          "meaning": "مكثف"
+        },
+        {
+          "term": "der Hals",
+          "meaning": "رقبة"
+        },
+        {
+          "term": "die Schulter",
+          "meaning": "كتف"
+        },
+        {
+          "term": "Keine Sorge!",
+          "meaning": "لاتقلق"
+        },
+        {
+          "term": "die Sorge",
+          "meaning": "قلق"
+        },
+        {
+          "term": "die Sportverletzung",
+          "meaning": "اصابة رياضية"
+        },
+        {
+          "term": "das Eishockey",
+          "meaning": "هوكي الجليد"
+        },
+        {
+          "term": "der Fuß",
+          "meaning": "قدم"
+        },
+        {
+          "term": "der Kopf",
+          "meaning": "رأس"
+        },
+        {
+          "term": "das Knie",
+          "meaning": "ركبة"
+        },
+        {
+          "term": "die Verletzung",
+          "meaning": "اصابة"
+        },
+        {
+          "term": "der/die Eishockeyspieler/in",
+          "meaning": "لاعب هوكي الجليد"
+        },
+        {
+          "term": "der/die Fitnesstrainer/in",
+          "meaning": "مدرب,ة اللياقة البدنية"
+        },
+        {
+          "term": "gegen",
+          "meaning": "ضد"
+        },
+        {
+          "term": "aktiv",
+          "meaning": "نشط"
+        },
+        {
+          "term": "die Messe",
+          "meaning": "معرض"
+        },
+        {
+          "term": "faul",
+          "meaning": "كسول"
+        },
+        {
+          "term": "die Gesundheit",
+          "meaning": "صحة"
+        },
+        {
+          "term": "der/die Aussteller/in",
+          "meaning": "عارض,ة"
+        },
+        {
+          "term": "präsentieren",
+          "meaning": "قدم"
+        },
+        {
+          "term": "das Fitnessprogramm",
+          "meaning": "برنامج اللياقة البدنية"
+        },
+        {
+          "term": "boxen",
+          "meaning": "ملاكمة"
+        },
+        {
+          "term": "schwimmen",
+          "meaning": "سباحة"
+        },
+        {
+          "term": "das Zumba",
+          "meaning": "رقص زومبا"
+        },
+        {
+          "term": "die Trainingsmöglichkeit",
+          "meaning": "امكانيات تدريب"
+        },
+        {
+          "term": "der/die Besucher/in",
+          "meaning": "زائر,ة"
+        },
+        {
+          "term": "gleich",
+          "meaning": "حالا"
+        },
+        {
+          "term": "dabeihaben",
+          "meaning": "حمل مع"
+        },
+        {
+          "term": "die Chipkarte",
+          "meaning": "بطاقة ذكية"
+        },
+        {
+          "term": "warten",
+          "meaning": "انتظر"
+        },
+        {
+          "term": "das Wartezimmer",
+          "meaning": "غرفة انتظار"
+        },
+        {
+          "term": "Platz nehmen",
+          "meaning": "جلس"
+        },
+        {
+          "term": "rufen",
+          "meaning": "نادى"
+        },
+        {
+          "term": "die Krankenversicherung",
+          "meaning": "تأمين صحي"
+        },
+        {
+          "term": "bezahlen",
+          "meaning": "دفع حساب"
+        },
+        {
+          "term": "die Arztkosten",
+          "meaning": "تكاليف طبيب"
+        },
+        {
+          "term": "der/die Versicherte",
+          "meaning": "مؤمَن عليه"
+        },
+        {
+          "term": "die Gesundheitskarte",
+          "meaning": "بطاقة تأمين"
+        },
+        {
+          "term": "die Apotheke",
+          "meaning": "صيدلية"
+        },
+        {
+          "term": "die E-Card",
+          "meaning": "بطاقة الكترونية"
+        },
+        {
+          "term": "die Versichertenkarte",
+          "meaning": "بطاقة تأمين صحي"
+        },
+        {
+          "term": "passieren",
+          "meaning": "حدث"
+        },
+        {
+          "term": "das Skateboard",
+          "meaning": "لوحة تزحلق"
+        },
+        {
+          "term": "der Unfall",
+          "meaning": "حادث"
+        },
+        {
+          "term": "hinfallen",
+          "meaning": "سقط"
+        },
+        {
+          "term": "schlimm",
+          "meaning": "سيء"
+        },
+        {
+          "term": "paar",
+          "meaning": "زوج"
+        },
+        {
+          "term": "der Schritt",
+          "meaning": "خطوة"
+        },
+        {
+          "term": "schlecht",
+          "meaning": "سيء"
+        },
+        {
+          "term": "bleiben",
+          "meaning": "بقى"
+        },
+        {
+          "term": "aufwachen",
+          "meaning": "استيقظ"
+        },
+        {
+          "term": "wehtun",
+          "meaning": "ألمَ"
+        },
+        {
+          "term": "hinlegen (sich)",
+          "meaning": "رقد"
+        },
+        {
+          "term": "krankschreiben",
+          "meaning": "اعطاء اجازة مرضية"
+        },
+        {
+          "term": "sollen",
+          "meaning": "وجب"
+        },
+        {
+          "term": "dick",
+          "meaning": "بدين"
+        },
+        {
+          "term": "die Verstauchung",
+          "meaning": "رض"
+        },
+        {
+          "term": "hochlegen",
+          "meaning": "رفع"
+        },
+        {
+          "term": "auftragen",
+          "meaning": "وضع"
+        },
+        {
+          "term": "dreimal",
+          "meaning": "ثلاث مرات"
+        },
+        {
+          "term": "die Sportsalbe",
+          "meaning": "مرهم للرياضة"
+        },
+        {
+          "term": "abends",
+          "meaning": "مساءا"
+        },
+        {
+          "term": "die Tablette",
+          "meaning": "قرص"
+        },
+        {
+          "term": "der Schmerz",
+          "meaning": "الم"
+        },
+        {
+          "term": "die Salbe",
+          "meaning": "مرهم"
+        },
+        {
+          "term": "Gute Besserung!",
+          "meaning": "بالسلامة"
+        },
+        {
+          "term": "die Kopfschmerzen",
+          "meaning": "صداع"
+        },
+        {
+          "term": "ausruhen (sich)",
+          "meaning": "استجمام"
+        },
+        {
+          "term": "die Halsschmerzen",
+          "meaning": "الم حنجرة"
+        },
+        {
+          "term": "der Husten",
+          "meaning": "كحة"
+        },
+        {
+          "term": "die Halstablette",
+          "meaning": "قرص لالام الحنجرة"
+        },
+        {
+          "term": "der Hustensaft",
+          "meaning": "دواء كحة"
+        },
+        {
+          "term": "sechsmal",
+          "meaning": "ست مرات"
+        },
+        {
+          "term": "das Handball",
+          "meaning": "كرة يد"
+        },
+        {
+          "term": "nächster, nächstes, nächste",
+          "meaning": "قادم,ة"
+        },
+        {
+          "term": "wiederkommen",
+          "meaning": "يأتي مرة اخرى"
+        },
+        {
+          "term": "der/die Anfänger/in",
+          "meaning": "مبتدأ,مبتدئة"
+        },
+        {
+          "term": "der Profi",
+          "meaning": "محترف"
+        },
+        {
+          "term": "die Entspannung",
+          "meaning": "استرخاء"
+        },
+        {
+          "term": "die Ernährung",
+          "meaning": "تغذية"
+        },
+        {
+          "term": "der Schnupfen",
+          "meaning": "رشح"
+        },
+        {
+          "term": "die Sauna",
+          "meaning": "حمام بخاري"
+        },
+        {
+          "term": "der Körper",
+          "meaning": "جسم"
+        },
+        {
+          "term": "das Immunsystem",
+          "meaning": "جهاز المناعة"
+        },
+        {
+          "term": "gesund",
+          "meaning": "سليم"
+        },
+        {
+          "term": "müde",
+          "meaning": "تعب"
+        },
+        {
+          "term": "spazieren gehen",
+          "meaning": "تمشى"
+        },
+        {
+          "term": "die Hauptsache",
+          "meaning": "المسألة الرئيسية"
+        },
+        {
+          "term": "die Energie",
+          "meaning": "طاقة"
+        },
+        {
+          "term": "ausmachen",
+          "meaning": "اطفأ"
+        },
+        {
+          "term": "die Erkältung",
+          "meaning": "برد"
+        },
+        {
+          "term": "die Nase",
+          "meaning": "انف"
+        },
+        {
+          "term": "besonders",
+          "meaning": "بشكل خاص"
+        },
+        {
+          "term": "der Brokkoli",
+          "meaning": "بروكولي"
+        },
+        {
+          "term": "das Vitamin",
+          "meaning": "فيتامين"
+        },
+        {
+          "term": "heiß",
+          "meaning": "ساخن"
+        },
+        {
+          "term": "kalt",
+          "meaning": "بارد"
+        },
+        {
+          "term": "leise",
+          "meaning": "هدوء"
+        },
+        {
+          "term": "die Sportart",
+          "meaning": "نوع رياضة"
+        },
+        {
+          "term": "der Sporttermin",
+          "meaning": "موعد رياضي"
+        },
+        {
+          "term": "einpacken",
+          "meaning": "حزم"
+        },
+        {
+          "term": "die Sportsachen",
+          "meaning": "حاجيات الرياضة"
+        },
+        {
+          "term": "der Sportkurs",
+          "meaning": "دورة رياضية"
+        },
+        {
+          "term": "richtig",
+          "meaning": "صحيح"
+        },
+        {
+          "term": "mitnehmen",
+          "meaning": "اصطحب"
+        },
+        {
+          "term": "weglegen",
+          "meaning": "ركن"
+        },
+        {
+          "term": "zählen",
+          "meaning": "عدّ"
+        },
+        {
+          "term": "das Ballett",
+          "meaning": "باليه"
+        }
+      ]
+    },
+    {
+      "id": "a1_k14",
+      "title": "Kapitel 14: Voll im Trend",
+      "words": [
+        {
+          "term": "die Kleidung",
+          "meaning": "ملابس"
+        },
+        {
+          "term": "der Dresscode",
+          "meaning": "قواعد اللبس"
+        },
+        {
+          "term": "die Regel",
+          "meaning": "قاعدة"
+        },
+        {
+          "term": "die Bank",
+          "meaning": "بنك"
+        },
+        {
+          "term": "formell",
+          "meaning": "رسمي"
+        },
+        {
+          "term": "das Start-up",
+          "meaning": "شركة ناشئة"
+        },
+        {
+          "term": "der Anzug",
+          "meaning": "بدلة"
+        },
+        {
+          "term": "der Pullover",
+          "meaning": "بلوفر"
+        },
+        {
+          "term": "die Jeans",
+          "meaning": "بنطلون جينز"
+        },
+        {
+          "term": "der/die Berater/in",
+          "meaning": "مستشار,ة"
+        },
+        {
+          "term": "das Hemd",
+          "meaning": "قميص"
+        },
+        {
+          "term": "die Krawatte",
+          "meaning": "ربطة عنق"
+        },
+        {
+          "term": "schick",
+          "meaning": "انيق"
+        },
+        {
+          "term": "der Schuh",
+          "meaning": "حذاء"
+        },
+        {
+          "term": "das Outfit",
+          "meaning": "مظهر"
+        },
+        {
+          "term": "farbig",
+          "meaning": "ملون"
+        },
+        {
+          "term": "das Jackett",
+          "meaning": "جاكيت"
+        },
+        {
+          "term": "die Hose",
+          "meaning": "بنطلون"
+        },
+        {
+          "term": "die Sandale",
+          "meaning": "حذاء صندل"
+        },
+        {
+          "term": "die Shorts",
+          "meaning": "بنطلون قصير"
+        },
+        {
+          "term": "der Lederschuh",
+          "meaning": "حذاء جلدي"
+        },
+        {
+          "term": "der/die Projektmanager/in",
+          "meaning": "مدير,ة مشروع"
+        },
+        {
+          "term": "das Lieblingsoutfit",
+          "meaning": "مظهر مفضل"
+        },
+        {
+          "term": "blau",
+          "meaning": "ازرق"
+        },
+        {
+          "term": "der Turnschuh",
+          "meaning": "حذاء رياضة"
+        },
+        {
+          "term": "die Bluse",
+          "meaning": "بلوزة"
+        },
+        {
+          "term": "der Blazer",
+          "meaning": "جاكيت"
+        },
+        {
+          "term": "der Hosenanzug",
+          "meaning": "بدلة بنطلون"
+        },
+        {
+          "term": "das Kleid",
+          "meaning": "فستان"
+        },
+        {
+          "term": "der Rock",
+          "meaning": "جونلة"
+        },
+        {
+          "term": "die Lieblingsfarbe",
+          "meaning": "لون مفضل"
+        },
+        {
+          "term": "gelb",
+          "meaning": "اصفر"
+        },
+        {
+          "term": "sportlich",
+          "meaning": "رياضي"
+        },
+        {
+          "term": "rot",
+          "meaning": "احمر"
+        },
+        {
+          "term": "grün",
+          "meaning": "اخضر"
+        },
+        {
+          "term": "braun",
+          "meaning": "بني"
+        },
+        {
+          "term": "orange",
+          "meaning": "برتقالي"
+        },
+        {
+          "term": "türkis",
+          "meaning": "فيروزي"
+        },
+        {
+          "term": "beige",
+          "meaning": "كاكي"
+        },
+        {
+          "term": "lila",
+          "meaning": "ليلكي"
+        },
+        {
+          "term": "rosa",
+          "meaning": "زهري"
+        },
+        {
+          "term": "grau",
+          "meaning": "رمادي"
+        },
+        {
+          "term": "bunt",
+          "meaning": "ملون"
+        },
+        {
+          "term": "die Jacke",
+          "meaning": "جاكيت"
+        },
+        {
+          "term": "das Wörterbuch",
+          "meaning": "قاموس"
+        },
+        {
+          "term": "das Rot",
+          "meaning": "احمر"
+        },
+        {
+          "term": "der Mantel",
+          "meaning": "معطف"
+        },
+        {
+          "term": "der Stiefel",
+          "meaning": "بوت,جزمة"
+        },
+        {
+          "term": "der Hut",
+          "meaning": "قبعة"
+        },
+        {
+          "term": "unmöglich",
+          "meaning": "مستحيل"
+        },
+        {
+          "term": "altmodisch",
+          "meaning": "طراز قديم"
+        },
+        {
+          "term": "die Größe",
+          "meaning": "حجم"
+        },
+        {
+          "term": "der Ärmel",
+          "meaning": "كم"
+        },
+        {
+          "term": "gefallen",
+          "meaning": "اعجب"
+        },
+        {
+          "term": "anprobieren",
+          "meaning": "جرّب"
+        },
+        {
+          "term": "vergleichen",
+          "meaning": "قارن"
+        },
+        {
+          "term": "der Sale",
+          "meaning": "تخفيض"
+        },
+        {
+          "term": "sicher",
+          "meaning": "متأكد"
+        },
+        {
+          "term": "das Lieblingskleidungsstück",
+          "meaning": "قطعة ملابس مفضلة"
+        },
+        {
+          "term": "interessieren (sich)",
+          "meaning": "اهتم"
+        },
+        {
+          "term": "die Mode",
+          "meaning": "موضة"
+        },
+        {
+          "term": "aktuell",
+          "meaning": "آنيّ"
+        }
+      ]
+    },
+    {
+      "id": "a1_k15",
+      "title": "Kapitel 15: Jahreszeiten und Feste",
+      "words": [
+        {
+          "term": "direkt",
+          "meaning": "مباشر"
+        },
+        {
+          "term": "feiern",
+          "meaning": "احتفل"
+        },
+        {
+          "term": "der Juni",
+          "meaning": "يونيو"
+        },
+        {
+          "term": "der Schluss",
+          "meaning": "ختام"
+        },
+        {
+          "term": "der Festplatz",
+          "meaning": "مكان احتفال"
+        },
+        {
+          "term": "der/die Erwachsene",
+          "meaning": "بالغ"
+        },
+        {
+          "term": "das Puppentheater",
+          "meaning": "مسرح الدمى"
+        },
+        {
+          "term": "der Markt",
+          "meaning": "سوق"
+        },
+        {
+          "term": "regional",
+          "meaning": "محلي"
+        },
+        {
+          "term": "die Kletterwand",
+          "meaning": "جدار تسلق"
+        },
+        {
+          "term": "südwestlich",
+          "meaning": "جنوب غربي"
+        },
+        {
+          "term": "der Spargel",
+          "meaning": "هليون"
+        },
+        {
+          "term": "berühmt",
+          "meaning": "مشهور"
+        },
+        {
+          "term": "der/die Spargelkönig/in",
+          "meaning": "ملك,ة الهليون"
+        },
+        {
+          "term": "die Spargelsaison",
+          "meaning": "موسم الهليون"
+        },
+        {
+          "term": "der Mai",
+          "meaning": "مايو"
+        },
+        {
+          "term": "das Fest",
+          "meaning": "احتفال"
+        },
+        {
+          "term": "natürlich",
+          "meaning": "طبيعي"
+        },
+        {
+          "term": "schmecken",
+          "meaning": "تذوق"
+        },
+        {
+          "term": "am besten",
+          "meaning": "الاحسن"
+        },
+        {
+          "term": "das Sommerfest",
+          "meaning": "احتفال صيفي"
+        },
+        {
+          "term": "der Juli",
+          "meaning": "يوليو"
+        },
+        {
+          "term": "der August",
+          "meaning": "اغسطس"
+        },
+        {
+          "term": "die Aktivität",
+          "meaning": "نشاط"
+        },
+        {
+          "term": "nördlich",
+          "meaning": "شمالي"
+        },
+        {
+          "term": "östlich",
+          "meaning": "شرقي"
+        },
+        {
+          "term": "südlich",
+          "meaning": "جنوبي"
+        },
+        {
+          "term": "westlich",
+          "meaning": "غربي"
+        },
+        {
+          "term": "das Highlight",
+          "meaning": "نقطة الذروة"
+        },
+        {
+          "term": "das Feuerwerk",
+          "meaning": "مفرقعات"
+        },
+        {
+          "term": "das Motto",
+          "meaning": "شعار"
+        },
+        {
+          "term": "die Flamme",
+          "meaning": "شعلة"
+        },
+        {
+          "term": "das Weltmusikfest",
+          "meaning": "احتفال الموسيقى العالمي"
+        },
+        {
+          "term": "die Theater-Bühne",
+          "meaning": "خشبة مسرح"
+        },
+        {
+          "term": "die Bühne",
+          "meaning": "منصة"
+        },
+        {
+          "term": "das Produkt",
+          "meaning": "منتج"
+        },
+        {
+          "term": "erwarten",
+          "meaning": "توقع"
+        },
+        {
+          "term": "die Nation",
+          "meaning": "أمة"
+        },
+        {
+          "term": "der Kulturverein",
+          "meaning": "اتحاد ثقافي"
+        },
+        {
+          "term": "die Parade",
+          "meaning": "استعراض"
+        },
+        {
+          "term": "der/die Teilnehmer/in",
+          "meaning": "مشارك,ة"
+        },
+        {
+          "term": "der Tanz",
+          "meaning": "رقص"
+        },
+        {
+          "term": "das Ende",
+          "meaning": "ختام"
+        },
+        {
+          "term": "beginnen",
+          "meaning": "بدأ"
+        },
+        {
+          "term": "die Sommerferien",
+          "meaning": "عطلة الصيف"
+        },
+        {
+          "term": "der Fluss",
+          "meaning": "نهر"
+        },
+        {
+          "term": "der See",
+          "meaning": "بحيرة"
+        },
+        {
+          "term": "meistens",
+          "meaning": "غالبا"
+        },
+        {
+          "term": "der Ort",
+          "meaning": "مكان"
+        },
+        {
+          "term": "das Weinfest",
+          "meaning": "احتفال النبيذ"
+        },
+        {
+          "term": "das Kirschfest",
+          "meaning": "احتفال الكرز"
+        },
+        {
+          "term": "das Erdbeerfest",
+          "meaning": "احتفال الفريز"
+        },
+        {
+          "term": "das Wetter",
+          "meaning": "طقس"
+        },
+        {
+          "term": "der Herbst",
+          "meaning": "خريف"
+        },
+        {
+          "term": "grillen",
+          "meaning": "شوى"
+        },
+        {
+          "term": "das Würstchen",
+          "meaning": "سجق"
+        },
+        {
+          "term": "der/die Vegetarier/in",
+          "meaning": "نباتي,ة"
+        },
+        {
+          "term": "werden",
+          "meaning": "اصبح"
+        },
+        {
+          "term": "das Gewitter",
+          "meaning": "رعد"
+        },
+        {
+          "term": "bewölkt",
+          "meaning": "مغيم"
+        },
+        {
+          "term": "regnen",
+          "meaning": "أمطرت"
+        },
+        {
+          "term": "Mist!",
+          "meaning": "يالعنة"
+        },
+        {
+          "term": "der Schirm",
+          "meaning": "مظلة"
+        },
+        {
+          "term": "das Zelt",
+          "meaning": "خيمة"
+        },
+        {
+          "term": "nachts",
+          "meaning": "ليلا"
+        },
+        {
+          "term": "der Grad",
+          "meaning": "درجة"
+        },
+        {
+          "term": "sonnig",
+          "meaning": "مشمس"
+        },
+        {
+          "term": "die Sonne",
+          "meaning": "شمس"
+        },
+        {
+          "term": "die Wolke",
+          "meaning": "غيمة"
+        },
+        {
+          "term": "genauso",
+          "meaning": "بالضبط هكذا"
+        },
+        {
+          "term": "kühl",
+          "meaning": "بارد"
+        },
+        {
+          "term": "das Tamil",
+          "meaning": "اللغة التاميلية"
+        },
+        {
+          "term": "das Rumänisch",
+          "meaning": "روماني"
+        },
+        {
+          "term": "die Jahreszeit",
+          "meaning": "فصل سنوي"
+        },
+        {
+          "term": "der Dezember",
+          "meaning": "ديسمبر"
+        },
+        {
+          "term": "der Februar",
+          "meaning": "فبراير"
+        },
+        {
+          "term": "die Semesterferien",
+          "meaning": "عطلة فصل دراسي"
+        },
+        {
+          "term": "der Frühling",
+          "meaning": "ربيع"
+        },
+        {
+          "term": "das Europa",
+          "meaning": "اوروبا"
+        },
+        {
+          "term": "die Trockenzeit",
+          "meaning": "موسم الجفاف"
+        },
+        {
+          "term": "die Regenzeit",
+          "meaning": "موسم المطر"
+        },
+        {
+          "term": "das Mitteleuropa",
+          "meaning": "وسط اوروبا"
+        },
+        {
+          "term": "der November",
+          "meaning": "نوفمبر"
+        },
+        {
+          "term": "das Blatt",
+          "meaning": "ورقة"
+        },
+        {
+          "term": "der Sturm",
+          "meaning": "عاصفة"
+        },
+        {
+          "term": "die Blume",
+          "meaning": "زهرة"
+        },
+        {
+          "term": "der Januar",
+          "meaning": "يناير"
+        },
+        {
+          "term": "der Regen",
+          "meaning": "مطر"
+        },
+        {
+          "term": "das Regenwetter",
+          "meaning": "جو مطري"
+        },
+        {
+          "term": "blitzen",
+          "meaning": "برقت"
+        },
+        {
+          "term": "donnern",
+          "meaning": "رعدت"
+        },
+        {
+          "term": "der Smalltalk",
+          "meaning": "حديث مجاملة"
+        },
+        {
+          "term": "englisch",
+          "meaning": "انكليزي"
+        },
+        {
+          "term": "die Kasse",
+          "meaning": "قاصة الدفع"
+        },
+        {
+          "term": "das Nichts-Sagen",
+          "meaning": "عدم الكلام"
+        },
+        {
+          "term": "unhöflich",
+          "meaning": "غير لطيف"
+        },
+        {
+          "term": "der Satz",
+          "meaning": "جملة"
+        },
+        {
+          "term": "das Mistwetter",
+          "meaning": "جو سيئ"
+        },
+        {
+          "term": "vergessen",
+          "meaning": "نسى"
+        },
+        {
+          "term": "furchtbar",
+          "meaning": "مثير للهلع"
+        },
+        {
+          "term": "letzter, letztes, letzte",
+          "meaning": "أخر,أخرى"
+        },
+        {
+          "term": "asiatisch",
+          "meaning": "اسيوي"
+        },
+        {
+          "term": "italienisch",
+          "meaning": "ايطالي"
+        },
+        {
+          "term": "das Kino",
+          "meaning": "سينما"
+        },
+        {
+          "term": "der Urlaub",
+          "meaning": "اجازة"
+        },
+        {
+          "term": "ankommen",
+          "meaning": "وصل"
+        },
+        {
+          "term": "die Situation",
+          "meaning": "حالة"
+        },
+        {
+          "term": "fantastisch",
+          "meaning": "خرافي"
+        },
+        {
+          "term": "das Geld",
+          "meaning": "نقود"
+        },
+        {
+          "term": "die Politik",
+          "meaning": "سياسة"
+        },
+        {
+          "term": "eher",
+          "meaning": "بالاحرى"
+        },
+        {
+          "term": "die Meinung",
+          "meaning": "رأي"
+        },
+        {
+          "term": "der Streit",
+          "meaning": "نزاع"
+        },
+        {
+          "term": "erzählen",
+          "meaning": "حكى"
+        },
+        {
+          "term": "zuhören",
+          "meaning": "اصغى"
+        },
+        {
+          "term": "niemals",
+          "meaning": "ابدا"
+        },
+        {
+          "term": "negativ",
+          "meaning": "سلبي"
+        },
+        {
+          "term": "positiv",
+          "meaning": "ايجابي"
+        },
+        {
+          "term": "neutral",
+          "meaning": "محايد"
+        },
+        {
+          "term": "der Sportverein",
+          "meaning": "اتحاد رياضي"
+        }
+      ]
+    },
+    {
+      "id": "a1_k16",
+      "title": "Kapitel 16: Ab in den Urlaub",
+      "words": [
+        {
+          "term": "der Zeltplatz",
+          "meaning": "مخيم"
+        },
+        {
+          "term": "der Campingplatz",
+          "meaning": "معسكر تخييم"
+        },
+        {
+          "term": "buchen",
+          "meaning": "حجز"
+        },
+        {
+          "term": "zelten",
+          "meaning": "خيّم"
+        },
+        {
+          "term": "beliebt",
+          "meaning": "محبب"
+        },
+        {
+          "term": "drinnen",
+          "meaning": "داخل"
+        },
+        {
+          "term": "die Schule",
+          "meaning": "مدرسة"
+        },
+        {
+          "term": "garantiert",
+          "meaning": "مضمون"
+        },
+        {
+          "term": "der/die Camper/in",
+          "meaning": "مخيّم,ة"
+        },
+        {
+          "term": "der Schlafsack",
+          "meaning": "كيس للنوم"
+        },
+        {
+          "term": "die Straßenkarte",
+          "meaning": "خارطة شوارع"
+        },
+        {
+          "term": "der Wald",
+          "meaning": "غابة"
+        },
+        {
+          "term": "die Radtour",
+          "meaning": "جولة بالدراجات"
+        },
+        {
+          "term": "der/die Experte/Expertin",
+          "meaning": "مختص,ة"
+        },
+        {
+          "term": "die Tourismusbranche",
+          "meaning": "فرع السياحة"
+        },
+        {
+          "term": "die Ferien",
+          "meaning": "عطلة"
+        },
+        {
+          "term": "der Aktivurlaub",
+          "meaning": "عطلة نشطة"
+        },
+        {
+          "term": "das Meer",
+          "meaning": "بحر"
+        },
+        {
+          "term": "der Bauernhof",
+          "meaning": "ريف"
+        },
+        {
+          "term": "die Ziege",
+          "meaning": "معزة"
+        },
+        {
+          "term": "die Kuh",
+          "meaning": "بقرة"
+        },
+        {
+          "term": "das Pferd",
+          "meaning": "حصان"
+        },
+        {
+          "term": "füttern",
+          "meaning": "اطعم"
+        },
+        {
+          "term": "die Erste-Hilfe-Tasche",
+          "meaning": "حقيبة المساعدات الاولية"
+        },
+        {
+          "term": "der Koffer",
+          "meaning": "حقيبة"
+        },
+        {
+          "term": "packen",
+          "meaning": "حزم"
+        },
+        {
+          "term": "reisen",
+          "meaning": "سافر"
+        },
+        {
+          "term": "der Rucksack",
+          "meaning": "حقيبة ظهرية"
+        },
+        {
+          "term": "das Souvenir",
+          "meaning": "تحفة"
+        },
+        {
+          "term": "praktisch",
+          "meaning": "عملي"
+        },
+        {
+          "term": "das Kleingeld",
+          "meaning": "فراطة"
+        },
+        {
+          "term": "die Notiz",
+          "meaning": "ملاحظة"
+        },
+        {
+          "term": "schließen",
+          "meaning": "اقفل"
+        },
+        {
+          "term": "das Auge",
+          "meaning": "عين"
+        },
+        {
+          "term": "das Lieblingsbuch",
+          "meaning": "كتاب مفضل"
+        },
+        {
+          "term": "benutzen",
+          "meaning": "استخدم"
+        },
+        {
+          "term": "der Rucksackurlaub",
+          "meaning": "اجازة فردية"
+        },
+        {
+          "term": "der E-Reader",
+          "meaning": "قارئ الكتروني"
+        },
+        {
+          "term": "das Notizbuch",
+          "meaning": "كراس ملاحظات"
+        },
+        {
+          "term": "die Schwimmbrille",
+          "meaning": "نظارة سباحة"
+        },
+        {
+          "term": "der Strand",
+          "meaning": "شاطئ"
+        },
+        {
+          "term": "der Platz",
+          "meaning": "مكان"
+        },
+        {
+          "term": "setzen",
+          "meaning": "وضع"
+        },
+        {
+          "term": "genießen",
+          "meaning": "تمتع"
+        },
+        {
+          "term": "der Sound",
+          "meaning": "صوت"
+        },
+        {
+          "term": "stören",
+          "meaning": "ازعج"
+        },
+        {
+          "term": "sitzen",
+          "meaning": "جلس"
+        },
+        {
+          "term": "die Route",
+          "meaning": "مسار"
+        },
+        {
+          "term": "die Ausstellung",
+          "meaning": "معرض"
+        },
+        {
+          "term": "der Lieblingsurlaub",
+          "meaning": "اجازة مفضلة"
+        },
+        {
+          "term": "die Rucksacktour",
+          "meaning": "جولة فردية"
+        },
+        {
+          "term": "allein(e)",
+          "meaning": "وحيد,ة"
+        },
+        {
+          "term": "die Bahn",
+          "meaning": "قطار"
+        },
+        {
+          "term": "das Hotel",
+          "meaning": "فندق"
+        },
+        {
+          "term": "übernachten",
+          "meaning": "بات"
+        },
+        {
+          "term": "wohin",
+          "meaning": "الى اين"
+        },
+        {
+          "term": "die Reise",
+          "meaning": "رحلة"
+        },
+        {
+          "term": "der Plan",
+          "meaning": "خطة"
+        },
+        {
+          "term": "weiterreisen",
+          "meaning": "استأنف السفر"
+        },
+        {
+          "term": "mitkommen",
+          "meaning": "رافق"
+        },
+        {
+          "term": "spontan",
+          "meaning": "عفوي"
+        },
+        {
+          "term": "der/die Niederländer/in",
+          "meaning": "هولندي,ة"
+        },
+        {
+          "term": "der Naturpark",
+          "meaning": "متنزه طبيعي"
+        },
+        {
+          "term": "fliegen",
+          "meaning": "طار"
+        },
+        {
+          "term": "der Traum",
+          "meaning": "حلم"
+        },
+        {
+          "term": "das Gewässer",
+          "meaning": "مياه"
+        },
+        {
+          "term": "das Volleyball",
+          "meaning": "كرة طائرة"
+        },
+        {
+          "term": "besichtigen",
+          "meaning": "زار"
+        },
+        {
+          "term": "das Frühjahr",
+          "meaning": "ربيع"
+        },
+        {
+          "term": "die Sonnenbrille",
+          "meaning": "نظارة شمسية"
+        },
+        {
+          "term": "das Ticket",
+          "meaning": "تذكرة"
+        },
+        {
+          "term": "der Reiseführer",
+          "meaning": "مرشد سياحي"
+        },
+        {
+          "term": "das Erinnerungsfoto",
+          "meaning": "صورة تذكارية"
+        },
+        {
+          "term": "der Flughafen",
+          "meaning": "مطار"
+        },
+        {
+          "term": "das Terminal",
+          "meaning": "محطة الانطلاق والوصول"
+        },
+        {
+          "term": "die Anrede",
+          "meaning": "مخاطبة"
+        },
+        {
+          "term": "liebe..., lieber... (Name)",
+          "meaning": "عزيز,ة"
+        }
+      ]
+    }
+  ]
+}

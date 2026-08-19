@@ -35,10 +35,26 @@ object AnthropicModels {
 private data class AnthropicMessage(val role: String, val content: String)
 
 @Serializable
+private data class AnthropicCacheControl(val type: String = "ephemeral")
+
+/** The system prompt as a content-block array (rather than a bare string) is what makes
+ * [AnthropicCacheControl] possible: caching is opted into per-block, not per-request. Every caller
+ * here sends the same system text on every call within one material's processing run (the segments
+ * of one document share the same lesson-extraction prompt, differing only in the user turn), so
+ * this is close to a guaranteed cache hit within Anthropic's 5-minute TTL - ~90% off the input-token
+ * cost of that repeated prompt from the second call onward. */
+@Serializable
+private data class AnthropicSystemBlock(
+    val type: String = "text",
+    val text: String,
+    @SerialName("cache_control") val cacheControl: AnthropicCacheControl = AnthropicCacheControl(),
+)
+
+@Serializable
 private data class AnthropicRequest(
     val model: String,
     @SerialName("max_tokens") val maxTokens: Int,
-    val system: String? = null,
+    val system: List<AnthropicSystemBlock>? = null,
     val messages: List<AnthropicMessage>,
 )
 
@@ -46,7 +62,16 @@ private data class AnthropicRequest(
 private data class AnthropicContentBlock(val type: String, val text: String? = null)
 
 @Serializable
-private data class AnthropicResponse(val content: List<AnthropicContentBlock> = emptyList())
+private data class AnthropicUsage(
+    @SerialName("input_tokens") val inputTokens: Int = 0,
+    @SerialName("output_tokens") val outputTokens: Int = 0,
+)
+
+@Serializable
+private data class AnthropicResponse(
+    val content: List<AnthropicContentBlock> = emptyList(),
+    val usage: AnthropicUsage? = null,
+)
 
 @Serializable
 private data class AnthropicImageSource(val type: String = "base64", @SerialName("media_type") val mediaType: String, val data: String)
@@ -61,7 +86,7 @@ private data class AnthropicVisionMessage(val role: String, val content: List<An
 private data class AnthropicVisionRequest(
     val model: String,
     @SerialName("max_tokens") val maxTokens: Int,
-    val system: String? = null,
+    val system: List<AnthropicSystemBlock>? = null,
     val messages: List<AnthropicVisionMessage>,
 )
 
@@ -76,7 +101,12 @@ class AnthropicClient(
     engine: HttpClientEngine,
     private val apiKeyProvider: () -> String?,
 ) {
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = false }
+    // encodeDefaults = true: AnthropicSystemBlock.type/AnthropicCacheControl.type/
+    // AnthropicImageSource.type are all protocol-required fields that happen to have a Kotlin
+    // default value - encodeDefaults=false was silently dropping them from every request (the
+    // exact trap this project's kmp-ktor skill calls out), which is what made every vocab
+    // extraction call fail outright once system became a content-block array with cache_control.
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     private val client = HttpClient(engine) {
         expectSuccess = false
@@ -96,8 +126,16 @@ class AnthropicClient(
     }
 
     /** Returns the concatenated text of the response's content blocks, or a [DataError]. A missing
-     * key short-circuits to `Http(401)` so the UI can prompt the user to set it. */
-    suspend fun complete(model: String, maxTokens: Int, system: String?, userMessage: String): ApiResult<String> {
+     * key short-circuits to `Http(401)` so the UI can prompt the user to set it. [onUsage], when
+     * given, is invoked with the call's input/output token counts on success - lets callers track
+     * spend (e.g. per-material totals) without changing this function's return type. */
+    suspend fun complete(
+        model: String,
+        maxTokens: Int,
+        system: String?,
+        userMessage: String,
+        onUsage: ((inputTokens: Int, outputTokens: Int) -> Unit)? = null,
+    ): ApiResult<String> {
         val key = apiKeyProvider()?.takeIf { it.isNotBlank() }
         if (key == null) {
             EvolaLog.d("anthropic", "no API key available (null/blank) — short-circuiting to 401")
@@ -108,11 +146,14 @@ class AnthropicClient(
                 header("x-api-key", key)
                 header("anthropic-version", "2023-06-01")
                 contentType(ContentType.Application.Json)
-                setBody(AnthropicRequest(model, maxTokens, system, listOf(AnthropicMessage("user", userMessage))))
+                setBody(AnthropicRequest(model, maxTokens, system?.let { listOf(AnthropicSystemBlock(text = it)) }, listOf(AnthropicMessage("user", userMessage))))
             }
         }
         if (result is ApiResult.Failure) {
             EvolaLog.d("anthropic", "call failed: model=$model keyLen=${key.length} inputChars=${userMessage.length} error=${result.error}")
+        }
+        if (result is ApiResult.Success) {
+            result.data.usage?.let { onUsage?.invoke(it.inputTokens, it.outputTokens) }
         }
         return result.map { response -> response.content.mapNotNull { it.text }.joinToString("") }
     }
@@ -128,6 +169,7 @@ class AnthropicClient(
         prompt: String,
         imageBytes: ByteArray,
         imageMediaType: String,
+        onUsage: ((inputTokens: Int, outputTokens: Int) -> Unit)? = null,
     ): ApiResult<String> {
         val key = apiKeyProvider()?.takeIf { it.isNotBlank() }
         if (key == null) {
@@ -143,11 +185,14 @@ class AnthropicClient(
                 header("x-api-key", key)
                 header("anthropic-version", "2023-06-01")
                 contentType(ContentType.Application.Json)
-                setBody(AnthropicVisionRequest(model, maxTokens, system, listOf(AnthropicVisionMessage("user", content))))
+                setBody(AnthropicVisionRequest(model, maxTokens, system?.let { listOf(AnthropicSystemBlock(text = it)) }, listOf(AnthropicVisionMessage("user", content))))
             }
         }
         if (result is ApiResult.Failure) {
             EvolaLog.d("anthropic", "vision call failed: model=$model keyLen=${key.length} imageBytes=${imageBytes.size} error=${result.error}")
+        }
+        if (result is ApiResult.Success) {
+            result.data.usage?.let { onUsage?.invoke(it.inputTokens, it.outputTokens) }
         }
         return result.map { response -> response.content.mapNotNull { it.text }.joinToString("") }
     }

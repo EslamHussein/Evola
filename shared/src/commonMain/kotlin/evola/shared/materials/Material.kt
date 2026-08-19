@@ -16,6 +16,10 @@ data class Material(
     val mimeType: String,
     val sizeBytes: Long,
     val pageCount: Int? = null,
+    @SerialName("input_tokens") val inputTokens: Long = 0,
+    @SerialName("output_tokens") val outputTokens: Long = 0,
+    @SerialName("lessons_ready") val lessonsReady: Int = 0,
+    @SerialName("lessons_total") val lessonsTotal: Int = 0,
 )
 
 /** Mirrors the DB's `lesson_status` enum ("pending" | "ready" | "failed"). M4 only ever creates

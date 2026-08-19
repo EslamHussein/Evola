@@ -13,9 +13,13 @@ private const val TRANSCRIBE_SYSTEM =
  * library, so the same downstream pipeline (segmentation, vocab/grammar extraction) that already
  * runs on PDF/DOCX/pasted text can run unchanged on the transcribed result. */
 class ImageTranscriber(private val client: AnthropicClient) {
-    suspend fun transcribe(imageBytes: ByteArray, mimeType: String): ApiResult<String> =
+    suspend fun transcribe(
+        imageBytes: ByteArray,
+        mimeType: String,
+        onUsage: ((inputTokens: Int, outputTokens: Int) -> Unit)? = null,
+    ): ApiResult<String> =
         client.completeWithImage(
             AnthropicModels.SMALL, 4000, TRANSCRIBE_SYSTEM,
-            "Transcribe the text in this image.", imageBytes, mimeType,
+            "Transcribe the text in this image.", imageBytes, mimeType, onUsage,
         )
 }

@@ -18,6 +18,22 @@ upsert:
 INSERT OR REPLACE INTO daily_activity(id, user_id, activity_date, completed)
 VALUES (?, ?, ?, 1);
 
+-- Reword's "Streak freeze" - a bridged date is treated as if it had real activity for streak-
+-- continuity purposes only (never counted toward a real day's new/review word totals). Append-only,
+-- tiny (bounded by however many freezes the user is ever granted).
+CREATE TABLE streak_freeze_dates (
+    id TEXT NOT NULL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    freeze_date TEXT NOT NULL,
+    UNIQUE (user_id, freeze_date)
+);
+
+frozenDates:
+SELECT freeze_date FROM streak_freeze_dates WHERE user_id = ?;
+
+insertFreeze:
+INSERT OR IGNORE INTO streak_freeze_dates(id, user_id, freeze_date) VALUES (?, ?, ?);
+
 -- extraction pipeline scratch (content-hash keyed, not user-scoped) - kept for the on-device
 -- segmentation port; no cross-user cache semantics remain on a single device.
 CREATE TABLE extraction_jobs (

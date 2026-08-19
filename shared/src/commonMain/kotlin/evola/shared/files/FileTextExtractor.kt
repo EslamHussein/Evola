@@ -4,6 +4,12 @@ const val MIME_PDF = "application/pdf"
 const val MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 const val MIME_TEXT_PLAIN = "text/plain"
 
+/** Joins per-page PDF text (form feed - the standard plain-text page-break convention) so the
+ * "pages" organization mode ([evola.shared.segmentation.PageSegmenter]) can split back into pages
+ * without changing [FileTextExtractor]'s single-`String` contract or the DB's flat `content_text`
+ * column. Absent entirely for non-paginated sources (plain text, DOCX) - callers must tolerate that. */
+const val PAGE_BREAK = ""
+
 /** Sniffs the MIME type from the file's magic bytes (never trust a client-declared extension) —
  * pure, so it lives in commonMain. PDF starts with "%PDF-"; DOCX is a ZIP ("PK\x03\x04") whose
  * entries include word/. */

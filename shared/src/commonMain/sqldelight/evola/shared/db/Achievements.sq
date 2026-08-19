@@ -1,0 +1,16 @@
+-- Reword's achievement badges - a fixed, code-defined badge set (see
+-- evola.shared.achievements.ALL_BADGES), this table only records which ones this user has
+-- unlocked and when. Append-only, tiny (bounded by the fixed badge count).
+CREATE TABLE achievements (
+    id TEXT NOT NULL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    badge_id TEXT NOT NULL,
+    unlocked_at INTEGER NOT NULL,
+    UNIQUE (user_id, badge_id)
+);
+
+unlockedBadgeIds:
+SELECT badge_id FROM achievements WHERE user_id = ?;
+
+unlock:
+INSERT OR IGNORE INTO achievements(id, user_id, badge_id, unlocked_at) VALUES (?, ?, ?, ?);
