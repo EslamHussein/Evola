@@ -35,8 +35,11 @@ import evola.composeapp.BackHandler
 import evola.composeapp.loading.ChaseLoadingIndicator
 import evola.composeapp.rtl.RtlText
 import evola.composeapp.speech.SpeechService
+import evola.composeapp.speech.rememberSpeechService
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
+import evola.shared.local.AppSettings
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_already_know
 import evola.composeapp.generated.resources.lessons_action_got_it
@@ -48,7 +51,10 @@ import evola.composeapp.generated.resources.lessons_handsfree_empty
 import evola.composeapp.generated.resources.lessons_handsfree_title
 import evola.composeapp.generated.resources.lessons_nav_close
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import evola.shared.vocabulary.VocabularyCard
+import evola.shared.vocabulary.VocabularySessionState
+import evola.shared.vocabulary.VocabularySessionSummary
 
 /**
  * Reword-style "hands-free" practice: narrates each card via TTS (so the learner doesn't need to
@@ -70,7 +76,34 @@ fun HandsFreeSessionScreen(viewModel: VocabularySessionViewModel, speechService:
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     BackHandler(onBack = onDone)
 
+    HandsFreeSessionContent(
+        state = state,
+        settings = settings,
+        speechService = speechService,
+        onDone = onDone,
+        onContinueToNextSession = { viewModel.startNextSession() },
+        onAlreadyKnown = { sessionId, itemId -> viewModel.submitAlreadyKnown(sessionId, itemId) },
+        onStartLearning = { sessionId, itemId -> viewModel.submitStartLearning(sessionId, itemId) },
+        onSelfGrade = { sessionId, itemId, correct -> viewModel.submitSelfGrade(sessionId, itemId, correct) },
+        onKeepShowing = { sessionId, itemId -> viewModel.submitKeepShowing(sessionId, itemId) },
+    )
+}
+
+@Composable
+private fun HandsFreeSessionContent(
+    state: VocabularySessionUiState,
+    settings: AppSettings,
+    speechService: SpeechService,
+    onDone: () -> Unit,
+    onContinueToNextSession: () -> Unit,
+    onAlreadyKnown: (sessionId: String, itemId: String) -> Unit,
+    onStartLearning: (sessionId: String, itemId: String) -> Unit,
+    onSelfGrade: (sessionId: String, itemId: String, correct: Boolean) -> Unit,
+    onKeepShowing: (sessionId: String, itemId: String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.lessons_handsfree_title)) },
@@ -81,40 +114,40 @@ fun HandsFreeSessionScreen(viewModel: VocabularySessionViewModel, speechService:
         },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (val current = state) {
+            when (state) {
                 is VocabularySessionUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { ChaseLoadingIndicator() }
 
-                is VocabularySessionUiState.Error -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                    Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                is VocabularySessionUiState.Error -> Box(Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
+                    Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 }
 
-                is VocabularySessionUiState.Empty -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                is VocabularySessionUiState.Empty -> Box(Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
                     Text(stringResource(Res.string.lessons_handsfree_empty), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 }
 
                 is VocabularySessionUiState.Summary -> SessionSummaryScreen(
-                    summary = current.summary,
-                    onContinueToNextSession = { viewModel.startNextSession() },
+                    summary = state.summary,
+                    onContinueToNextSession = onContinueToNextSession,
                     onDone = onDone,
                 )
 
                 is VocabularySessionUiState.InProgress -> HandsFreeCard(
-                    card = current.session.card,
-                    dueReview = current.session.origin == "due_review",
+                    card = state.session.card,
+                    dueReview = state.session.origin == "due_review",
                     speechService = speechService,
                     ttsRate = settings.ttsRate,
                     ttsVoiceName = settings.ttsVoiceName,
                     onAlreadyKnown = {
-                        viewModel.submitAlreadyKnown(current.session.sessionId, current.session.card.itemId)
+                        onAlreadyKnown(state.session.sessionId, state.session.card.itemId)
                     },
                     onStartLearning = {
-                        viewModel.submitStartLearning(current.session.sessionId, current.session.card.itemId)
+                        onStartLearning(state.session.sessionId, state.session.card.itemId)
                     },
                     onSelfGrade = { correct ->
-                        viewModel.submitSelfGrade(current.session.sessionId, current.session.card.itemId, correct)
+                        onSelfGrade(state.session.sessionId, state.session.card.itemId, correct)
                     },
                     onKeepShowing = {
-                        viewModel.submitKeepShowing(current.session.sessionId, current.session.card.itemId)
+                        onKeepShowing(state.session.sessionId, state.session.card.itemId)
                     },
                 )
             }
@@ -190,3 +223,67 @@ private fun HandsFreeCard(
 }
 
 private data class HandsFreeActions(val leftLabel: String, val rightLabel: String, val onLeft: () -> Unit, val onRight: () -> Unit)
+
+private val fakeNewCard = VocabularyCard.New(
+    itemId = "v1", term = "Hund", gender = "der", partOfSpeech = "noun", plural = "Hunde", ipaPronunciation = "/hʊnt/",
+    meaning = "dog", exampleSentence = "Der Hund läuft schnell.", exampleSentenceTranslation = null, grammarNote = null,
+    relatedWords = emptyList(), difficultyRating = null, frequencyRating = null, memoryTip = null,
+    isBookmarked = false, markedDifficult = false,
+)
+
+private val fakeHandsFreeSession = VocabularySessionState(
+    sessionId = "s1", sessionNumber = 1, cardsCompleted = 2, cardsRemaining = 5,
+    card = fakeNewCard, origin = "new", wordIndex = 3, totalWords = 8,
+)
+
+private val fakeSessionSummary = VocabularySessionSummary(
+    sessionNumber = 1, wordsLearned = 8, accuracy = 87.5, timeSeconds = 240, newWordsCount = 5, reviewWordsCount = 3,
+)
+
+@Preview
+@Composable
+private fun HandsFreeSessionLoadingPreview() {
+    EvolaTheme {
+        HandsFreeSessionContent(
+            state = VocabularySessionUiState.Loading, settings = AppSettings(), speechService = rememberSpeechService(),
+            onDone = {}, onContinueToNextSession = {}, onAlreadyKnown = { _, _ -> }, onStartLearning = { _, _ -> },
+            onSelfGrade = { _, _, _ -> }, onKeepShowing = { _, _ -> },
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun HandsFreeSessionInProgressPreview() {
+    EvolaTheme {
+        HandsFreeSessionContent(
+            state = VocabularySessionUiState.InProgress(fakeHandsFreeSession), settings = AppSettings(), speechService = rememberSpeechService(),
+            onDone = {}, onContinueToNextSession = {}, onAlreadyKnown = { _, _ -> }, onStartLearning = { _, _ -> },
+            onSelfGrade = { _, _, _ -> }, onKeepShowing = { _, _ -> },
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun HandsFreeSessionEmptyPreview() {
+    EvolaTheme {
+        HandsFreeSessionContent(
+            state = VocabularySessionUiState.Empty, settings = AppSettings(), speechService = rememberSpeechService(),
+            onDone = {}, onContinueToNextSession = {}, onAlreadyKnown = { _, _ -> }, onStartLearning = { _, _ -> },
+            onSelfGrade = { _, _, _ -> }, onKeepShowing = { _, _ -> },
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun HandsFreeSessionSummaryPreview() {
+    EvolaTheme {
+        HandsFreeSessionContent(
+            state = VocabularySessionUiState.Summary(fakeSessionSummary), settings = AppSettings(), speechService = rememberSpeechService(),
+            onDone = {}, onContinueToNextSession = {}, onAlreadyKnown = { _, _ -> }, onStartLearning = { _, _ -> },
+            onSelfGrade = { _, _, _ -> }, onKeepShowing = { _, _ -> },
+        )
+    }
+}
