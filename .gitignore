@@ -9,3 +9,12 @@ out/
 .env
 local.properties
 uploads/
+
+# Claude Code local config
+.claude/
+
+# Xcode per-user state
+iosApp/**/xcuserdata/
+iosApp/**/*.xcodeproj/project.xcworkspace/
+iosApp/**/*.xcworkspace/xcuserdata/
+*.xcuserstate
