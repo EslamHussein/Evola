@@ -55,15 +55,22 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import org.koin.compose.koinInject
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.components.IconTile
 import evola.composeapp.theme.components.RootTopBarTitle
 import evola.composeapp.theme.components.SelectableChip
+import evola.shared.core.ApiResult
 import evola.shared.goals.Goal
+import evola.shared.goals.GoalProgress
+import evola.shared.goals.VocabularyBreakdown
 import evola.shared.language.NativeLanguage
+import evola.shared.local.BackupRepository
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_profile_cancel
 import evola.composeapp.generated.resources.main_profile_default_journey_title
@@ -84,6 +91,7 @@ import evola.composeapp.generated.resources.main_profile_saving
 import evola.composeapp.generated.resources.main_profile_title
 import evola.composeapp.generated.resources.main_profile_your_goal_label
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Profile tab per 06_SCREENS_REFERENCE.md - account info + goal editing + sign-out.
  * Notifications/subscription/privacy are explicitly out of MVP scope (01_PRODUCT_SPEC.md), so
@@ -105,18 +113,11 @@ fun ProfileScreen(
     onGoalUpdated: (Goal) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    val backupRepository = org.koin.compose.koinInject<evola.shared.local.BackupRepository>()
+    val backupRepository = koinInject<BackupRepository>()
     var isEditingGoal by remember { mutableStateOf(false) }
-    var goalText by remember(goal.id) { mutableStateOf(goal.goalText) }
-    var title by remember(goal.id) { mutableStateOf(goal.title ?: "") }
-    var nativeLanguage by remember(goal.id) { mutableStateOf(goal.nativeLanguage) }
-    val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val state by viewModel.collectAsState()
-    val isSubmitting = state.isSubmitting
-    val errorMessage = state.errorMessage
     var showResetAllConfirm by remember { mutableStateOf(false) }
     val goalUpdatedMessage = stringResource(Res.string.main_profile_goal_updated_snackbar)
     val progressResetMessage = stringResource(Res.string.main_profile_progress_reset_snackbar)
@@ -134,24 +135,65 @@ fun ProfileScreen(
         }
     }
 
+    ProfileContent(
+        goal = goal,
+        state = state,
+        isEditingGoal = isEditingGoal,
+        onEditingGoalChange = { isEditingGoal = it },
+        showResetAllConfirm = showResetAllConfirm,
+        onShowResetAllConfirmChange = { showResetAllConfirm = it },
+        snackbarHostState = snackbarHostState,
+        coroutineScope = coroutineScope,
+        backupRepository = backupRepository,
+        onOpenSettings = onOpenSettings,
+        onUpdateGoal = { goalId, goalText, title, nativeLanguage -> viewModel.updateGoal(goalId, goalText, title, nativeLanguage) },
+        onResetAllProgress = { viewModel.resetAllProgress() },
+    )
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun ProfileContent(
+    goal: Goal,
+    state: ProfileState,
+    isEditingGoal: Boolean,
+    onEditingGoalChange: (Boolean) -> Unit,
+    showResetAllConfirm: Boolean,
+    onShowResetAllConfirmChange: (Boolean) -> Unit,
+    snackbarHostState: SnackbarHostState,
+    coroutineScope: CoroutineScope,
+    backupRepository: BackupRepository,
+    onOpenSettings: () -> Unit,
+    onUpdateGoal: (goalId: String, goalText: String, title: String, nativeLanguage: NativeLanguage) -> Unit,
+    onResetAllProgress: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var goalText by remember(goal.id) { mutableStateOf(goal.goalText) }
+    var title by remember(goal.id) { mutableStateOf(goal.title ?: "") }
+    var nativeLanguage by remember(goal.id) { mutableStateOf(goal.nativeLanguage) }
+    val focusManager = LocalFocusManager.current
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val isSubmitting = state.isSubmitting
+    val errorMessage = state.errorMessage
+
     if (showResetAllConfirm) {
         AlertDialog(
-            onDismissRequest = { showResetAllConfirm = false },
+            onDismissRequest = { onShowResetAllConfirmChange(false) },
             shape = MaterialTheme.shapes.large,
             title = { Text(stringResource(Res.string.main_profile_reset_all_dialog_title)) },
             text = { Text(stringResource(Res.string.main_profile_reset_all_dialog_body)) },
             confirmButton = {
                 TextButton(onClick = {
-                    showResetAllConfirm = false
-                    viewModel.resetAllProgress()
+                    onShowResetAllConfirmChange(false)
+                    onResetAllProgress()
                 }) { Text(stringResource(Res.string.main_profile_reset_all_confirm)) }
             },
-            dismissButton = { TextButton(onClick = { showResetAllConfirm = false }) { Text(stringResource(Res.string.main_profile_cancel)) } },
+            dismissButton = { TextButton(onClick = { onShowResetAllConfirmChange(false) }) { Text(stringResource(Res.string.main_profile_cancel)) } },
         )
     }
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = { TopAppBar(title = { RootTopBarTitle(stringResource(Res.string.main_profile_title)) }, scrollBehavior = scrollBehavior) },
         snackbarHost = { SnackbarHost(snackbarHostState) { Snackbar(it) } },
     ) { padding ->
@@ -217,10 +259,10 @@ fun ProfileScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm, Alignment.End),
                             ) {
-                                TextButton(onClick = { isEditingGoal = false }, enabled = !isSubmitting) { Text(stringResource(Res.string.main_profile_cancel)) }
+                                TextButton(onClick = { onEditingGoalChange(false) }, enabled = !isSubmitting) { Text(stringResource(Res.string.main_profile_cancel)) }
                                 Button(
                                     onClick = {
-                                        viewModel.updateGoal(goal.id, goalText, title, nativeLanguage)
+                                        onUpdateGoal(goal.id, goalText, title, nativeLanguage)
                                     },
                                     enabled = !isSubmitting && goalText.trim().length >= 3,
                                 ) {
@@ -236,7 +278,7 @@ fun ProfileScreen(
                                     Spacer(Modifier.height(2.dp))
                                     Text(goal.goalText, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
                                 }
-                                IconButton(onClick = { isEditingGoal = true }) {
+                                IconButton(onClick = { onEditingGoalChange(true) }) {
                                     Icon(Icons.Filled.Edit, contentDescription = stringResource(Res.string.main_profile_edit_goal_cd), tint = EvolaColors.Text2)
                                 }
                             }
@@ -256,7 +298,7 @@ fun ProfileScreen(
                 AppSection(onOpenSettings, backupRepository, state.progress, goal, snackbarHostState, coroutineScope)
 
                 Spacer(Modifier.height(EvolaSpacing.xxl))
-                DangerZoneSection(onResetAllProgress = { showResetAllConfirm = true })
+                DangerZoneSection(onResetAllProgress = { onShowResetAllConfirmChange(true) })
 
                 Spacer(Modifier.height(EvolaSpacing.xxl))
                 CreditsSection()
@@ -282,5 +324,43 @@ private fun LanguageBadge(language: NativeLanguage) {
                 color = EvolaColors.Text2,
             )
         }
+    }
+}
+
+private val fakeProfileGoal = Goal(id = "g1", goalText = "Learn German for my trip to Berlin", title = "Berlin Trip", nativeLanguage = NativeLanguage.ENGLISH, isActive = true, createdAt = "2026-01-01")
+
+private val fakeProfileGoalProgress = GoalProgress(
+    overallPct = 0.42f, currentLessonId = "l1", streakDays = 5, todayCompleted = false,
+    vocabulary = VocabularyBreakdown(notStarted = 12, inProgress = 8, mastered = 20, struggling = 3),
+)
+
+private object FakeBackupRepository : BackupRepository {
+    override fun export(): String = ""
+    override fun import(json: String): ApiResult<Unit> = ApiResult.Success(Unit)
+}
+
+@Preview
+@Composable
+private fun ProfileViewingPreview() {
+    EvolaTheme {
+        ProfileContent(
+            goal = fakeProfileGoal, state = ProfileState(unlockedBadgeIds = setOf("streak_7"), progress = fakeProfileGoalProgress),
+            isEditingGoal = false, onEditingGoalChange = {}, showResetAllConfirm = false, onShowResetAllConfirmChange = {},
+            snackbarHostState = remember { SnackbarHostState() }, coroutineScope = rememberCoroutineScope(),
+            backupRepository = FakeBackupRepository, onOpenSettings = {}, onUpdateGoal = { _, _, _, _ -> }, onResetAllProgress = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun ProfileEditingPreview() {
+    EvolaTheme {
+        ProfileContent(
+            goal = fakeProfileGoal, state = ProfileState(unlockedBadgeIds = emptySet(), progress = fakeProfileGoalProgress),
+            isEditingGoal = true, onEditingGoalChange = {}, showResetAllConfirm = false, onShowResetAllConfirmChange = {},
+            snackbarHostState = remember { SnackbarHostState() }, coroutineScope = rememberCoroutineScope(),
+            backupRepository = FakeBackupRepository, onOpenSettings = {}, onUpdateGoal = { _, _, _, _ -> }, onResetAllProgress = {},
+        )
     }
 }
