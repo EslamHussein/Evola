@@ -17,7 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.BackHandler
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.wizard_processing_analyzing
@@ -38,7 +38,7 @@ fun ProcessingScreen(
     materialId: String,
     onDone: (materialId: String) -> Unit,
 ) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
 
     LaunchedEffect(state) {
         val done = state as? ProcessingState.Done

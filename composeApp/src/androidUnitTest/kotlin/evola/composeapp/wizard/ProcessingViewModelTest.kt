@@ -16,20 +16,20 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import pro.respawn.flowmvi.test.subscribeAndTest
+import org.orbitmvi.orbit.test.testWithInternalState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-/** Same convention as [evola.composeapp.main.HomeContainerTest]: a real [LocalMaterialsRepository]
+/** Same convention as [evola.composeapp.main.HomeViewModelTest]: a real [LocalMaterialsRepository]
  * backed by an in-memory SQLite [EvolaDatabase]. Seeds a material already in a terminal status
  * (READY/FAILED) so the very first poll tick resolves without needing to manipulate virtual time -
- * [ProcessingContainer] uses `asyncInit`, so state stays [ProcessingState.Loading] until the first
- * real fetch lands. */
-class ProcessingContainerTest {
+ * [ProcessingViewModel]'s poll loop terminates itself on the first tick in every one of these
+ * cases, so no `cancelAndIgnoreRemainingItems()` is needed (compare [evola.composeapp.materials.
+ * MaterialDetailViewModelTest]'s `retry` test, which does exercise that path). */
+class ProcessingViewModelTest {
 
     private fun repository(materialId: String, status: String): MaterialsRepository {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
@@ -54,26 +54,29 @@ class ProcessingContainerTest {
 
     @Test
     fun `a material already READY resolves to Done on the first poll`() = runTest {
-        ProcessingContainer("m1", repository("m1", "READY")).store.subscribeAndTest {
-            val final = states.first { it !is ProcessingState.Loading }
-            val done = assertIs<ProcessingState.Done>(final)
+        val viewModel = ProcessingViewModel("m1", repository("m1", "READY"))
+        viewModel.testWithInternalState(this, ProcessingState.Loading) {
+            runOnCreate()
+            val done = assertIs<ProcessingState.Done>(awaitInternalState())
             assertEquals("m1", done.materialId)
         }
     }
 
     @Test
     fun `a material already FAILED resolves to Done too - Resource Details renders the failure, not this screen`() = runTest {
-        ProcessingContainer("m1", repository("m1", "FAILED")).store.subscribeAndTest {
-            val final = states.first { it !is ProcessingState.Loading }
-            assertIs<ProcessingState.Done>(final)
+        val viewModel = ProcessingViewModel("m1", repository("m1", "FAILED"))
+        viewModel.testWithInternalState(this, ProcessingState.Loading) {
+            runOnCreate()
+            assertIs<ProcessingState.Done>(awaitInternalState())
         }
     }
 
     @Test
     fun `an unknown material id surfaces as Error, not a crash`() = runTest {
-        ProcessingContainer("does-not-exist", repository("m1", "READY")).store.subscribeAndTest {
-            val final = states.first { it !is ProcessingState.Loading }
-            val error = assertIs<ProcessingState.Error>(final)
+        val viewModel = ProcessingViewModel("does-not-exist", repository("m1", "READY"))
+        viewModel.testWithInternalState(this, ProcessingState.Loading) {
+            runOnCreate()
+            val error = assertIs<ProcessingState.Error>(awaitInternalState())
             assertTrue(error.message.isNotBlank())
         }
     }
