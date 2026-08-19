@@ -4,31 +4,43 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import evola.composeapp.loading.ChaseLoadingIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import pro.respawn.flowmvi.compose.dsl.subscribe
+import evola.composeapp.BackHandler
+import evola.composeapp.loading.ChaseLoadingIndicator
 import evola.composeapp.theme.EvolaSpacing
+import evola.shared.materials.MaterialDetail
 
 @Composable
 fun ProcessingScreen(
     viewModel: ProcessingViewModel,
+    materialId: String,
     onDone: (materialId: String) -> Unit,
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.subscribe()
 
     LaunchedEffect(state) {
         val done = state as? ProcessingState.Done
         if (done != null) onDone(done.materialId)
     }
+
+    // Extraction already runs on a process-lifetime scope, not tied to this screen - it keeps
+    // going whether or not the user is looking at it, so there's no reason to block them here.
+    // Both the back gesture and the button below just jump straight to the same Detail screen
+    // Done already lands on, which shows the same live progress this screen does.
+    BackHandler(onBack = { onDone(materialId) })
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -37,21 +49,67 @@ fun ProcessingScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             when (val current = state) {
-                ProcessingState.InProgress, is ProcessingState.Done -> {
+                ProcessingState.Loading -> {
                     ChaseLoadingIndicator()
                     Spacer(Modifier.height(EvolaSpacing.md))
                     Text("Analyzing your resource...", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "This can take a moment while we split it into lessons.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
+
+                is ProcessingState.InProgress -> {
+                    InProgressContent(current.detail)
+                }
+
+                is ProcessingState.Done -> {
+                    ChaseLoadingIndicator()
+                }
+
                 is ProcessingState.Error -> {
                     Text("Something went wrong", style = MaterialTheme.typography.titleMedium)
                     Text(current.message, style = MaterialTheme.typography.bodyMedium)
                 }
             }
+
+            if (state is ProcessingState.Loading || state is ProcessingState.InProgress) {
+                Spacer(Modifier.height(EvolaSpacing.lg))
+                TextButton(onClick = { onDone(materialId) }) { Text("Continue in background") }
+            }
         }
     }
+}
+
+@Composable
+private fun InProgressContent(detail: MaterialDetail) {
+    val lessons = detail.lessons
+    if (lessons.isEmpty()) {
+        // Segmentation phase: no lesson rows exist yet.
+        ChaseLoadingIndicator()
+        Spacer(Modifier.height(EvolaSpacing.md))
+        Text("Splitting your resource into lessons...", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "This can take a moment while we split it into lessons.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+
+    val readyCount = lessons.count { it.status == "ready" }
+    val total = lessons.size
+    val current = lessons.firstOrNull { it.status == "extracting" }
+
+    ChaseLoadingIndicator()
+    Spacer(Modifier.height(EvolaSpacing.md))
+    Text("Lesson ${current?.number ?: (readyCount + 1).coerceAtMost(total)} of $total", style = MaterialTheme.typography.titleMedium)
+    if (current != null) {
+        Text(
+            "Extracting vocabulary...",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    Spacer(Modifier.height(EvolaSpacing.md))
+    LinearProgressIndicator(
+        progress = { readyCount / total.toFloat() },
+        modifier = Modifier.fillMaxWidth(),
+    )
 }

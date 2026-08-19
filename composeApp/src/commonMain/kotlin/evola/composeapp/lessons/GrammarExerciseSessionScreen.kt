@@ -48,7 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import pro.respawn.flowmvi.compose.dsl.subscribe
 import evola.composeapp.BackHandler
 import evola.shared.grammar.GrammarExercise
 import evola.shared.vocabulary.isTolerantMatch
@@ -59,7 +59,7 @@ import evola.shared.vocabulary.isTolerantMatch
  * back arrow and the system back gesture are wired to [onDone] in every state. */
 @Composable
 fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onDone: () -> Unit) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.subscribe()
     BackHandler(onBack = onDone)
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
@@ -84,7 +84,7 @@ fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onD
                 is GrammarExerciseSessionState.Error -> CenteredMessage {
                     Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = viewModel::retry) { Text("Retry") }
+                    Button(onClick = { viewModel.intent(GrammarExerciseSessionIntent.Retry) }) { Text("Retry") }
                 }
 
                 is GrammarExerciseSessionState.Empty -> CenteredMessage {
@@ -100,7 +100,9 @@ fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onD
                 is GrammarExerciseSessionState.InProgress -> ExerciseBody(
                     exercise = current.currentExercise,
                     answeredCount = current.answeredCount,
-                    onSubmit = viewModel::submitAnswer,
+                    onSubmit = { response, correct ->
+                        viewModel.intent(GrammarExerciseSessionIntent.SubmitAnswer(current.currentExercise.exerciseId, response, correct))
+                    },
                 )
 
                 is GrammarExerciseSessionState.Summary -> CenteredMessage {

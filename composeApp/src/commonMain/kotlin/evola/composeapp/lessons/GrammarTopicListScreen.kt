@@ -32,7 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import pro.respawn.flowmvi.compose.dsl.subscribe
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.shared.grammar.GrammarTopic
@@ -41,7 +41,7 @@ import evola.shared.grammar.GrammarTopic
  * extracted (a valid, non-error outcome), not an error message. */
 @Composable
 fun GrammarTopicListScreen(viewModel: GrammarTopicListViewModel, onOpenTopic: (String) -> Unit, onBack: () -> Unit) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.subscribe()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(

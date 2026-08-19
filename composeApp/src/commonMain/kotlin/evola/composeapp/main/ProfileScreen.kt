@@ -19,11 +19,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -41,6 +50,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,10 +65,11 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import pro.respawn.flowmvi.compose.dsl.subscribe
 import evola.composeapp.KEY_ANTHROPIC_API_KEY
+import evola.composeapp.backup.rememberBackupFileLoader
+import evola.composeapp.backup.rememberBackupFileSaver
 import evola.composeapp.rememberSecureStore
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
@@ -67,6 +78,7 @@ import evola.composeapp.theme.components.RootTopBarTitle
 import evola.composeapp.theme.components.SelectableChip
 import evola.composeapp.theme.components.StatusTag
 import evola.composeapp.theme.components.StatusTagStyle
+import evola.shared.core.ApiResult
 import evola.shared.goals.Goal
 import evola.shared.language.NativeLanguage
 import kotlinx.coroutines.launch
@@ -84,9 +96,19 @@ fun ProfileScreen(
     goal: Goal,
     viewModel: ProfileViewModel,
     onGoalUpdated: (Goal) -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
-    val isSubmitting by viewModel.isSubmitting.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val backupRepository = org.koin.compose.koinInject<evola.shared.local.BackupRepository>()
+    val achievementsRepository = org.koin.compose.koinInject<evola.shared.achievements.AchievementsRepository>()
+    val goalsRepository = org.koin.compose.koinInject<evola.shared.goals.GoalsRepository>()
+    var unlockedBadgeIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var latestProgress by remember { mutableStateOf<evola.shared.goals.GoalProgress?>(null) }
+    LaunchedEffect(Unit) {
+        unlockedBadgeIds = (achievementsRepository.unlockedBadgeIds() as? evola.shared.core.ApiResult.Success)?.data.orEmpty()
+    }
+    LaunchedEffect(goal.id) {
+        latestProgress = (goalsRepository.getProgress(goal.id, evola.shared.todayLocalDate()) as? evola.shared.core.ApiResult.Success)?.data
+    }
     var isEditingGoal by remember { mutableStateOf(false) }
     var goalText by remember(goal.id) { mutableStateOf(goal.goalText) }
     var title by remember(goal.id) { mutableStateOf(goal.title ?: "") }
@@ -95,6 +117,38 @@ fun ProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val state by viewModel.subscribe()
+    val isSubmitting = state.isSubmitting
+    val errorMessage = state.errorMessage
+    var showResetAllConfirm by remember { mutableStateOf(false) }
+    LaunchedEffect(state.goalUpdated?.id) {
+        state.goalUpdated?.let { event ->
+            onGoalUpdated(event.goal)
+            isEditingGoal = false
+            snackbarHostState.showSnackbar("Goal updated")
+        }
+    }
+    LaunchedEffect(state.progressReset?.id) {
+        state.progressReset?.let { event ->
+            snackbarHostState.showSnackbar(if (event.success) "All progress reset" else "Couldn't reset progress")
+        }
+    }
+
+    if (showResetAllConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResetAllConfirm = false },
+            shape = MaterialTheme.shapes.large,
+            title = { Text("Reset all progress?") },
+            text = { Text("Every word across every lesson goes back to \"New\". This can't be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showResetAllConfirm = false
+                    viewModel.intent(ProfileIntent.ResetAllProgress)
+                }) { Text("Reset everything") }
+            },
+            dismissButton = { TextButton(onClick = { showResetAllConfirm = false }) { Text("Cancel") } },
+        )
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -166,11 +220,7 @@ fun ProfileScreen(
                                 TextButton(onClick = { isEditingGoal = false }, enabled = !isSubmitting) { Text("Cancel") }
                                 Button(
                                     onClick = {
-                                        viewModel.updateGoal(goal.id, goalText, title, nativeLanguage) { updated ->
-                                            onGoalUpdated(updated)
-                                            isEditingGoal = false
-                                            coroutineScope.launch { snackbarHostState.showSnackbar("Goal updated") }
-                                        }
+                                        viewModel.intent(ProfileIntent.UpdateGoal(goal.id, goalText, title, nativeLanguage))
                                     },
                                     enabled = !isSubmitting && goalText.trim().length >= 3,
                                 ) {
@@ -197,10 +247,165 @@ fun ProfileScreen(
                 }
 
                 Spacer(Modifier.height(EvolaSpacing.xxl))
+                AchievementsSection(unlockedBadgeIds)
+
+                Spacer(Modifier.height(EvolaSpacing.xxl))
                 AnthropicKeySection(snackbarHostState, coroutineScope)
+
+                Spacer(Modifier.height(EvolaSpacing.xxl))
+                AppSection(onOpenSettings, backupRepository, latestProgress, goal, snackbarHostState, coroutineScope)
+
+                Spacer(Modifier.height(EvolaSpacing.xxl))
+                DangerZoneSection(onResetAllProgress = { showResetAllConfirm = true })
+
+                Spacer(Modifier.height(EvolaSpacing.xxl))
+                CreditsSection()
             }
         }
     }
+}
+
+/** Settings entry point + local backup/restore - a JSON file export/import
+ * ([evola.shared.local.BackupRepository]) rather than any cloud sync, matching this app's no-
+ * account, fully-local design. */
+@Composable
+private fun AppSection(
+    onOpenSettings: () -> Unit,
+    backupRepository: evola.shared.local.BackupRepository,
+    latestProgress: evola.shared.goals.GoalProgress?,
+    goal: Goal,
+    snackbarHostState: SnackbarHostState,
+    coroutineScope: kotlinx.coroutines.CoroutineScope,
+) {
+    val saveBackup = rememberBackupFileSaver(
+        content = { backupRepository.export() },
+        onSaved = { saved -> if (saved) coroutineScope.launch { snackbarHostState.showSnackbar("Backup saved") } },
+    )
+    val loadBackup = rememberBackupFileLoader { json ->
+        when (backupRepository.import(json)) {
+            is ApiResult.Success -> coroutineScope.launch { snackbarHostState.showSnackbar("Backup restored - restart Evola to see it") }
+            is ApiResult.Failure -> coroutineScope.launch { snackbarHostState.showSnackbar("Couldn't restore that file") }
+        }
+    }
+    val shareText = evola.composeapp.share.rememberShareText()
+
+    Text("App", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.semantics { heading() })
+    Spacer(Modifier.height(EvolaSpacing.sm))
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column {
+            AppRow(Icons.Filled.Settings, "Settings", "Daily goal, exercises, pronunciation, reminders", onClick = onOpenSettings)
+            Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
+            AppRow(
+                Icons.AutoMirrored.Filled.TrendingUp,
+                "Share progress",
+                "Share a summary of your streak and mastered words",
+                onClick = { shareText(progressShareText(goal, latestProgress)) },
+            )
+            Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
+            AppRow(Icons.Filled.CloudUpload, "Create backup", "Save your goals, materials, and progress to a file", onClick = saveBackup)
+            Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
+            AppRow(Icons.Filled.CloudDownload, "Restore backup", "Replace everything with a previously saved file", onClick = loadBackup)
+        }
+    }
+}
+
+/** Reword's "Share progress" summary text - built from whatever [latestProgress] is available at
+ * share time; a null/never-loaded progress still produces a sensible (if less detailed) message
+ * rather than blocking the share action on a fetch. */
+private fun progressShareText(goal: Goal, progress: evola.shared.goals.GoalProgress?): String {
+    if (progress == null) return "I'm learning German with Evola! Working toward: ${goal.goalText}"
+    val streakPart = when {
+        progress.streakDays > 1 -> "on a ${progress.streakDays}-day streak"
+        progress.streakDays == 1 -> "on a 1-day streak"
+        else -> "getting started"
+    }
+    return "I've mastered ${progress.vocabulary.mastered} German words on Evola, $streakPart! " +
+        "Working toward: ${goal.goalText}"
+}
+
+@Composable
+private fun AppRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(EvolaSpacing.lg),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconTile(icon, locked = false)
+        Spacer(Modifier.width(EvolaSpacing.md))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.height(2.dp))
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
+        }
+        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = EvolaColors.Text3)
+    }
+}
+
+/** Reword's achievement badges - a fixed grid of every [evola.shared.achievements.ALL_BADGES]
+ * entry, locked/unlocked styled by [unlockedBadgeIds] rather than only showing what's earned so
+ * far - seeing what's still ahead is part of the point. */
+@Composable
+private fun AchievementsSection(unlockedBadgeIds: Set<String>) {
+    Text("Achievements", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.semantics { heading() })
+    Spacer(Modifier.height(EvolaSpacing.sm))
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
+            evola.shared.achievements.ALL_BADGES.forEachIndexed { index, badge ->
+                if (index > 0) {
+                    Spacer(Modifier.height(EvolaSpacing.sm))
+                }
+                val unlocked = badge.id in unlockedBadgeIds
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        if (unlocked) Icons.Filled.EmojiEvents else Icons.Filled.Lock,
+                        contentDescription = null,
+                        tint = if (unlocked) EvolaColors.Gold else EvolaColors.Text3,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Spacer(Modifier.width(EvolaSpacing.md))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            badge.title,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (unlocked) EvolaColors.Text else EvolaColors.Text3,
+                        )
+                        Spacer(Modifier.height(1.dp))
+                        Text(badge.description, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Reword's Menu "Reset all progress" - a single destructive row, kept separate from [AppSection]
+ * so it doesn't sit next to routine actions like Settings/backup. */
+@Composable
+private fun DangerZoneSection(onResetAllProgress: () -> Unit) {
+    Text("Danger zone", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.semantics { heading() })
+    Spacer(Modifier.height(EvolaSpacing.sm))
+    Card(modifier = Modifier.fillMaxWidth()) {
+        AppRow(
+            Icons.Filled.Restore,
+            "Reset all progress",
+            "Every word across every lesson goes back to \"New\"",
+            onClick = onResetAllProgress,
+        )
+    }
+}
+
+/** Attribution for bundled third-party data, per its license terms - required regardless of
+ * whether the German-noun-lookup feature built on top of it (see
+ * [evola.shared.vocabulary.GermanNounLexicon]) is finished yet, since the dataset already ships
+ * inside the app binary once bundled as a resource. */
+@Composable
+private fun CreditsSection() {
+    Text("Credits", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.semantics { heading() })
+    Spacer(Modifier.height(EvolaSpacing.sm))
+    Text(
+        "German noun data from gambolputty/german-nouns, compiled from WiktionaryDE, licensed under CC BY-SA 4.0.",
+        style = MaterialTheme.typography.bodySmall,
+        color = EvolaColors.Text3,
+    )
 }
 
 /** Pill badge for the goal card's native-language readout - mirrors the icon+label chip language
@@ -209,7 +414,7 @@ fun ProfileScreen(
 private fun LanguageBadge(language: NativeLanguage) {
     Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.SurfaceAlt) {
         Row(
-            modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = EvolaSpacing.xs),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs),
         ) {
@@ -301,7 +506,11 @@ private fun AnthropicKeySection(
                 } else {
                     null
                 },
-                visualTransformation = PasswordVisualTransformation(),
+                // No PasswordVisualTransformation: on iOS, Compose Multiplatform disables the
+                // paste/text-actions menu entirely on any masked field (JetBrains/compose-
+                // multiplatform#4502) - since pasting a copied key is the actual workflow here,
+                // masking would break the field's main use case. The key isn't shown anywhere
+                // else once saved (draft clears after save; only "Connected"/"Not set" is shown).
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                 modifier = Modifier.fillMaxWidth(),

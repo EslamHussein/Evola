@@ -47,9 +47,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import pro.respawn.flowmvi.compose.dsl.subscribe
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.CircularProgressRing
@@ -65,7 +66,7 @@ fun LessonDetailScreen(
     onOpenSection: (key: String) -> Unit,
     onViewVocabularyList: () -> Unit,
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.subscribe()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
@@ -167,7 +168,7 @@ private fun SectionRow(section: LessonSection, onClick: () -> Unit, onViewList: 
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
             .background(EvolaColors.Surface)
-            .clickable(onClick = onClick)
+            .clickable(onClickLabel = section.label, role = Role.Button, onClick = onClick)
             .padding(EvolaSpacing.md),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.md),

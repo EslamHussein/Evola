@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -57,10 +56,10 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.SelectableChip
+import pro.respawn.flowmvi.compose.dsl.subscribe
 
 private const val MIN_PASTED_TEXT_LENGTH = 20
 
@@ -70,7 +69,8 @@ fun AddMaterialScreen(
     onContinue: (StagedResource) -> Unit,
     onCancel: () -> Unit,
 ) {
-    val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
+    val state by viewModel.subscribe()
+    val selectedType = state.selectedType
     var pickedFile by remember { mutableStateOf<PickedFile?>(null) }
     var pastedText by remember { mutableStateOf("") }
     var pickedImages by remember { mutableStateOf<List<PickedFile>>(emptyList()) }
@@ -143,21 +143,21 @@ fun AddMaterialScreen(
                     SelectableChip(
                         label = "PDF",
                         selected = selectedType == ResourceType.PDF,
-                        onClick = { viewModel.selectType(ResourceType.PDF) },
+                        onClick = { viewModel.intent(AddMaterialIntent.SelectType(ResourceType.PDF)) },
                         icon = Icons.Filled.PictureAsPdf,
                         modifier = Modifier.weight(1f),
                     )
                     SelectableChip(
                         label = "Text",
                         selected = selectedType == ResourceType.TEXT,
-                        onClick = { viewModel.selectType(ResourceType.TEXT) },
+                        onClick = { viewModel.intent(AddMaterialIntent.SelectType(ResourceType.TEXT)) },
                         icon = Icons.Filled.Description,
                         modifier = Modifier.weight(1f),
                     )
                     SelectableChip(
                         label = "Image",
                         selected = selectedType == ResourceType.IMAGE,
-                        onClick = { viewModel.selectType(ResourceType.IMAGE) },
+                        onClick = { viewModel.intent(AddMaterialIntent.SelectType(ResourceType.IMAGE)) },
                         icon = Icons.Filled.Image,
                         modifier = Modifier.weight(1f),
                     )
@@ -281,7 +281,7 @@ private fun ImagePickerGrid(images: List<PickedFile>, onAdd: () -> Unit, onRemov
             Box(modifier = Modifier.size(IMAGE_TILE_SIZE)) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.small,
                     color = EvolaColors.SurfaceAlt,
                     border = BorderStroke(1.dp, EvolaColors.Border),
                 ) {
@@ -298,7 +298,7 @@ private fun ImagePickerGrid(images: List<PickedFile>, onAdd: () -> Unit, onRemov
                 }
                 IconButton(
                     onClick = { onRemove(index) },
-                    modifier = Modifier.align(Alignment.TopEnd).size(24.dp),
+                    modifier = Modifier.align(Alignment.TopEnd),
                 ) {
                     Icon(
                         Icons.Filled.Close,
@@ -313,7 +313,7 @@ private fun ImagePickerGrid(images: List<PickedFile>, onAdd: () -> Unit, onRemov
         Surface(
             onClick = onAdd,
             modifier = Modifier.size(IMAGE_TILE_SIZE),
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.small,
             color = EvolaColors.SurfaceAlt,
             border = BorderStroke(1.dp, EvolaColors.Border),
         ) {

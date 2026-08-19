@@ -55,13 +55,14 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.LaunchedEffect
 import evola.composeapp.BackHandler
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.ComingSoonChip
 import evola.composeapp.theme.components.SegmentedProgressBar
 import evola.composeapp.theme.components.SelectableChip
+import pro.respawn.flowmvi.compose.dsl.subscribe
 
 @Composable
 fun AiWizardScreen(
@@ -69,13 +70,20 @@ fun AiWizardScreen(
     onCancel: () -> Unit,
     onAnalysisStarted: (materialId: String) -> Unit,
 ) {
-    val step by viewModel.step.collectAsStateWithLifecycle()
-    val resourceType by viewModel.resourceType.collectAsStateWithLifecycle()
-    val organizationMode by viewModel.organizationMode.collectAsStateWithLifecycle()
-    val aiInstructions by viewModel.aiInstructions.collectAsStateWithLifecycle()
-    val submitState by viewModel.submitState.collectAsStateWithLifecycle()
+    val state by viewModel.subscribe()
+    val step = state.step
+    val resourceType = state.resourceType
+    val organizationMode = state.organizationMode
+    val aiInstructions = state.aiInstructions
+    val submitState = state.submitState
 
-    val exitOrBack = { if (!viewModel.goBack()) onCancel() }
+    LaunchedEffect(state.materialCreated?.id) {
+        state.materialCreated?.let { event -> onAnalysisStarted(event.materialId) }
+    }
+
+    val exitOrBack = {
+        if (step == STEP_ORDER.first()) onCancel() else viewModel.intent(WizardIntent.GoBack)
+    }
     BackHandler(onBack = exitOrBack)
     val focusManager = LocalFocusManager.current
 
@@ -85,7 +93,7 @@ fun AiWizardScreen(
 
     (submitState as? WizardSubmitState.Duplicate)?.let { duplicate ->
         AlertDialog(
-            onDismissRequest = viewModel::dismissDuplicatePrompt,
+            onDismissRequest = { viewModel.intent(WizardIntent.DismissDuplicatePrompt) },
             shape = MaterialTheme.shapes.large,
             title = { Text("Already uploaded") },
             text = { Text("You've already uploaded this content. Would you like to view it instead?") },
@@ -93,7 +101,7 @@ fun AiWizardScreen(
                 TextButton(onClick = { onAnalysisStarted(duplicate.existingMaterialId) }) { Text("View existing material") }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::dismissDuplicatePrompt) { Text("Cancel") }
+                TextButton(onClick = { viewModel.intent(WizardIntent.DismissDuplicatePrompt) }) { Text("Cancel") }
             },
         )
     }
@@ -104,7 +112,7 @@ fun AiWizardScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text(viewModel.stagedTitle) },
+                title = { Text(state.stagedTitle) },
                 navigationIcon = {
                     IconButton(onClick = exitOrBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -123,9 +131,9 @@ fun AiWizardScreen(
                     Button(
                         onClick = {
                             if (step == WizardStep.INSTRUCTIONS) {
-                                viewModel.startAnalysis(onAnalysisStarted)
+                                viewModel.intent(WizardIntent.StartAnalysis)
                             } else {
-                                viewModel.goNext()
+                                viewModel.intent(WizardIntent.GoNext)
                             }
                         },
                         enabled = !isSubmitting,
@@ -158,14 +166,20 @@ fun AiWizardScreen(
                 Spacer(Modifier.height(EvolaSpacing.xl))
 
                 when (step) {
-                    WizardStep.RESOURCE_INFO -> ResourceInfoStep(resourceType, viewModel::selectResourceType)
-                    WizardStep.ORGANIZATION -> OrganizationStep(organizationMode, viewModel::selectOrganizationMode)
+                    WizardStep.RESOURCE_INFO -> ResourceInfoStep(
+                        resourceType,
+                        { type -> viewModel.intent(WizardIntent.SelectResourceType(type)) },
+                    )
+                    WizardStep.ORGANIZATION -> OrganizationStep(
+                        organizationMode,
+                        { mode -> viewModel.intent(WizardIntent.SelectOrganizationMode(mode)) },
+                    )
                     WizardStep.FOCUS -> FocusStep()
                     WizardStep.INSTRUCTIONS -> InstructionsStep(
                         aiInstructions,
-                        onChange = viewModel::updateAiInstructions,
-                        suggestions = viewModel.suggestedInstructions,
-                        onSuggestion = viewModel::appendSuggestion,
+                        onChange = { text -> viewModel.intent(WizardIntent.UpdateInstructions(text)) },
+                        suggestions = state.suggestedInstructions,
+                        onSuggestion = { suggestion -> viewModel.intent(WizardIntent.AppendSuggestion(suggestion)) },
                     )
                 }
             }
@@ -203,6 +217,7 @@ private fun OrganizationStep(selected: OrganizationMode, onSelect: (Organization
     Column(verticalArrangement = Arrangement.spacedBy(EvolaSpacing.md)) {
         OrganizationCard(OrganizationMode.ENTIRE, selected, enabled = true, onSelect = onSelect)
         OrganizationCard(OrganizationMode.AUTO, selected, enabled = true, onSelect = onSelect)
+        OrganizationCard(OrganizationMode.PAGES, selected, enabled = true, onSelect = onSelect)
         OrganizationCard(OrganizationMode.MANUAL, selected, enabled = false, onSelect = onSelect)
     }
 }

@@ -2,6 +2,7 @@
 
 package evola.composeapp.materials
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,8 +16,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -30,23 +36,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import pro.respawn.flowmvi.compose.dsl.subscribe
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.RootTopBarTitle
-import evola.shared.goals.Lesson
 import evola.shared.materials.Material
+import evola.shared.materials.MaterialStatus
 
 @Composable
 fun MaterialsListScreen(
     viewModel: MaterialsListViewModel,
     onAddMaterial: () -> Unit,
     onOpenMaterial: (String) -> Unit,
-    onContinueLesson: (Lesson) -> Unit,
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.subscribe()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
@@ -61,12 +67,11 @@ fun MaterialsListScreen(
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
                 is MaterialsListState.Loading -> LoadingBody()
-                is MaterialsListState.Error -> ErrorBody(current.message, onRetry = viewModel::refresh)
+                is MaterialsListState.Error -> ErrorBody(current.message, onRetry = { viewModel.intent(MaterialsListIntent.Refresh) })
                 is MaterialsListState.Loaded -> MaterialsListBody(
                     materials = current.materials,
-                    currentLesson = current.currentLesson,
                     onOpenMaterial = onOpenMaterial,
-                    onContinueLesson = onContinueLesson,
+                    onDeleteMaterial = { materialId -> viewModel.intent(MaterialsListIntent.Delete(materialId)) },
                 )
             }
         }
@@ -100,9 +105,8 @@ private fun ErrorBody(message: String, onRetry: () -> Unit) {
 @Composable
 private fun MaterialsListBody(
     materials: List<Material>,
-    currentLesson: Lesson?,
     onOpenMaterial: (String) -> Unit,
-    onContinueLesson: (Lesson) -> Unit,
+    onDeleteMaterial: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         if (materials.isEmpty()) {
@@ -114,14 +118,12 @@ private fun MaterialsListBody(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(vertical = 4.dp),
             ) {
-                currentLesson?.let { lesson ->
-                    item {
-                        ContinueLessonCard(lesson = lesson, onClick = { onContinueLesson(lesson) })
-                        Spacer(Modifier.height(12.dp))
-                    }
-                }
-                items(materials) { material ->
-                    MaterialRow(material = material, onClick = { onOpenMaterial(material.id) })
+                items(materials, key = { it.id }) { material ->
+                    MaterialRow(
+                        material = material,
+                        onClick = { onOpenMaterial(material.id) },
+                        onDelete = { onDeleteMaterial(material.id) },
+                    )
                     Spacer(Modifier.height(8.dp))
                 }
             }
@@ -129,30 +131,46 @@ private fun MaterialsListBody(
     }
 }
 
-/** Same "what's next" job the old Study tab's flat list used to own, now surfaced as a single card
- * above the book list - Materials is the one lesson browser now, so this is the one place that
- * job needs to live. */
 @Composable
-private fun ContinueLessonCard(lesson: Lesson, onClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
-        Column(modifier = Modifier.padding(EvolaSpacing.md)) {
-            Text("Continue", style = MaterialTheme.typography.labelMedium, color = EvolaColors.Accent)
-            Spacer(Modifier.height(4.dp))
-            Text("${lesson.number}. ${lesson.title}", style = MaterialTheme.typography.titleMedium)
+private fun MaterialRow(material: Material, onClick: () -> Unit, onDelete: () -> Unit) {
+    val dismissState = rememberSwipeToDismissBoxState(confirmValueChange = { it != SwipeToDismissBoxValue.StartToEnd })
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = { DeleteSwipeBackground(onDelete) },
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onClick,
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(material.filename, style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
+                Text(materialStatusLabel(material), style = MaterialTheme.typography.bodyMedium)
+            }
         }
     }
 }
 
+private fun materialStatusLabel(material: Material): String = when (material.status) {
+    MaterialStatus.PROCESSING ->
+        if (material.lessonsTotal > 0) "Processing — ${material.lessonsReady}/${material.lessonsTotal} lessons" else "Processing..."
+    MaterialStatus.READY -> if (material.lessonsTotal == 1) "1 lesson" else "${material.lessonsTotal} lessons"
+    else -> material.status.name
+}
+
+/** Swiping only reveals this - it doesn't delete by itself (`confirmValueChange` above blocks the
+ * dismiss-and-remove animation on drag alone); the row is only actually removed once this button
+ * is tapped, matching the two-step "swipe reveals, tap confirms" pattern (same shape as the lesson
+ * row's delete swipe in MaterialDetailScreen.kt). */
 @Composable
-private fun MaterialRow(material: Material, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
+private fun DeleteSwipeBackground(onDelete: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(EvolaColors.Rust),
+        contentAlignment = Alignment.CenterEnd,
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(material.filename, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(4.dp))
-            Text(material.status.name, style = MaterialTheme.typography.bodyMedium)
+        IconButton(onClick = onDelete, modifier = Modifier.padding(horizontal = EvolaSpacing.lg)) {
+            Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.White)
         }
     }
 }

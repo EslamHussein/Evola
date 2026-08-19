@@ -30,10 +30,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import evola.shared.goals.Goal
 import evola.shared.language.NativeLanguage
+import pro.respawn.flowmvi.compose.dsl.subscribe
 
 private const val GOAL_TEXT_SOFT_CAP = 200
 
@@ -41,12 +42,16 @@ private const val GOAL_TEXT_SOFT_CAP = 200
  * was already chosen on the preceding onboarding step and is saved atomically with the goal. */
 @Composable
 fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguage, onGoalCreated: (Goal) -> Unit) {
-    val isSubmitting by viewModel.isSubmitting.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val state by viewModel.subscribe()
+    val isSubmitting = state.isSubmitting
+    val errorMessage = state.errorMessage
     var goalText by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var wasTruncated by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+    LaunchedEffect(state.goalCreated?.id) {
+        state.goalCreated?.let { event -> onGoalCreated(event.goal) }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize()
@@ -114,7 +119,7 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguag
             }
             Spacer(Modifier.height(24.dp))
             Button(
-                onClick = { viewModel.createGoal(goalText, title, nativeLanguage, onGoalCreated) },
+                onClick = { viewModel.intent(GoalSetupIntent.CreateGoal(goalText, title, nativeLanguage)) },
                 enabled = !isSubmitting && goalText.trim().length >= 3,
                 modifier = Modifier.fillMaxWidth(),
             ) {
