@@ -38,8 +38,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.unit.dp
 import org.orbitmvi.orbit.compose.collectAsState
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.materials_list_add_material_desc
 import evola.composeapp.generated.resources.materials_list_delete_desc
@@ -57,6 +57,7 @@ import evola.composeapp.theme.components.RootTopBarTitle
 import evola.shared.materials.Material
 import evola.shared.materials.MaterialStatus
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun MaterialsListScreen(
@@ -65,10 +66,28 @@ fun MaterialsListScreen(
     onOpenMaterial: (String) -> Unit,
 ) {
     val state by viewModel.collectAsState()
+    MaterialsListContent(
+        state = state,
+        onAddMaterial = onAddMaterial,
+        onOpenMaterial = onOpenMaterial,
+        onRetry = { viewModel.refresh() },
+        onDeleteMaterial = { materialId -> viewModel.delete(materialId) },
+    )
+}
+
+@Composable
+private fun MaterialsListContent(
+    state: MaterialsListState,
+    onAddMaterial: () -> Unit,
+    onOpenMaterial: (String) -> Unit,
+    onRetry: () -> Unit,
+    onDeleteMaterial: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = { TopAppBar(title = { RootTopBarTitle(stringResource(Res.string.materials_list_title)) }, scrollBehavior = scrollBehavior) },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddMaterial) {
@@ -77,13 +96,13 @@ fun MaterialsListScreen(
         },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (val current = state) {
+            when (state) {
                 is MaterialsListState.Loading -> LoadingBody()
-                is MaterialsListState.Error -> ErrorBody(current.message, onRetry = { viewModel.refresh() })
+                is MaterialsListState.Error -> ErrorBody(state.message, onRetry = onRetry)
                 is MaterialsListState.Loaded -> MaterialsListBody(
-                    materials = current.materials,
+                    materials = state.materials,
                     onOpenMaterial = onOpenMaterial,
-                    onDeleteMaterial = { materialId -> viewModel.delete(materialId) },
+                    onDeleteMaterial = onDeleteMaterial,
                 )
             }
         }
@@ -95,7 +114,7 @@ private fun LoadingBody() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             ChaseLoadingIndicator()
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(EvolaSpacing.lg))
             Text(stringResource(Res.string.materials_list_loading))
         }
     }
@@ -104,12 +123,12 @@ private fun LoadingBody() {
 @Composable
 private fun ErrorBody(message: String, onRetry: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Text(message, style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(EvolaSpacing.lg))
         Button(onClick = onRetry) { Text(stringResource(Res.string.materials_list_retry)) }
     }
 }
@@ -120,7 +139,7 @@ private fun MaterialsListBody(
     onOpenMaterial: (String) -> Unit,
     onDeleteMaterial: (String) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {
         if (materials.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(stringResource(Res.string.materials_list_empty), style = MaterialTheme.typography.bodyLarge)
@@ -128,7 +147,7 @@ private fun MaterialsListBody(
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 4.dp),
+                contentPadding = PaddingValues(vertical = EvolaSpacing.xs),
             ) {
                 items(materials, key = { it.id }) { material ->
                     MaterialRow(
@@ -136,7 +155,7 @@ private fun MaterialsListBody(
                         onClick = { onOpenMaterial(material.id) },
                         onDelete = { onDeleteMaterial(material.id) },
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(EvolaSpacing.sm))
                 }
             }
         }
@@ -155,9 +174,9 @@ private fun MaterialRow(material: Material, onClick: () -> Unit, onDelete: () ->
             modifier = Modifier.fillMaxWidth(),
             onClick = onClick,
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
                 Text(material.filename, style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(EvolaSpacing.xs))
                 Text(materialStatusLabel(material), style = MaterialTheme.typography.bodyMedium)
             }
         }
@@ -194,5 +213,47 @@ private fun DeleteSwipeBackground(onDelete: () -> Unit) {
         IconButton(onClick = onDelete, modifier = Modifier.padding(horizontal = EvolaSpacing.lg)) {
             Icon(Icons.Filled.Delete, contentDescription = stringResource(Res.string.materials_list_delete_desc), tint = Color.White)
         }
+    }
+}
+
+private val fakeMaterialsListItems = listOf(
+    Material(
+        id = "m1", userId = "u1", goalId = "g1", filename = "grammar-book.pdf", contentHash = "h1",
+        status = MaterialStatus.READY, mimeType = "application/pdf", sizeBytes = 204_800L, lessonsReady = 3, lessonsTotal = 3,
+    ),
+    Material(
+        id = "m2", userId = "u1", goalId = "g1", filename = "reading-practice.pdf", contentHash = "h2",
+        status = MaterialStatus.PROCESSING, mimeType = "application/pdf", sizeBytes = 102_400L, lessonsReady = 1, lessonsTotal = 4,
+    ),
+)
+
+@Preview
+@Composable
+private fun MaterialsListLoadingPreview() {
+    EvolaTheme { MaterialsListContent(state = MaterialsListState.Loading, onAddMaterial = {}, onOpenMaterial = {}, onRetry = {}, onDeleteMaterial = {}) }
+}
+
+@Preview
+@Composable
+private fun MaterialsListLoadedPreview() {
+    EvolaTheme {
+        MaterialsListContent(
+            state = MaterialsListState.Loaded(fakeMaterialsListItems),
+            onAddMaterial = {}, onOpenMaterial = {}, onRetry = {}, onDeleteMaterial = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun MaterialsListEmptyPreview() {
+    EvolaTheme { MaterialsListContent(state = MaterialsListState.Loaded(emptyList()), onAddMaterial = {}, onOpenMaterial = {}, onRetry = {}, onDeleteMaterial = {}) }
+}
+
+@Preview
+@Composable
+private fun MaterialsListErrorPreview() {
+    EvolaTheme {
+        MaterialsListContent(state = MaterialsListState.Error("Something went wrong."), onAddMaterial = {}, onOpenMaterial = {}, onRetry = {}, onDeleteMaterial = {})
     }
 }
