@@ -14,25 +14,24 @@ import evola.shared.materials.MaterialStatus
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import org.orbitmvi.orbit.test.testWithInternalState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
-import pro.respawn.flowmvi.test.subscribeAndTest
 
-/** [ProcessingStatusContainer] polls [evola.shared.materials.MaterialsRepository.list] in a
- * `while(true)` loop via `asyncInit`, so these tests never try to wait out multiple poll ticks -
- * they only assert on the state produced by the very first tick, which runs immediately on
- * subscribe (before the loop's own `delay`). A real [LocalMaterialsRepository] backs the test
- * (matching this project's "never mock a repository" convention), backed by an in-memory SQLite
- * [EvolaDatabase] with material rows inserted directly - `upload()`/`processMaterial()` are never
- * exercised, so the AI/file-extraction collaborators it requires are given inert real
- * implementations that error loudly if the test accidentally invokes them. */
+/** [ProcessingStatusViewModel] polls [evola.shared.materials.MaterialsRepository.list] in a
+ * `while(true)` loop via `onCreate`, so these tests never try to wait out multiple poll ticks -
+ * they only assert on the state produced by the very first tick, which runs immediately (before
+ * the loop's own `delay`). A real [LocalMaterialsRepository] backs the test (matching this
+ * project's "never mock a repository" convention), backed by an in-memory SQLite [EvolaDatabase]
+ * with material rows inserted directly - `upload()`/`processMaterial()` are never exercised, so
+ * the AI/file-extraction collaborators it requires are given inert real implementations that
+ * error loudly if the test accidentally invokes them. */
 @OptIn(ExperimentalUuidApi::class)
-class ProcessingStatusContainerTest {
+class ProcessingStatusViewModelTest {
 
     private fun materialsRepository(db: EvolaDatabase): LocalMaterialsRepository {
         val client = AnthropicClient(MockEngine { error("AI must not be called by this test") }) { "test-key" }
@@ -71,11 +70,16 @@ class ProcessingStatusContainerTest {
         val processingId = seedMaterial(db, "goal-1", "PROCESSING")
         seedMaterial(db, "goal-1", "READY")
 
-        ProcessingStatusContainer(materialsRepository(db)).store.subscribeAndTest {
-            val loaded = states.first { it.processingMaterials.isNotEmpty() }
+        val viewModel = ProcessingStatusViewModel(materialsRepository(db))
+        viewModel.testWithInternalState(this, ProcessingStatusState()) {
+            runOnCreate()
+            val loaded = awaitInternalState()
             assertEquals(1, loaded.processingMaterials.size)
             assertEquals(processingId, loaded.processingMaterials.first().id)
             assertEquals(MaterialStatus.PROCESSING, loaded.processingMaterials.first().status)
+            // onCreate is a `while(true)` poll loop that never completes on its own - cancel it
+            // explicitly so the test doesn't hang waiting for it to join.
+            cancelAndIgnoreRemainingItems()
         }
     }
 
@@ -86,9 +90,12 @@ class ProcessingStatusContainerTest {
         val second = seedMaterial(db, "goal-2", "PROCESSING", filename = "b.pdf")
         seedMaterial(db, "goal-1", "FAILED")
 
-        ProcessingStatusContainer(materialsRepository(db)).store.subscribeAndTest {
-            val loaded = states.first { it.processingMaterials.size == 2 }
+        val viewModel = ProcessingStatusViewModel(materialsRepository(db))
+        viewModel.testWithInternalState(this, ProcessingStatusState()) {
+            runOnCreate()
+            val loaded = awaitInternalState()
             assertEquals(setOf(first, second), loaded.processingMaterials.map { it.id }.toSet())
+            cancelAndIgnoreRemainingItems()
         }
     }
 }
