@@ -1,5 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Review-reminder notifications (Settings > Notifications). Android 13+ only - a no-op
+         permission below that, where notifications are granted by default. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:label="Evola"
         android:icon="@mipmap/ic_launcher"
@@ -10,12 +13,26 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Evola.Splash">
+            android:theme="@style/Theme.Evola.Splash"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Reword's home-screen widget - streak + due-word count. See HomeWidgetProvider's own
+             doc comment for why it lives in :composeApp rather than here. -->
+        <receiver
+            android:name="evola.composeapp.widget.HomeWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_home_info" />
+        </receiver>
 
         <!-- Backs the camera-capture flow on the Add Resource "Image" type: TakePicture() needs a
              content:// Uri to write the full-resolution photo into, since the camera app runs in

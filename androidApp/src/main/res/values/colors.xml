@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Matches evola.composeapp.theme.EvolaColors.Paper - keep in sync. -->
-    <color name="splash_background">#FF0E1220</color>
-    <color name="ic_launcher_background">#FF0E1220</color>
+    <color name="splash_background">#FFEFEEF3</color>
+    <color name="ic_launcher_background">#FFEFEEF3</color>
 </resources>
