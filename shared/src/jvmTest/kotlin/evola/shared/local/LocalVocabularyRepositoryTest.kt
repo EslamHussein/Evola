@@ -222,11 +222,13 @@ class LocalVocabularyRepositoryTest {
 
     @Test
     fun `a category session pulls only words in that bucket, across the whole goal, as practice cards`() = runTest {
-        val (repo, db) = setup(itemCount = 3)
-        // v0 struggling (wrong last answer), v1 mastered clean, v2 stays "unseen" (learning bucket) -
-        // the same red/yellow/green split Home shows (see LocalGoalsRepository.vocabularyBreakdown).
+        val (repo, db) = setup(itemCount = 4)
+        // v0 struggling (wrong last answer), v1 mastered clean, v2 touched but not struggling/mastered
+        // (learning bucket), v3 stays "unseen" (never studied) - the same red/yellow/green split Home
+        // shows (see LocalGoalsRepository.vocabularyBreakdown); "unseen" isn't a bucket of its own.
         db.vocabularyQueries.updateProgress("learning", 0L, 1L, 0L, 0L, nowMillis(), LOCAL_USER, "v0")
         db.vocabularyQueries.updateProgress("mastered", 3L, 0L, 4L, 0L, nowMillis(), LOCAL_USER, "v1")
+        db.vocabularyQueries.updateProgress("learning", 1L, 0L, 1L, 0L, nowMillis(), LOCAL_USER, "v2")
 
         val struggling = (repo.startCategorySession("g1", WordCategory.STRUGGLING) as ApiResult.Success).data
         assertIs<VocabularyCard.Practice>(struggling.card)
@@ -238,13 +240,17 @@ class LocalVocabularyRepositoryTest {
 
         val learning = (repo.startCategorySession("g1", WordCategory.LEARNING) as ApiResult.Success).data
         assertEquals("v2", learning.card.itemId)
+        assertEquals(1, learning.totalWords)
     }
 
     @Test
     fun `a category session fails when the bucket is empty`() = runTest {
         val (repo, _) = setup(itemCount = 1)
-        // The single word is "unseen" (learning bucket) - nothing struggling or mastered.
-        val result = repo.startCategorySession("g1", WordCategory.STRUGGLING)
-        assertIs<ApiResult.Failure>(result)
+        // The single word is "unseen" - not struggling, not mastered, and not "learning" either,
+        // since "learning" requires having been touched at least once.
+        val struggling = repo.startCategorySession("g1", WordCategory.STRUGGLING)
+        assertIs<ApiResult.Failure>(struggling)
+        val learning = repo.startCategorySession("g1", WordCategory.LEARNING)
+        assertIs<ApiResult.Failure>(learning)
     }
 }

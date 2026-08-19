@@ -477,16 +477,18 @@ private fun ReadinessRing(percent: Int, vocabulary: VocabularyBreakdown, modifie
 
 /** "Word breakdown" header (with the goal's total word count as a pill) plus three red/yellow/
  * green cards - a re-cut of the same words by how they're actually going, not just SRS status:
- * red = the most recent answer was wrong (needs attention now), green = mastered, yellow =
- * everything else still building up. A word can't land in both red and green - any wrong answer
+ * red = the most recent answer was wrong (needs attention now), green = mastered, yellow = touched
+ * at least once but still building up. "Not started" (unseen) words don't count as "learning" -
+ * they're part of the total pill but don't get their own card, matching [ReadinessRing]'s ring
+ * (which also treats unseen separately). A word can't land in both red and green - any wrong answer
  * demotes it out of "mastered" immediately (see VocabularySrs.onIncorrect) - so the three cards
- * always sum to the total with no double-counting. */
+ * always sum to less than or equal to the total, the gap being untouched words. */
 @Composable
 private fun WordBreakdownSection(vocabulary: VocabularyBreakdown, onStartCategorySession: (WordCategory) -> Unit) {
     val total = vocabulary.notStarted + vocabulary.inProgress + vocabulary.mastered
     val struggling = vocabulary.struggling
     val mastered = vocabulary.mastered
-    val learning = (total - struggling - mastered).coerceAtLeast(0)
+    val learning = (vocabulary.inProgress - struggling).coerceAtLeast(0)
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Text("Word breakdown", style = MaterialTheme.typography.titleMedium)
         Surface(color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.extraLarge) {

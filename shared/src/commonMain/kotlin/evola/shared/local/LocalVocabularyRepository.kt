@@ -81,15 +81,19 @@ class LocalVocabularyRepository(
 
     /** Same red/yellow/green split as [evola.shared.local.LocalGoalsRepository.vocabularyBreakdown]
      * (struggling = incorrect_streak > 0; mastered = "mastered" status, which - per
-     * [VocabularySrs.onIncorrect] - implies incorrect_streak is always 0; learning = everything
-     * else), so a word picked here always lands in the same bucket Home showed it in. */
+     * [VocabularySrs.onIncorrect] - implies incorrect_streak is always 0; learning = touched at
+     * least once but neither struggling nor mastered - "unseen" words are excluded since the user
+     * hasn't actually started them), so a word picked here always lands in the same bucket Home
+     * showed it in. */
     override suspend fun startCategorySession(goalId: String, category: WordCategory, limit: Int): ApiResult<VocabularySessionState> {
         val rows = db.vocabularyQueries.wordStatusesByGoal(LOCAL_USER, goalId).executeAsList()
         val picked = rows.filter { row ->
             when (category) {
                 WordCategory.STRUGGLING -> row.incorrect_streak > 0
                 WordCategory.MASTERED -> row.status == VocabularySrs.STATUSES.last() && row.incorrect_streak == 0L
-                WordCategory.LEARNING -> row.incorrect_streak == 0L && row.status != VocabularySrs.STATUSES.last()
+                WordCategory.LEARNING -> row.incorrect_streak == 0L &&
+                    row.status != VocabularySrs.STATUSES.last() &&
+                    row.status != VocabularySrs.STATUSES.first()
             }
         }.map { it.item_id }.take(limit)
         if (picked.isEmpty()) return fail(404, "No words in this category", "goalId=$goalId category=$category")
