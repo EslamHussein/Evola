@@ -41,9 +41,11 @@ import evola.composeapp.generated.resources.onboarding_goal_start_learning
 import evola.composeapp.generated.resources.onboarding_goal_title_label
 import evola.composeapp.generated.resources.onboarding_goal_title_placeholder
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.shared.goals.Goal
 import evola.shared.language.NativeLanguage
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
@@ -54,20 +56,28 @@ private const val GOAL_TEXT_SOFT_CAP = 200
 @Composable
 fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguage, onGoalCreated: (Goal) -> Unit) {
     val state by viewModel.collectAsState()
+    viewModel.collectSideEffect { effect ->
+        when (effect) {
+            is GoalSetupSideEffect.GoalCreated -> onGoalCreated(effect.goal)
+        }
+    }
+    GoalSetupContent(
+        state = state,
+        onCreateGoal = { goalText, title -> viewModel.createGoal(goalText, title, nativeLanguage) },
+    )
+}
+
+@Composable
+private fun GoalSetupContent(state: GoalSetupState, onCreateGoal: (goalText: String, title: String) -> Unit, modifier: Modifier = Modifier) {
     val isSubmitting = state.isSubmitting
     val errorMessage = state.errorMessage
     var goalText by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var wasTruncated by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
-    viewModel.collectSideEffect { effect ->
-        when (effect) {
-            is GoalSetupSideEffect.GoalCreated -> onGoalCreated(effect.goal)
-        }
-    }
 
     Surface(
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize()
             // Tapping anywhere outside a text field dismisses the keyboard - without this, on a
             // screen with no other focusable target, there was no way to get the keyboard out of
             // the way to reach "Start learning" underneath it.
@@ -132,12 +142,32 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguag
             }
             Spacer(Modifier.height(EvolaSpacing.xl))
             Button(
-                onClick = { viewModel.createGoal(goalText, title, nativeLanguage) },
+                onClick = { onCreateGoal(goalText, title) },
                 enabled = !isSubmitting && goalText.trim().length >= 3,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(if (isSubmitting) Res.string.onboarding_goal_saving else Res.string.onboarding_goal_start_learning))
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun GoalSetupIdlePreview() {
+    EvolaTheme { GoalSetupContent(state = GoalSetupState(), onCreateGoal = { _, _ -> }) }
+}
+
+@Preview
+@Composable
+private fun GoalSetupSubmittingPreview() {
+    EvolaTheme { GoalSetupContent(state = GoalSetupState(isSubmitting = true), onCreateGoal = { _, _ -> }) }
+}
+
+@Preview
+@Composable
+private fun GoalSetupErrorPreview() {
+    EvolaTheme {
+        GoalSetupContent(state = GoalSetupState(errorMessage = "Goal text must be 3-200 characters."), onCreateGoal = { _, _ -> })
     }
 }
