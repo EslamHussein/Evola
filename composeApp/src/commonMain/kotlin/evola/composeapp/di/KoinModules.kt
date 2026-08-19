@@ -16,11 +16,13 @@ import evola.shared.grammar.GrammarRepository
 import evola.shared.lessons.LessonsRepository
 import evola.shared.local.BackupRepository
 import evola.shared.local.LocalAchievementsRepository
+import evola.shared.local.LocalBackupRepository
 import evola.shared.local.LocalGoalsRepository
 import evola.shared.local.LocalGrammarRepository
 import evola.shared.local.LocalLessonsRepository
 import evola.shared.local.LocalMaterialsRepository
 import evola.shared.local.LocalSettingsRepository
+import evola.shared.local.SettingsRepository
 import evola.composeapp.lessons.BrowseFlashcardsViewModel
 import evola.composeapp.lessons.GrammarExerciseSessionViewModel
 import evola.composeapp.lessons.GrammarTopicListViewModel
@@ -99,12 +101,12 @@ fun evolaModule(
     single { GermanNounLexicon(get()) }
     single(createdAtStart = true) { GermanNounImportCoordinator(get(), get()) }
 
-    single { LocalSettingsRepository(get()) }
-    single { BackupRepository(get()) }
+    single<SettingsRepository> { LocalSettingsRepository(get()) }
+    single<BackupRepository> { LocalBackupRepository(get()) }
     single<AchievementsRepository> { LocalAchievementsRepository(get()) }
-    single<GoalsRepository> { LocalGoalsRepository(get(), get<LocalSettingsRepository>(), get<AchievementsRepository>()) }
+    single<GoalsRepository> { LocalGoalsRepository(get(), get<SettingsRepository>(), get<AchievementsRepository>()) }
     single<LessonsRepository> { LocalLessonsRepository(get()) }
-    single<VocabularyRepository> { LocalVocabularyRepository(get(), get(), get<LocalSettingsRepository>()) }
+    single<VocabularyRepository> { LocalVocabularyRepository(get(), get(), get<SettingsRepository>()) }
     single<GrammarRepository> { LocalGrammarRepository(get()) }
     single<MaterialsRepository> {
         LocalMaterialsRepository(

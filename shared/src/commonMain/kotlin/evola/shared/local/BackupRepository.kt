@@ -68,15 +68,21 @@ data class BackupSetting(val key: String, val value: String)
 
 /**
  * Local backup/restore over a subset of [EvolaDatabase] - a JSON snapshot rather than a raw SQLite
- * file copy (sidesteps WAL/open-handle issues a live file copy would hit) covering the data a
- * learner would actually mourn losing: goals, materials, lessons, vocabulary (items + progress),
- * daily activity, and settings. Grammar tables and in-progress session/queue state are deliberately
- * excluded - regenerable/re-derivable, not source data, kept out to keep this repository's surface
- * area proportionate to what it protects. Single-user: user is always [LOCAL_USER].
+ * file copy, covering the data a learner would actually mourn losing: goals, materials, lessons,
+ * vocabulary (items + progress), daily activity, and settings. Grammar tables and in-progress
+ * session/queue state are deliberately excluded - regenerable/re-derivable, not source data, kept
+ * out to keep this repository's surface area proportionate to what it protects.
  */
-class BackupRepository(private val db: EvolaDatabase) {
+interface BackupRepository {
+    fun export(): String
+    fun import(json: String): ApiResult<Unit>
+}
 
-    fun export(): String {
+/** Single-user: user is always [LOCAL_USER]. A JSON snapshot rather than a raw SQLite file copy -
+ * sidesteps WAL/open-handle issues a live file copy would hit. */
+class LocalBackupRepository(private val db: EvolaDatabase) : BackupRepository {
+
+    override fun export(): String {
         val snapshot = BackupSnapshot(
             schemaVersion = BACKUP_SCHEMA_VERSION,
             exportedAtMillis = nowMillis(),
@@ -113,7 +119,7 @@ class BackupRepository(private val db: EvolaDatabase) {
         return localJson.encodeToString(BackupSnapshot.serializer(), snapshot)
     }
 
-    fun import(json: String): ApiResult<Unit> {
+    override fun import(json: String): ApiResult<Unit> {
         val snapshot = try {
             localJson.decodeFromString(BackupSnapshot.serializer(), json)
         } catch (e: SerializationException) {

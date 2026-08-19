@@ -62,7 +62,7 @@ private data class UndoSnapshot(
 class LocalVocabularyRepository(
     private val db: EvolaDatabase,
     private val anthropic: AnthropicClient,
-    private val settingsRepository: LocalSettingsRepository,
+    private val settingsRepository: SettingsRepository,
 ) : VocabularyRepository {
 
     /** In-memory only, per [undoLastGrade]'s own doc comment - not part of the durable session

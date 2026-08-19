@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-class BackupRepositoryTest {
+class LocalBackupRepositoryTest {
 
     private fun setup(): Pair<BackupRepository, EvolaDatabase> {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
@@ -21,7 +21,7 @@ class BackupRepositoryTest {
         db.vocabularyQueries.insertProgress("p1", LOCAL_USER, "v1", "learning", 2L, 0L, 1L, 12345L, 100L, 1L, 0L)
         db.activityQueries.upsert("a1", LOCAL_USER, "2026-08-10")
         db.settingsQueries.upsert(LOCAL_USER, "daily_new_word_goal", "12")
-        return BackupRepository(db) to db
+        return LocalBackupRepository(db) to db
     }
 
     @Test

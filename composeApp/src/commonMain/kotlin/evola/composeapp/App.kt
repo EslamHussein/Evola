@@ -8,7 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import evola.shared.local.AppTheme
-import evola.shared.local.LocalSettingsRepository
+import evola.shared.local.SettingsRepository
 import evola.composeapp.di.GermanNounImportCoordinator
 import evola.composeapp.di.evolaModule
 import evola.composeapp.di.rememberDatabaseDriverFactory
@@ -68,7 +68,7 @@ fun App() {
     val fileTextExtractor = rememberFileTextExtractor()
 
     KoinApplication(application = { modules(evolaModule(driverFactory, secureStore, fileTextExtractor)) }) {
-        val settingsRepository = koinInject<LocalSettingsRepository>()
+        val settingsRepository = koinInject<SettingsRepository>()
         val settings by settingsRepository.settings.collectAsStateWithLifecycle(initialValue = null)
 
         EvolaTheme(appTheme = settings?.appTheme ?: AppTheme.SYSTEM) {

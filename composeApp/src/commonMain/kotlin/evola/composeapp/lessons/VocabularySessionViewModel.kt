@@ -6,7 +6,7 @@ import evola.composeapp.core.toUserMessage
 import evola.shared.core.ApiResult
 import evola.shared.core.getOrNull
 import evola.shared.local.AppSettings
-import evola.shared.local.LocalSettingsRepository
+import evola.shared.local.SettingsRepository
 import evola.shared.todayLocalDate
 import evola.shared.vocabulary.VocabularyAnswerResult
 import evola.shared.vocabulary.VocabularyCard
@@ -39,7 +39,7 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 class VocabularySessionViewModel(
     private val source: VocabSessionSource,
     private val repository: VocabularyRepository,
-    private val settingsRepository: LocalSettingsRepository,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel(), OrbitContainerHost<VocabularySessionUiState, VocabularySessionUiState, Nothing> {
 
     override val container =

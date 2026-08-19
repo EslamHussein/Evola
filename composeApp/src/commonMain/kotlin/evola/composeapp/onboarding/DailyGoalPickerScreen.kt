@@ -27,7 +27,7 @@ import evola.composeapp.generated.resources.onboarding_daily_goal_prompt
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.SelectableChip
-import evola.shared.local.LocalSettingsRepository
+import evola.shared.local.SettingsRepository
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -41,7 +41,7 @@ private val DAILY_GOAL_OPTIONS = listOf(5, 8, 12, 20)
  * step, right after the goal itself, matches Reword's flow without inventing new content structure. */
 @Composable
 fun DailyGoalPickerScreen(onContinue: () -> Unit) {
-    val settingsRepository = koinInject<LocalSettingsRepository>()
+    val settingsRepository = koinInject<SettingsRepository>()
     val coroutineScope = rememberCoroutineScope()
     var selected by remember { mutableStateOf(8) }
 

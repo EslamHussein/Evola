@@ -29,7 +29,7 @@ private const val WEEK_LENGTH = 7
  * mirrors the retired server `GoalService`. */
 class LocalGoalsRepository(
     private val db: EvolaDatabase,
-    private val settingsRepository: LocalSettingsRepository,
+    private val settingsRepository: SettingsRepository,
     private val achievementsRepository: AchievementsRepository,
 ) : GoalsRepository {
 

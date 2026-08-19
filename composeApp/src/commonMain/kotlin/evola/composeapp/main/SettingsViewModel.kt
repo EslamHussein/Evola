@@ -2,14 +2,14 @@ package evola.composeapp.main
 
 import androidx.lifecycle.ViewModel
 import evola.shared.local.AppTheme
-import evola.shared.local.LocalSettingsRepository
+import evola.shared.local.SettingsRepository
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 
-/** Thin reactive wrapper over [LocalSettingsRepository.settings] - every setter just upserts and
+/** Thin reactive wrapper over [SettingsRepository.settings] - every setter just upserts and
  * lets the repository's own Flow push the new value back, so [SettingsState.settings] is always the
  * source of truth rather than something this ViewModel tracks separately. */
-class SettingsViewModel(private val repository: LocalSettingsRepository) :
+class SettingsViewModel(private val repository: SettingsRepository) :
     ViewModel(), OrbitContainerHost<SettingsState, SettingsState, Nothing> {
 
     override val container = orbitContainer<SettingsState, Nothing>(SettingsState(), onCreate = {

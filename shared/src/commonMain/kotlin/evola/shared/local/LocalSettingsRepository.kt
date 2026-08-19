@@ -98,53 +98,83 @@ fun AppSettings.isWithinNotificationFrequencyLimit(nowMillis: Long): Boolean {
 }
 
 /**
- * Single-user local settings over the `user_settings` KV table (Settings.sq) - a plain key-value
- * table rather than one column per setting, so a new toggle never needs a schema migration. [settings]
- * is a live Flow so every consumer (Settings screen, the vocabulary session's exercise toggles/
- * invert-swipe/TTS gate, Home's daily-goal readout, the reminder scheduler) reacts to a change
- * immediately without polling. Every setter is a plain suspend upsert - callers don't need to
- * read-modify-write, since [settings] always reflects the latest row. Single-user: user is always
- * [LOCAL_USER].
+ * Every user-tunable knob this app has, reactively and single-user. [settings] is a live Flow so
+ * every consumer (Settings screen, the vocabulary session's exercise toggles/invert-swipe/TTS
+ * gate, Home's daily-goal readout, the reminder scheduler) reacts to a change immediately without
+ * polling. Every setter is a plain suspend upsert - callers don't need to read-modify-write, since
+ * [settings] always reflects the latest row.
  */
-class LocalSettingsRepository(private val db: EvolaDatabase) {
+interface SettingsRepository {
+    val settings: Flow<AppSettings>
 
-    val settings: Flow<AppSettings> = db.settingsQueries.all(LOCAL_USER)
-        .asFlow()
-        .mapToList(Dispatchers.Default)
-        .map { rows -> rows.associate { it.key to it.value_ }.toAppSettings() }
+    suspend fun setDailyNewWordGoal(value: Int)
+    suspend fun setKeyboardExerciseEnabled(value: Boolean)
+    suspend fun setMultipleChoiceExerciseEnabled(value: Boolean)
+    suspend fun setInvertSwipe(value: Boolean)
+    suspend fun setTtsEnabled(value: Boolean)
+    suspend fun setTtsRate(value: Float)
 
-    suspend fun setDailyNewWordGoal(value: Int) = set(KEY_DAILY_NEW_WORD_GOAL, value.coerceAtLeast(1).toString())
-    suspend fun setKeyboardExerciseEnabled(value: Boolean) = set(KEY_KEYBOARD_EXERCISE_ENABLED, value.toString())
-    suspend fun setMultipleChoiceExerciseEnabled(value: Boolean) = set(KEY_MULTIPLE_CHOICE_EXERCISE_ENABLED, value.toString())
-    suspend fun setInvertSwipe(value: Boolean) = set(KEY_INVERT_SWIPE, value.toString())
-    suspend fun setTtsEnabled(value: Boolean) = set(KEY_TTS_ENABLED, value.toString())
-    suspend fun setTtsRate(value: Float) = set(KEY_TTS_RATE, value.toString())
-
-    /** Null clears back to the platform/engine default - stored as the literal string "null" isn't
-     * used; a null [value] instead removes the row entirely so [current]'s absent-key default kicks in. */
-    suspend fun setTtsVoiceName(value: String?) {
-        if (value == null) db.settingsQueries.upsert(LOCAL_USER, KEY_TTS_VOICE_NAME, "") else set(KEY_TTS_VOICE_NAME, value)
-    }
-    suspend fun setAutoPronounce(value: Boolean) = set(KEY_AUTO_PRONOUNCE, value.toString())
-    suspend fun setShowTranscription(value: Boolean) = set(KEY_SHOW_TRANSCRIPTION, value.toString())
-    suspend fun setNotificationsEnabled(value: Boolean) = set(KEY_NOTIFICATIONS_ENABLED, value.toString())
-    suspend fun setReminderHour(value: Int) = set(KEY_REMINDER_HOUR, value.coerceIn(0, 23).toString())
-    suspend fun setSilentHoursStart(value: Int) = set(KEY_SILENT_HOURS_START, value.coerceIn(0, 23).toString())
-    suspend fun setSilentHoursEnd(value: Int) = set(KEY_SILENT_HOURS_END, value.coerceIn(0, 23).toString())
-    suspend fun setNotificationFrequencyLimitHours(value: Int) = set(KEY_NOTIFICATION_FREQUENCY_LIMIT_HOURS, value.coerceIn(1, 24).toString())
-    suspend fun setHasSeenSwipeTutorial(value: Boolean) = set(KEY_HAS_SEEN_SWIPE_TUTORIAL, value.toString())
-    suspend fun setReducedMotion(value: Boolean) = set(KEY_REDUCED_MOTION, value.toString())
-    suspend fun setAppTheme(value: AppTheme) = set(KEY_APP_THEME, value.name)
-    suspend fun setStreakFreezesAvailable(value: Int) = set(KEY_STREAK_FREEZES_AVAILABLE, value.coerceAtLeast(0).toString())
+    /** Null clears back to the platform/engine default. */
+    suspend fun setTtsVoiceName(value: String?)
+    suspend fun setAutoPronounce(value: Boolean)
+    suspend fun setShowTranscription(value: Boolean)
+    suspend fun setNotificationsEnabled(value: Boolean)
+    suspend fun setReminderHour(value: Int)
+    suspend fun setSilentHoursStart(value: Int)
+    suspend fun setSilentHoursEnd(value: Int)
+    suspend fun setNotificationFrequencyLimitHours(value: Int)
+    suspend fun setHasSeenSwipeTutorial(value: Boolean)
+    suspend fun setReducedMotion(value: Boolean)
+    suspend fun setAppTheme(value: AppTheme)
+    suspend fun setStreakFreezesAvailable(value: Int)
 
     /** Written by the reminder Worker itself right after a successful post - not a user-facing
      * setting, just reuses this table since it's the app's only KV store. */
-    suspend fun setLastNotificationPostedAtMillis(value: Long) = set(KEY_LAST_NOTIFICATION_POSTED_AT_MILLIS, value.toString())
+    suspend fun setLastNotificationPostedAtMillis(value: Long)
 
     /** One-shot, non-reactive read - for call sites that aren't already Compose-collecting
      * [settings] as a Flow: the vocabulary session's queue assembly (a plain suspend function, not a
      * composable) and the reminder Worker (no Compose scope at all). */
-    fun current(): AppSettings = db.settingsQueries.all(LOCAL_USER).executeAsList().associate { it.key to it.value_ }.toAppSettings()
+    fun current(): AppSettings
+}
+
+/**
+ * Single-user local settings over the `user_settings` KV table (Settings.sq) - a plain key-value
+ * table rather than one column per setting, so a new toggle never needs a schema migration.
+ * Single-user: user is always [LOCAL_USER].
+ */
+class LocalSettingsRepository(private val db: EvolaDatabase) : SettingsRepository {
+
+    override val settings: Flow<AppSettings> = db.settingsQueries.all(LOCAL_USER)
+        .asFlow()
+        .mapToList(Dispatchers.Default)
+        .map { rows -> rows.associate { it.key to it.value_ }.toAppSettings() }
+
+    override suspend fun setDailyNewWordGoal(value: Int) = set(KEY_DAILY_NEW_WORD_GOAL, value.coerceAtLeast(1).toString())
+    override suspend fun setKeyboardExerciseEnabled(value: Boolean) = set(KEY_KEYBOARD_EXERCISE_ENABLED, value.toString())
+    override suspend fun setMultipleChoiceExerciseEnabled(value: Boolean) = set(KEY_MULTIPLE_CHOICE_EXERCISE_ENABLED, value.toString())
+    override suspend fun setInvertSwipe(value: Boolean) = set(KEY_INVERT_SWIPE, value.toString())
+    override suspend fun setTtsEnabled(value: Boolean) = set(KEY_TTS_ENABLED, value.toString())
+    override suspend fun setTtsRate(value: Float) = set(KEY_TTS_RATE, value.toString())
+
+    override suspend fun setTtsVoiceName(value: String?) {
+        if (value == null) db.settingsQueries.upsert(LOCAL_USER, KEY_TTS_VOICE_NAME, "") else set(KEY_TTS_VOICE_NAME, value)
+    }
+    override suspend fun setAutoPronounce(value: Boolean) = set(KEY_AUTO_PRONOUNCE, value.toString())
+    override suspend fun setShowTranscription(value: Boolean) = set(KEY_SHOW_TRANSCRIPTION, value.toString())
+    override suspend fun setNotificationsEnabled(value: Boolean) = set(KEY_NOTIFICATIONS_ENABLED, value.toString())
+    override suspend fun setReminderHour(value: Int) = set(KEY_REMINDER_HOUR, value.coerceIn(0, 23).toString())
+    override suspend fun setSilentHoursStart(value: Int) = set(KEY_SILENT_HOURS_START, value.coerceIn(0, 23).toString())
+    override suspend fun setSilentHoursEnd(value: Int) = set(KEY_SILENT_HOURS_END, value.coerceIn(0, 23).toString())
+    override suspend fun setNotificationFrequencyLimitHours(value: Int) = set(KEY_NOTIFICATION_FREQUENCY_LIMIT_HOURS, value.coerceIn(1, 24).toString())
+    override suspend fun setHasSeenSwipeTutorial(value: Boolean) = set(KEY_HAS_SEEN_SWIPE_TUTORIAL, value.toString())
+    override suspend fun setReducedMotion(value: Boolean) = set(KEY_REDUCED_MOTION, value.toString())
+    override suspend fun setAppTheme(value: AppTheme) = set(KEY_APP_THEME, value.name)
+    override suspend fun setStreakFreezesAvailable(value: Int) = set(KEY_STREAK_FREEZES_AVAILABLE, value.coerceAtLeast(0).toString())
+
+    override suspend fun setLastNotificationPostedAtMillis(value: Long) = set(KEY_LAST_NOTIFICATION_POSTED_AT_MILLIS, value.toString())
+
+    override fun current(): AppSettings = db.settingsQueries.all(LOCAL_USER).executeAsList().associate { it.key to it.value_ }.toAppSettings()
 
     private fun set(key: String, value: String) {
         db.settingsQueries.upsert(LOCAL_USER, key, value)
