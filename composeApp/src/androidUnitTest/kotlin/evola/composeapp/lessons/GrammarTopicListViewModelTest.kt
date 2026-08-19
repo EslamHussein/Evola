@@ -5,16 +5,16 @@ import evola.shared.db.EvolaDatabase
 import evola.shared.local.LOCAL_USER
 import evola.shared.local.LocalGrammarRepository
 import kotlinx.coroutines.test.runTest
-import pro.respawn.flowmvi.test.subscribeAndTest
+import org.orbitmvi.orbit.test.testWithInternalState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-/** Same convention as [evola.composeapp.main.HomeContainerTest]: a real [LocalGrammarRepository]
- * backed by an in-memory SQLite [EvolaDatabase], driven through [GrammarTopicListContainer.store]
- * via the official `pro.respawn.flowmvi:test` DSL. */
-class GrammarTopicListContainerTest {
+/** Same convention as [evola.composeapp.main.HomeViewModelTest]: a real [LocalGrammarRepository]
+ * backed by an in-memory SQLite [EvolaDatabase], driven through [GrammarTopicListViewModel] via
+ * the official `org.orbit-mvi:orbit-test` DSL. */
+class GrammarTopicListViewModelTest {
 
     private fun setup(): LocalGrammarRepository {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
@@ -32,8 +32,10 @@ class GrammarTopicListContainerTest {
 
     @Test
     fun `loads every grammar topic in the lesson`() = runTest {
-        GrammarTopicListContainer("l1", setup()).store.subscribeAndTest {
-            val loaded = assertIs<GrammarTopicListState.Loaded>(states.value)
+        val viewModel = GrammarTopicListViewModel("l1", setup())
+        viewModel.testWithInternalState(this, GrammarTopicListState.Loading) {
+            runOnCreate()
+            val loaded = assertIs<GrammarTopicListState.Loaded>(awaitInternalState())
             assertEquals(2, loaded.topics.size)
             assertEquals(setOf("Akkusativ", "Dativ"), loaded.topics.map { it.name }.toSet())
             assertTrue(loaded.topics.any { it.masteryState == "new" })
@@ -50,8 +52,10 @@ class GrammarTopicListContainerTest {
         db.materialsQueries.insert("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L)
         db.lessonsQueries.insert("l1", "m1", "g1", 1L, "Lesson 1", "ready", null, 0L)
 
-        GrammarTopicListContainer("l1", LocalGrammarRepository(db)).store.subscribeAndTest {
-            val loaded = assertIs<GrammarTopicListState.Loaded>(states.value)
+        val viewModel = GrammarTopicListViewModel("l1", LocalGrammarRepository(db))
+        viewModel.testWithInternalState(this, GrammarTopicListState.Loading) {
+            runOnCreate()
+            val loaded = assertIs<GrammarTopicListState.Loaded>(awaitInternalState())
             assertEquals(0, loaded.topics.size)
         }
     }
