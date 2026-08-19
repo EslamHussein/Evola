@@ -68,7 +68,8 @@ import evola.composeapp.vocabulary.rememberCsvFilePicker
 import evola.shared.vocabulary.VocabularyItem
 import evola.shared.vocabulary.parseWordCsv
 import kotlinx.coroutines.launch
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_cancel
 import evola.composeapp.generated.resources.lessons_action_play_pronunciation
@@ -112,7 +113,7 @@ private enum class VocabularySortMode(val labelRes: StringResource) {
 
 @Composable
 fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     var editingItem by remember { mutableStateOf<VocabularyItem?>(null) }
     var viewingItem by remember { mutableStateOf<VocabularyItem?>(null) }
     var addingWord by remember { mutableStateOf(false) }
@@ -128,7 +129,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
             title = { Text(stringResource(Res.string.lessons_reset_progress_title)) },
             text = { Text(stringResource(Res.string.lessons_reset_progress_text)) },
             confirmButton = {
-                TextButton(onClick = { showResetConfirm = false; viewModel.intent(VocabularyListIntent.ResetProgress) }) { Text(stringResource(Res.string.lessons_reset_progress_confirm)) }
+                TextButton(onClick = { showResetConfirm = false; viewModel.resetProgress() }) { Text(stringResource(Res.string.lessons_reset_progress_confirm)) }
             },
             dismissButton = {
                 TextButton(onClick = { showResetConfirm = false }) { Text(stringResource(Res.string.lessons_action_cancel)) }
@@ -138,11 +139,21 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
+    // Mirrors the last side effect into a local Compose state (rather than reading it straight
+    // from the suspend collectSideEffect callback below) because the imported-word count needs
+    // stringResource's plural resolution, which is composable-context-only.
+    var lastEffect by remember { mutableStateOf<VocabularyListSideEffect?>(null) }
+    var lastEffectId by remember { mutableStateOf(0L) }
+    viewModel.collectSideEffect { effect ->
+        lastEffect = effect
+        lastEffectId++
+    }
+
     // Snackbar copy must be resolved here (composable context) since it's used inside the
     // LaunchedEffect's suspend lambda below, where stringResource cannot be called.
     val updateFailedMsg = stringResource(Res.string.lessons_snackbar_update_failed)
     val importFailedMsg = stringResource(Res.string.lessons_snackbar_import_failed)
-    val importedCount = (state.event as? VocabularyListEvent.WordsImported)?.count
+    val importedCount = (lastEffect as? VocabularyListSideEffect.WordsImported)?.count
     val importedWordMsg = if (importedCount == 1) {
         stringResource(Res.string.lessons_snackbar_imported_word, importedCount)
     } else {
@@ -152,23 +163,23 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
     val progressResetMsg = stringResource(Res.string.lessons_snackbar_progress_reset)
     val progressResetFailedMsg = stringResource(Res.string.lessons_snackbar_progress_reset_failed)
 
-    LaunchedEffect(state.event?.id) {
-        when (val event = state.event) {
-            is VocabularyListEvent.ItemUpdated -> Unit
-            is VocabularyListEvent.ItemUpdateFailed -> snackbarHostState.showSnackbar(updateFailedMsg)
-            is VocabularyListEvent.MarkedAlreadyKnown -> viewingItem = null
-            is VocabularyListEvent.CopiedToPersonalList -> viewingItem = null
-            is VocabularyListEvent.WordAdded -> addingWord = false
-            is VocabularyListEvent.WordsImported -> {
-                val message = if (event.count == null) importFailedMsg else importedWordMsg
+    LaunchedEffect(lastEffectId) {
+        when (val effect = lastEffect) {
+            is VocabularyListSideEffect.ItemUpdated -> Unit
+            is VocabularyListSideEffect.ItemUpdateFailed -> snackbarHostState.showSnackbar(updateFailedMsg)
+            is VocabularyListSideEffect.MarkedAlreadyKnown -> viewingItem = null
+            is VocabularyListSideEffect.CopiedToPersonalList -> viewingItem = null
+            is VocabularyListSideEffect.WordAdded -> addingWord = false
+            is VocabularyListSideEffect.WordsImported -> {
+                val message = if (effect.count == null) importFailedMsg else importedWordMsg
                 snackbarHostState.showSnackbar(message)
             }
-            is VocabularyListEvent.ItemDeleted -> {
+            is VocabularyListSideEffect.ItemDeleted -> {
                 viewingItem = null
-                if (!event.success) snackbarHostState.showSnackbar(deleteFailedMsg)
+                if (!effect.success) snackbarHostState.showSnackbar(deleteFailedMsg)
             }
-            is VocabularyListEvent.ProgressReset -> {
-                snackbarHostState.showSnackbar(if (event.success) progressResetMsg else progressResetFailedMsg)
+            is VocabularyListSideEffect.ProgressReset -> {
+                snackbarHostState.showSnackbar(if (effect.success) progressResetMsg else progressResetFailedMsg)
             }
             null -> Unit
         }
@@ -179,7 +190,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
             item = item,
             onBack = { editingItem = null },
             onSave = { term, meaning, nativeMeaning ->
-                viewModel.intent(VocabularyListIntent.UpdateItem(item.itemId, term, meaning, nativeMeaning))
+                viewModel.updateItem(item.itemId, term, meaning, nativeMeaning)
                 editingItem = null
             },
         )
@@ -194,9 +205,9 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                 viewingItem = null
                 editingItem = item
             },
-            onMarkAlreadyKnown = { viewModel.intent(VocabularyListIntent.MarkAlreadyKnown(item.itemId)) },
-            onCopyToPersonalList = { viewModel.intent(VocabularyListIntent.CopyToPersonalList(item.itemId)) },
-            onDelete = { viewModel.intent(VocabularyListIntent.DeleteItem(item.itemId)) },
+            onMarkAlreadyKnown = { viewModel.markAlreadyKnown(item.itemId) },
+            onCopyToPersonalList = { viewModel.copyToPersonalList(item.itemId) },
+            onDelete = { viewModel.deleteItem(item.itemId) },
         )
         return
     }
@@ -204,7 +215,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
     if (addingWord) {
         AddVocabularyScreen(
             onBack = { addingWord = false },
-            onSave = { term, meaning, nativeMeaning -> viewModel.intent(VocabularyListIntent.AddWord(term, meaning, nativeMeaning)) },
+            onSave = { term, meaning, nativeMeaning -> viewModel.addWord(term, meaning, nativeMeaning) },
         )
         return
     }
@@ -217,7 +228,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
         if (rows.isEmpty()) {
             coroutineScope.launch { snackbarHostState.showSnackbar(noValidRowsMsg) }
         } else {
-            viewModel.intent(VocabularyListIntent.ImportWords(rows))
+            viewModel.importWords(rows)
         }
     }
 
