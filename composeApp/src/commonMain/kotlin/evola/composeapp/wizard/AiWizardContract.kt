@@ -1,8 +1,5 @@
 package evola.composeapp.wizard
 
-import pro.respawn.flowmvi.api.MVIIntent
-import pro.respawn.flowmvi.api.MVIState
-
 enum class WizardStep { RESOURCE_INFO, ORGANIZATION, FOCUS, INSTRUCTIONS }
 
 /** Step 1's options - real, single-select, submitted as `resource_type` (persisted but not yet
@@ -39,13 +36,9 @@ sealed interface WizardSubmitState {
 
 val STEP_ORDER = listOf(WizardStep.RESOURCE_INFO, WizardStep.ORGANIZATION, WizardStep.FOCUS, WizardStep.INSTRUCTIONS)
 
-/** See [evola.composeapp.main.GoalUpdateEvent] - same state-based one-shot-event pattern
- * (`subscribeConsume`/`MVIAction` isn't visible from `commonMain` in FlowMVI 3.1.0). */
-data class MaterialCreatedEvent(val materialId: String, val id: Long = kotlin.random.Random.nextLong())
-
-/** The AI Analysis Wizard's 4-step state machine, consolidated into one [MVIState] - it's one
+/** The AI Analysis Wizard's 4-step state machine, consolidated into one state class - it's one
  * cohesive step-driven screen (all 5 original StateFlows changed together as the user progressed),
- * not independent lifecycles, so a single `copy()`-based state is the correct FlowMVI shape. */
+ * not independent lifecycles, so a single `copy()`-based state is the correct shape. */
 data class WizardState(
     val step: WizardStep = WizardStep.RESOURCE_INFO,
     val resourceType: ResourceInfoType = ResourceInfoType.BOOK,
@@ -54,22 +47,8 @@ data class WizardState(
     val submitState: WizardSubmitState = WizardSubmitState.Idle,
     val suggestedInstructions: List<String> = SUGGESTED_INSTRUCTIONS,
     val stagedTitle: String = "",
-    val materialCreated: MaterialCreatedEvent? = null,
-) : MVIState
+)
 
-sealed interface WizardIntent : MVIIntent {
-    data class SelectResourceType(val type: ResourceInfoType) : WizardIntent
-    data class SelectOrganizationMode(val mode: OrganizationMode) : WizardIntent
-    data class UpdateInstructions(val text: String) : WizardIntent
-    data class AppendSuggestion(val suggestion: String) : WizardIntent
-
-    /** Unlike the pre-FlowMVI version, [GoBack] no longer reports "already at the first step" back
-     * to the caller via a return value (`states.value` sync reads are unconditionally blocked in
-     * FlowMVI 3.1.0 - see the plan's gotcha notes) - the screen already has `state.step` in scope
-     * from what it's rendering, so it decides "exit the wizard vs. go back a step" itself by
-     * comparing against [STEP_ORDER]'s first element before dispatching [GoBack] at all. */
-    data object GoNext : WizardIntent
-    data object GoBack : WizardIntent
-    data object DismissDuplicatePrompt : WizardIntent
-    data object StartAnalysis : WizardIntent
+sealed interface WizardSideEffect {
+    data class MaterialCreated(val materialId: String) : WizardSideEffect
 }

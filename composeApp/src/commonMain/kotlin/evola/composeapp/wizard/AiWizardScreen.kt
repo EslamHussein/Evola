@@ -55,7 +55,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.LaunchedEffect
 import evola.composeapp.BackHandler
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.wizard_add_lesson_range
@@ -85,7 +84,8 @@ import evola.composeapp.theme.components.ComingSoonChip
 import evola.composeapp.theme.components.SegmentedProgressBar
 import evola.composeapp.theme.components.SelectableChip
 import org.jetbrains.compose.resources.stringResource
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 
 @Composable
 fun AiWizardScreen(
@@ -93,19 +93,21 @@ fun AiWizardScreen(
     onCancel: () -> Unit,
     onAnalysisStarted: (materialId: String) -> Unit,
 ) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     val step = state.step
     val resourceType = state.resourceType
     val organizationMode = state.organizationMode
     val aiInstructions = state.aiInstructions
     val submitState = state.submitState
 
-    LaunchedEffect(state.materialCreated?.id) {
-        state.materialCreated?.let { event -> onAnalysisStarted(event.materialId) }
+    viewModel.collectSideEffect { effect ->
+        when (effect) {
+            is WizardSideEffect.MaterialCreated -> onAnalysisStarted(effect.materialId)
+        }
     }
 
-    val exitOrBack = {
-        if (step == STEP_ORDER.first()) onCancel() else viewModel.intent(WizardIntent.GoBack)
+    val exitOrBack: () -> Unit = {
+        if (step == STEP_ORDER.first()) onCancel() else viewModel.goBack()
     }
     BackHandler(onBack = exitOrBack)
     val focusManager = LocalFocusManager.current
@@ -116,7 +118,7 @@ fun AiWizardScreen(
 
     (submitState as? WizardSubmitState.Duplicate)?.let { duplicate ->
         AlertDialog(
-            onDismissRequest = { viewModel.intent(WizardIntent.DismissDuplicatePrompt) },
+            onDismissRequest = { viewModel.dismissDuplicatePrompt() },
             shape = MaterialTheme.shapes.large,
             title = { Text(stringResource(Res.string.wizard_duplicate_title)) },
             text = { Text(stringResource(Res.string.wizard_duplicate_message)) },
@@ -126,7 +128,7 @@ fun AiWizardScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.intent(WizardIntent.DismissDuplicatePrompt) }) {
+                TextButton(onClick = { viewModel.dismissDuplicatePrompt() }) {
                     Text(stringResource(Res.string.wizard_cancel))
                 }
             },
@@ -158,9 +160,9 @@ fun AiWizardScreen(
                     Button(
                         onClick = {
                             if (step == WizardStep.INSTRUCTIONS) {
-                                viewModel.intent(WizardIntent.StartAnalysis)
+                                viewModel.startAnalysis()
                             } else {
-                                viewModel.intent(WizardIntent.GoNext)
+                                viewModel.goNext()
                             }
                         },
                         enabled = !isSubmitting,
@@ -199,18 +201,18 @@ fun AiWizardScreen(
                 when (step) {
                     WizardStep.RESOURCE_INFO -> ResourceInfoStep(
                         resourceType,
-                        { type -> viewModel.intent(WizardIntent.SelectResourceType(type)) },
+                        { type -> viewModel.selectResourceType(type) },
                     )
                     WizardStep.ORGANIZATION -> OrganizationStep(
                         organizationMode,
-                        { mode -> viewModel.intent(WizardIntent.SelectOrganizationMode(mode)) },
+                        { mode -> viewModel.selectOrganizationMode(mode) },
                     )
                     WizardStep.FOCUS -> FocusStep()
                     WizardStep.INSTRUCTIONS -> InstructionsStep(
                         aiInstructions,
-                        onChange = { text -> viewModel.intent(WizardIntent.UpdateInstructions(text)) },
+                        onChange = { text -> viewModel.updateInstructions(text) },
                         suggestions = state.suggestedInstructions,
-                        onSuggestion = { suggestion -> viewModel.intent(WizardIntent.AppendSuggestion(suggestion)) },
+                        onSuggestion = { suggestion -> viewModel.appendSuggestion(suggestion) },
                     )
                 }
             }

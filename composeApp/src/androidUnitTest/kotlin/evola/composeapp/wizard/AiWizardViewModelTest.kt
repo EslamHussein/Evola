@@ -18,22 +18,20 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.runTest
-import pro.respawn.flowmvi.test.subscribeAndTest
-import pro.respawn.flowmvi.test.wait
+import org.orbitmvi.orbit.test.testWithInternalState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
-/** Same convention as [evola.composeapp.main.HomeContainerTest]: a real [LocalMaterialsRepository]
+/** Same convention as [evola.composeapp.main.HomeViewModelTest]: a real [LocalMaterialsRepository]
  * backed by an in-memory SQLite [EvolaDatabase] and a [MockEngine] that always returns an empty
- * Anthropic response, driven through [AiWizardContainer.store] via the official
- * `pro.respawn.flowmvi:test` DSL. `StartAnalysis` only needs to be asserted on its immediate,
+ * Anthropic response, driven through [AiWizardViewModel] via the official
+ * `org.orbit-mvi:orbit-test` DSL. `startAnalysis` only needs to be asserted on its immediate,
  * synchronous outcome (`UploadResult`) - the background segmentation/extraction job it kicks off
  * runs on a real (non-test-controlled) [CoroutineScope] and is out of scope here, same as the
  * production [evola.composeapp.di.KoinModules] wiring. */
-class AiWizardContainerTest {
+class AiWizardViewModelTest {
 
     private fun repository(): MaterialsRepository {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
@@ -76,61 +74,66 @@ class AiWizardContainerTest {
     }
 
     @Test
-    fun `SelectResourceType and SelectOrganizationMode update state directly`() = runTest {
-        AiWizardContainer("g1", StagedResource.Text("irrelevant"), repository()).store.subscribeAndTest {
-            WizardIntent.SelectResourceType(ResourceInfoType.WORKBOOK) resultsIn {
-                wait()
-                assertEquals(ResourceInfoType.WORKBOOK, states.value.resourceType)
-            }
-            WizardIntent.SelectOrganizationMode(OrganizationMode.PAGES) resultsIn {
-                wait()
-                assertEquals(OrganizationMode.PAGES, states.value.organizationMode)
-            }
-            // MANUAL has no backend support yet - selecting it is a documented no-op.
-            WizardIntent.SelectOrganizationMode(OrganizationMode.MANUAL) resultsIn {
-                wait()
-                assertEquals(OrganizationMode.PAGES, states.value.organizationMode)
-            }
+    fun `selectResourceType and selectOrganizationMode update state directly`() = runTest {
+        val viewModel = AiWizardViewModel("g1", StagedResource.Text("irrelevant"), repository())
+        viewModel.testWithInternalState(this, WizardState(stagedTitle = "Pasted text")) {
+            containerHost.selectResourceType(ResourceInfoType.WORKBOOK)
+            assertEquals(ResourceInfoType.WORKBOOK, awaitInternalState().resourceType)
+
+            containerHost.selectOrganizationMode(OrganizationMode.PAGES)
+            assertEquals(OrganizationMode.PAGES, awaitInternalState().organizationMode)
+
+            // MANUAL has no backend support yet - selecting it is a documented no-op, so it never
+            // reduces; nothing new to await here.
+            containerHost.selectOrganizationMode(OrganizationMode.MANUAL)
         }
     }
 
     @Test
-    fun `GoNext and GoBack move through the 4 steps and clamp at both ends`() = runTest {
-        AiWizardContainer("g1", StagedResource.Text("irrelevant"), repository()).store.subscribeAndTest {
-            assertEquals(WizardStep.RESOURCE_INFO, states.value.step)
-            WizardIntent.GoBack resultsIn { wait(); assertEquals(WizardStep.RESOURCE_INFO, states.value.step) }
-            WizardIntent.GoNext resultsIn { wait(); assertEquals(WizardStep.ORGANIZATION, states.value.step) }
-            WizardIntent.GoNext resultsIn { wait(); assertEquals(WizardStep.FOCUS, states.value.step) }
-            WizardIntent.GoNext resultsIn { wait(); assertEquals(WizardStep.INSTRUCTIONS, states.value.step) }
-            WizardIntent.GoNext resultsIn { wait(); assertEquals(WizardStep.INSTRUCTIONS, states.value.step) }
-            WizardIntent.GoBack resultsIn { wait(); assertEquals(WizardStep.FOCUS, states.value.step) }
+    fun `goNext and goBack move through the 4 steps and clamp at both ends`() = runTest {
+        val viewModel = AiWizardViewModel("g1", StagedResource.Text("irrelevant"), repository())
+        viewModel.testWithInternalState(this, WizardState(stagedTitle = "Pasted text")) {
+            // Already at the first step - goBack is a documented no-op, so it never reduces.
+            containerHost.goBack()
+
+            containerHost.goNext()
+            assertEquals(WizardStep.ORGANIZATION, awaitInternalState().step)
+            containerHost.goNext()
+            assertEquals(WizardStep.FOCUS, awaitInternalState().step)
+            containerHost.goNext()
+            assertEquals(WizardStep.INSTRUCTIONS, awaitInternalState().step)
+
+            // Already at the last step - clamps, so it never reduces.
+            containerHost.goNext()
+
+            containerHost.goBack()
+            assertEquals(WizardStep.FOCUS, awaitInternalState().step)
         }
     }
 
     @Test
-    fun `StartAnalysis with real text creates a material and reports MaterialCreatedEvent`() = runTest {
+    fun `startAnalysis with real text creates a material and posts a MaterialCreated side effect`() = runTest {
         withGoal { repository, goalId ->
-            AiWizardContainer(goalId, StagedResource.Text("A".repeat(50)), repository).store.subscribeAndTest {
-                WizardIntent.StartAnalysis resultsIn {
-                    wait()
-                    val event = assertNotNull(states.value.materialCreated)
-                    assertEquals(WizardSubmitState.Idle, states.value.submitState)
-                    assertNotNull(event.materialId)
-                }
+            val viewModel = AiWizardViewModel(goalId, StagedResource.Text("A".repeat(50)), repository)
+            viewModel.testWithInternalState(this, WizardState(stagedTitle = "Pasted text")) {
+                containerHost.startAnalysis()
+                assertEquals(WizardSubmitState.Submitting, awaitInternalState().submitState)
+                assertEquals(WizardSubmitState.Idle, awaitInternalState().submitState)
+                val effect = assertIs<WizardSideEffect.MaterialCreated>(awaitSideEffect())
+                assertNotNull(effect.materialId)
             }
         }
     }
 
     @Test
-    fun `StartAnalysis with too-little text surfaces NoExtractableText as a safe error message`() = runTest {
+    fun `startAnalysis with too-little text surfaces NoExtractableText as a safe error message`() = runTest {
         withGoal { repository, goalId ->
-            AiWizardContainer(goalId, StagedResource.Text("short"), repository).store.subscribeAndTest {
-                WizardIntent.StartAnalysis resultsIn {
-                    wait()
-                    val error = assertIs<WizardSubmitState.Error>(states.value.submitState)
-                    assertEquals("There isn't enough text here yet - add more content.", error.message)
-                    assertNull(states.value.materialCreated)
-                }
+            val viewModel = AiWizardViewModel(goalId, StagedResource.Text("short"), repository)
+            viewModel.testWithInternalState(this, WizardState(stagedTitle = "Pasted text")) {
+                containerHost.startAnalysis()
+                assertEquals(WizardSubmitState.Submitting, awaitInternalState().submitState)
+                val error = assertIs<WizardSubmitState.Error>(awaitInternalState().submitState)
+                assertEquals("There isn't enough text here yet - add more content.", error.message)
             }
         }
     }
