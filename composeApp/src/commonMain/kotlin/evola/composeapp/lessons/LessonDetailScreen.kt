@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.components.CircularProgressRing
 import evola.composeapp.theme.components.IconTile
 import evola.composeapp.theme.components.LockedRow
@@ -65,6 +66,7 @@ import evola.composeapp.generated.resources.lessons_detail_title
 import evola.composeapp.generated.resources.lessons_detail_view_list
 import evola.composeapp.generated.resources.lessons_nav_back
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun LessonDetailScreen(
@@ -74,10 +76,21 @@ fun LessonDetailScreen(
     onViewVocabularyList: () -> Unit,
 ) {
     val state by viewModel.collectAsState()
+    LessonDetailContent(state = state, onBack = onBack, onOpenSection = onOpenSection, onViewVocabularyList = onViewVocabularyList)
+}
+
+@Composable
+private fun LessonDetailContent(
+    state: LessonDetailState,
+    onBack: () -> Unit,
+    onOpenSection: (key: String) -> Unit,
+    onViewVocabularyList: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.lessons_detail_title)) },
@@ -91,11 +104,11 @@ fun LessonDetailScreen(
         },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (val current = state) {
+            when (state) {
                 is LessonDetailState.Loading -> ProgressMessage(stringResource(Res.string.lessons_detail_loading))
-                is LessonDetailState.Error -> CenteredMessage(current.message)
+                is LessonDetailState.Error -> CenteredMessage(state.message)
                 is LessonDetailState.Loaded -> LessonDetailBody(
-                    detail = current.detail,
+                    detail = state.detail,
                     onOpenSection = onOpenSection,
                     onViewVocabularyList = onViewVocabularyList,
                 )
@@ -107,7 +120,7 @@ fun LessonDetailScreen(
 @Composable
 private fun CenteredMessage(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, modifier = Modifier.padding(24.dp))
+        Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, modifier = Modifier.padding(EvolaSpacing.xl))
     }
 }
 
@@ -116,7 +129,7 @@ private fun ProgressMessage(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             ChaseLoadingIndicator()
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(EvolaSpacing.lg))
             Text(message, style = MaterialTheme.typography.bodyLarge)
         }
     }
@@ -198,4 +211,34 @@ private fun SectionRow(section: LessonSection, onClick: () -> Unit, onViewList: 
             tint = if (section.state == "done") EvolaColors.Gold else EvolaColors.Text3,
         )
     }
+}
+
+private val fakeLessonDetail = LessonDetail(
+    lessonId = "l1", number = 1, title = "Lesson 1", status = "ready",
+    breadcrumb = "Grammar Book · Lesson 1", progressPercent = 45,
+    sections = listOf(
+        LessonSection(key = "vocabulary", label = "Vocabulary", subtitle = "12 words", locked = false, state = "in_progress"),
+        LessonSection(key = "grammar", label = "Grammar", subtitle = "3 topics", locked = false, state = "done"),
+        LessonSection(key = "reading", label = "Reading", subtitle = "Not built yet", locked = true, state = "locked"),
+    ),
+)
+
+@Preview
+@Composable
+private fun LessonDetailLoadingPreview() {
+    EvolaTheme { LessonDetailContent(state = LessonDetailState.Loading, onBack = {}, onOpenSection = {}, onViewVocabularyList = {}) }
+}
+
+@Preview
+@Composable
+private fun LessonDetailLoadedPreview() {
+    EvolaTheme {
+        LessonDetailContent(state = LessonDetailState.Loaded(fakeLessonDetail), onBack = {}, onOpenSection = {}, onViewVocabularyList = {})
+    }
+}
+
+@Preview
+@Composable
+private fun LessonDetailErrorPreview() {
+    EvolaTheme { LessonDetailContent(state = LessonDetailState.Error("Something went wrong."), onBack = {}, onOpenSection = {}, onViewVocabularyList = {}) }
 }
