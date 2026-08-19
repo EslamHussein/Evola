@@ -80,10 +80,12 @@ import evola.composeapp.generated.resources.wizard_starting
 import evola.composeapp.generated.resources.wizard_view_existing_material
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.components.ComingSoonChip
 import evola.composeapp.theme.components.SegmentedProgressBar
 import evola.composeapp.theme.components.SelectableChip
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
@@ -94,20 +96,50 @@ fun AiWizardScreen(
     onAnalysisStarted: (materialId: String) -> Unit,
 ) {
     val state by viewModel.collectAsState()
-    val step = state.step
-    val resourceType = state.resourceType
-    val organizationMode = state.organizationMode
-    val aiInstructions = state.aiInstructions
-    val submitState = state.submitState
-
     viewModel.collectSideEffect { effect ->
         when (effect) {
             is WizardSideEffect.MaterialCreated -> onAnalysisStarted(effect.materialId)
         }
     }
 
+    AiWizardContent(
+        state = state,
+        onCancel = onCancel,
+        onAnalysisStarted = onAnalysisStarted,
+        onGoBack = { viewModel.goBack() },
+        onGoNext = { viewModel.goNext() },
+        onStartAnalysis = { viewModel.startAnalysis() },
+        onDismissDuplicatePrompt = { viewModel.dismissDuplicatePrompt() },
+        onSelectResourceType = { type -> viewModel.selectResourceType(type) },
+        onSelectOrganizationMode = { mode -> viewModel.selectOrganizationMode(mode) },
+        onUpdateInstructions = { text -> viewModel.updateInstructions(text) },
+        onAppendSuggestion = { suggestion -> viewModel.appendSuggestion(suggestion) },
+    )
+}
+
+@Composable
+private fun AiWizardContent(
+    state: WizardState,
+    onCancel: () -> Unit,
+    onAnalysisStarted: (materialId: String) -> Unit,
+    onGoBack: () -> Unit,
+    onGoNext: () -> Unit,
+    onStartAnalysis: () -> Unit,
+    onDismissDuplicatePrompt: () -> Unit,
+    onSelectResourceType: (ResourceInfoType) -> Unit,
+    onSelectOrganizationMode: (OrganizationMode) -> Unit,
+    onUpdateInstructions: (String) -> Unit,
+    onAppendSuggestion: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val step = state.step
+    val resourceType = state.resourceType
+    val organizationMode = state.organizationMode
+    val aiInstructions = state.aiInstructions
+    val submitState = state.submitState
+
     val exitOrBack: () -> Unit = {
-        if (step == STEP_ORDER.first()) onCancel() else viewModel.goBack()
+        if (step == STEP_ORDER.first()) onCancel() else onGoBack()
     }
     BackHandler(onBack = exitOrBack)
     val focusManager = LocalFocusManager.current
@@ -118,7 +150,7 @@ fun AiWizardScreen(
 
     (submitState as? WizardSubmitState.Duplicate)?.let { duplicate ->
         AlertDialog(
-            onDismissRequest = { viewModel.dismissDuplicatePrompt() },
+            onDismissRequest = onDismissDuplicatePrompt,
             shape = MaterialTheme.shapes.large,
             title = { Text(stringResource(Res.string.wizard_duplicate_title)) },
             text = { Text(stringResource(Res.string.wizard_duplicate_message)) },
@@ -128,7 +160,7 @@ fun AiWizardScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.dismissDuplicatePrompt() }) {
+                TextButton(onClick = onDismissDuplicatePrompt) {
                     Text(stringResource(Res.string.wizard_cancel))
                 }
             },
@@ -138,7 +170,7 @@ fun AiWizardScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text(state.stagedTitle) },
@@ -160,9 +192,9 @@ fun AiWizardScreen(
                     Button(
                         onClick = {
                             if (step == WizardStep.INSTRUCTIONS) {
-                                viewModel.startAnalysis()
+                                onStartAnalysis()
                             } else {
-                                viewModel.goNext()
+                                onGoNext()
                             }
                         },
                         enabled = !isSubmitting,
@@ -199,20 +231,14 @@ fun AiWizardScreen(
                 Spacer(Modifier.height(EvolaSpacing.xl))
 
                 when (step) {
-                    WizardStep.RESOURCE_INFO -> ResourceInfoStep(
-                        resourceType,
-                        { type -> viewModel.selectResourceType(type) },
-                    )
-                    WizardStep.ORGANIZATION -> OrganizationStep(
-                        organizationMode,
-                        { mode -> viewModel.selectOrganizationMode(mode) },
-                    )
+                    WizardStep.RESOURCE_INFO -> ResourceInfoStep(resourceType, onSelectResourceType)
+                    WizardStep.ORGANIZATION -> OrganizationStep(organizationMode, onSelectOrganizationMode)
                     WizardStep.FOCUS -> FocusStep()
                     WizardStep.INSTRUCTIONS -> InstructionsStep(
                         aiInstructions,
-                        onChange = { text -> viewModel.updateInstructions(text) },
+                        onChange = onUpdateInstructions,
                         suggestions = state.suggestedInstructions,
-                        onSuggestion = { suggestion -> viewModel.appendSuggestion(suggestion) },
+                        onSuggestion = onAppendSuggestion,
                     )
                 }
             }
@@ -335,5 +361,81 @@ private fun InstructionsStep(
         suggestions.forEach { suggestion ->
             SelectableChip(label = suggestion, selected = false, onClick = { onSuggestion(suggestion) })
         }
+    }
+}
+
+private val fakeWizardContentActions = object {
+    val onCancel: () -> Unit = {}
+    val onAnalysisStarted: (String) -> Unit = {}
+    val onGoBack: () -> Unit = {}
+    val onGoNext: () -> Unit = {}
+    val onStartAnalysis: () -> Unit = {}
+    val onDismissDuplicatePrompt: () -> Unit = {}
+    val onSelectResourceType: (ResourceInfoType) -> Unit = {}
+    val onSelectOrganizationMode: (OrganizationMode) -> Unit = {}
+    val onUpdateInstructions: (String) -> Unit = {}
+    val onAppendSuggestion: (String) -> Unit = {}
+}
+
+@Preview
+@Composable
+private fun AiWizardResourceInfoPreview() {
+    val a = fakeWizardContentActions
+    EvolaTheme {
+        AiWizardContent(
+            state = WizardState(step = WizardStep.RESOURCE_INFO, stagedTitle = "grammar-book.pdf"),
+            onCancel = a.onCancel, onAnalysisStarted = a.onAnalysisStarted, onGoBack = a.onGoBack, onGoNext = a.onGoNext,
+            onStartAnalysis = a.onStartAnalysis, onDismissDuplicatePrompt = a.onDismissDuplicatePrompt,
+            onSelectResourceType = a.onSelectResourceType, onSelectOrganizationMode = a.onSelectOrganizationMode,
+            onUpdateInstructions = a.onUpdateInstructions, onAppendSuggestion = a.onAppendSuggestion,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun AiWizardOrganizationPreview() {
+    val a = fakeWizardContentActions
+    EvolaTheme {
+        AiWizardContent(
+            state = WizardState(step = WizardStep.ORGANIZATION, stagedTitle = "grammar-book.pdf"),
+            onCancel = a.onCancel, onAnalysisStarted = a.onAnalysisStarted, onGoBack = a.onGoBack, onGoNext = a.onGoNext,
+            onStartAnalysis = a.onStartAnalysis, onDismissDuplicatePrompt = a.onDismissDuplicatePrompt,
+            onSelectResourceType = a.onSelectResourceType, onSelectOrganizationMode = a.onSelectOrganizationMode,
+            onUpdateInstructions = a.onUpdateInstructions, onAppendSuggestion = a.onAppendSuggestion,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun AiWizardInstructionsSubmittingPreview() {
+    val a = fakeWizardContentActions
+    EvolaTheme {
+        AiWizardContent(
+            state = WizardState(step = WizardStep.INSTRUCTIONS, stagedTitle = "grammar-book.pdf", submitState = WizardSubmitState.Submitting),
+            onCancel = a.onCancel, onAnalysisStarted = a.onAnalysisStarted, onGoBack = a.onGoBack, onGoNext = a.onGoNext,
+            onStartAnalysis = a.onStartAnalysis, onDismissDuplicatePrompt = a.onDismissDuplicatePrompt,
+            onSelectResourceType = a.onSelectResourceType, onSelectOrganizationMode = a.onSelectOrganizationMode,
+            onUpdateInstructions = a.onUpdateInstructions, onAppendSuggestion = a.onAppendSuggestion,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun AiWizardDuplicatePromptPreview() {
+    val a = fakeWizardContentActions
+    EvolaTheme {
+        AiWizardContent(
+            state = WizardState(
+                step = WizardStep.INSTRUCTIONS, stagedTitle = "grammar-book.pdf",
+                submitState = WizardSubmitState.Duplicate(existingMaterialId = "m1"),
+            ),
+            onCancel = a.onCancel, onAnalysisStarted = a.onAnalysisStarted, onGoBack = a.onGoBack, onGoNext = a.onGoNext,
+            onStartAnalysis = a.onStartAnalysis, onDismissDuplicatePrompt = a.onDismissDuplicatePrompt,
+            onSelectResourceType = a.onSelectResourceType, onSelectOrganizationMode = a.onSelectOrganizationMode,
+            onUpdateInstructions = a.onUpdateInstructions, onAppendSuggestion = a.onAppendSuggestion,
+        )
     }
 }
