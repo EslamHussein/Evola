@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -19,11 +20,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import evola.composeapp.BackHandler
 import evola.composeapp.language.LocalNativeLanguage
+import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.components.GlassNavigationBar
 import evola.composeapp.lessons.GrammarExerciseSessionScreen
 import evola.composeapp.lessons.GrammarExerciseSessionViewModel
@@ -38,6 +39,9 @@ import evola.composeapp.lessons.VocabularySessionScreen
 import evola.composeapp.lessons.VocabularySessionViewModel
 import evola.composeapp.materials.AddMaterialScreen
 import evola.composeapp.materials.AddMaterialViewModel
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
+import pro.respawn.flowmvi.compose.dsl.subscribe
 import evola.composeapp.materials.MaterialDetailScreen
 import evola.composeapp.materials.MaterialDetailViewModel
 import evola.composeapp.materials.MaterialsListScreen
@@ -48,14 +52,16 @@ import evola.composeapp.wizard.AiWizardViewModel
 import evola.composeapp.wizard.ProcessingScreen
 import evola.composeapp.wizard.ProcessingViewModel
 import evola.shared.goals.Goal
-import evola.shared.goals.GoalsRepository
-import evola.shared.grammar.GrammarRepository
-import evola.shared.lessons.LessonsRepository
-import evola.shared.materials.MaterialsRepository
-import evola.shared.vocabulary.VocabularyRepository
 import evola.shared.vocabulary.WordCategory
 
 private enum class MainTab { HOME, MATERIALS, PROFILE }
+
+/** Profile's own tiny sub-navigation, same shape as [MaterialsSubScreen] but with just the two
+ * destinations Profile currently needs. */
+private sealed interface ProfileSubScreen {
+    data object Main : ProfileSubScreen
+    data object Settings : ProfileSubScreen
+}
 
 /** [materialId] is null when this destination was reached from Home's "Continue lesson" CTA
  * rather than by drilling into a specific material - [LessonDetail] and everything below it fetch
@@ -71,9 +77,21 @@ private sealed interface MaterialsSubScreen {
     data class LessonDetail(val lessonId: String, val materialId: String?) : MaterialsSubScreen
     data class Session(val lessonId: String, val materialId: String?) : MaterialsSubScreen
 
+    /** Same word queue as [Session], rendered by [evola.composeapp.lessons.HandsFreeSessionScreen]
+     * instead - Home's "Hands-free practice" row. */
+    data class HandsFreeSession(val lessonId: String, val materialId: String?) : MaterialsSubScreen
+
+    /** Reword's "Extra modes (do not affect stats)" - a plain, non-graded flip-through of every
+     * word in the lesson, rendered by [evola.composeapp.lessons.BrowseFlashcardsScreen]. */
+    data class BrowseFlashcards(val lessonId: String, val materialId: String?) : MaterialsSubScreen
+
     /** Started from Home's Needs practice/Learning/Mastered card - a one-off, cross-lesson
      * practice session, not tied to any single lesson (see [evola.composeapp.lessons.VocabSessionSource.Category]). */
     data class CategorySession(val category: WordCategory) : MaterialsSubScreen
+
+    /** Reword's Home "Learn new words"/"Review words"/"Mixed mode" rows - goal-wide, same shape as
+     * [CategorySession] (see [evola.composeapp.lessons.VocabSessionSource.Mode]). */
+    data class ModeSession(val mode: evola.shared.vocabulary.SessionMode) : MaterialsSubScreen
     data class VocabularyList(val lessonId: String, val materialId: String?) : MaterialsSubScreen
     data class GrammarTopics(val lessonId: String, val materialId: String?) : MaterialsSubScreen
     data class GrammarSession(val lessonId: String, val topicId: String, val materialId: String?) : MaterialsSubScreen
@@ -94,22 +112,23 @@ private fun MaterialsSubScreen.LessonDetail.backTarget(): MaterialsSubScreen =
  * to grow. Modal flows within a tab (add material, material detail) hide the bar, matching the
  * spec's "modal/full-screen flows hide the tab bar" note.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     initialGoal: Goal,
-    goalsRepository: GoalsRepository,
-    materialsRepository: MaterialsRepository,
-    vocabularyRepository: VocabularyRepository,
-    lessonsRepository: LessonsRepository,
-    grammarRepository: GrammarRepository,
 ) {
     var goal by remember { mutableStateOf(initialGoal) }
     var selectedTab by remember { mutableStateOf(MainTab.HOME) }
     var materialsSubScreen by remember { mutableStateOf<MaterialsSubScreen>(MaterialsSubScreen.List) }
+    var profileSubScreen by remember { mutableStateOf<ProfileSubScreen>(ProfileSubScreen.Main) }
 
-    val showTabBar = selectedTab != MainTab.MATERIALS || materialsSubScreen is MaterialsSubScreen.List
+    val showTabBar = (selectedTab != MainTab.MATERIALS || materialsSubScreen is MaterialsSubScreen.List) &&
+        (selectedTab != MainTab.PROFILE || profileSubScreen is ProfileSubScreen.Main)
 
-    val glassIndicatorColor = Color.White.copy(alpha = 0.16f)
+    // A white-alpha indicator (right for the old dark glass bar) all but disappears against
+    // Reword's light palette's white/near-white blurred surface - the accent at low alpha reads on
+    // both.
+    val glassIndicatorColor = EvolaColors.Accent.copy(alpha = 0.16f)
     val glassItemColors = NavigationBarItemDefaults.colors(indicatorColor = glassIndicatorColor)
     val hazeState = rememberHazeState()
 
@@ -143,7 +162,10 @@ fun MainScreen(
                     )
                     NavigationBarItem(
                         selected = selectedTab == MainTab.PROFILE,
-                        onClick = { selectedTab = MainTab.PROFILE },
+                        onClick = {
+                            selectedTab = MainTab.PROFILE
+                            profileSubScreen = ProfileSubScreen.Main
+                        },
                         icon = { Icon(Icons.Filled.Person, contentDescription = "Profile") },
                         label = { Text("Profile") },
                         colors = glassItemColors,
@@ -155,7 +177,7 @@ fun MainScreen(
         Box(modifier = Modifier.padding(padding).hazeSource(state = hazeState)) {
             when (selectedTab) {
                 MainTab.HOME -> {
-                    val homeViewModel = remember(goal.id) { HomeViewModel(goal.id, goalsRepository) }
+                    val homeViewModel = koinViewModel<HomeViewModel>(key = goal.id) { parametersOf(goal.id) }
                     HomeScreen(
                         goal = goal,
                         viewModel = homeViewModel,
@@ -168,23 +190,34 @@ fun MainScreen(
                             selectedTab = MainTab.MATERIALS
                             materialsSubScreen = MaterialsSubScreen.CategorySession(category)
                         },
+                        onStartModeSession = { mode ->
+                            selectedTab = MainTab.MATERIALS
+                            materialsSubScreen = MaterialsSubScreen.ModeSession(mode)
+                        },
+                        onStartHandsFree = { lesson ->
+                            selectedTab = MainTab.MATERIALS
+                            materialsSubScreen = MaterialsSubScreen.HandsFreeSession(lesson.id, materialId = null)
+                        },
+                        onBrowseFlashcards = { lesson ->
+                            selectedTab = MainTab.MATERIALS
+                            materialsSubScreen = MaterialsSubScreen.BrowseFlashcards(lesson.id, materialId = null)
+                        },
                     )
                 }
 
                 MainTab.MATERIALS -> when (val sub = materialsSubScreen) {
                     MaterialsSubScreen.List -> {
-                        val viewModel = remember(goal.id) { MaterialsListViewModel(goal.id, goalsRepository, materialsRepository) }
+                        val viewModel = koinViewModel<MaterialsListViewModel>()
                         MaterialsListScreen(
                             viewModel = viewModel,
                             onAddMaterial = { materialsSubScreen = MaterialsSubScreen.Add },
                             onOpenMaterial = { materialId -> materialsSubScreen = MaterialsSubScreen.Detail(materialId) },
-                            onContinueLesson = { lesson -> materialsSubScreen = MaterialsSubScreen.LessonDetail(lesson.id, materialId = null) },
                         )
                     }
 
                     MaterialsSubScreen.Add -> {
                         BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.List })
-                        val viewModel = remember { AddMaterialViewModel() }
+                        val viewModel = koinViewModel<AddMaterialViewModel>()
                         AddMaterialScreen(
                             viewModel = viewModel,
                             onContinue = { staged -> materialsSubScreen = MaterialsSubScreen.Wizard(staged) },
@@ -194,8 +227,8 @@ fun MainScreen(
 
                     is MaterialsSubScreen.Wizard -> {
                         BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.Add })
-                        val viewModel = remember(sub.staged) {
-                            AiWizardViewModel(goal.id, sub.staged, materialsRepository)
+                        val viewModel = koinViewModel<AiWizardViewModel>(key = sub.staged.toString()) {
+                            parametersOf(goal.id, sub.staged)
                         }
                         AiWizardScreen(
                             viewModel = viewModel,
@@ -205,19 +238,20 @@ fun MainScreen(
                     }
 
                     is MaterialsSubScreen.Processing -> {
-                        val viewModel = remember(sub.materialId) {
-                            ProcessingViewModel(sub.materialId, materialsRepository)
+                        val viewModel = koinViewModel<ProcessingViewModel>(key = sub.materialId) {
+                            parametersOf(sub.materialId)
                         }
                         ProcessingScreen(
                             viewModel = viewModel,
+                            materialId = sub.materialId,
                             onDone = { materialId -> materialsSubScreen = MaterialsSubScreen.Detail(materialId) },
                         )
                     }
 
                     is MaterialsSubScreen.Detail -> {
                         BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.List })
-                        val viewModel = remember(sub.materialId) {
-                            MaterialDetailViewModel(sub.materialId, materialsRepository)
+                        val viewModel = koinViewModel<MaterialDetailViewModel>(key = sub.materialId) {
+                            parametersOf(sub.materialId)
                         }
                         MaterialDetailScreen(
                             viewModel = viewModel,
@@ -228,8 +262,8 @@ fun MainScreen(
 
                     is MaterialsSubScreen.LessonDetail -> {
                         BackHandler(onBack = { materialsSubScreen = sub.backTarget() })
-                        val viewModel = remember(sub.lessonId) {
-                            LessonDetailViewModel(sub.lessonId, lessonsRepository)
+                        val viewModel = koinViewModel<LessonDetailViewModel>(key = sub.lessonId) {
+                            parametersOf(sub.lessonId)
                         }
                         LessonDetailScreen(
                             viewModel = viewModel,
@@ -245,8 +279,8 @@ fun MainScreen(
                     }
 
                     is MaterialsSubScreen.Session -> {
-                        val viewModel = remember(sub.lessonId) {
-                            VocabularySessionViewModel(VocabSessionSource.Lesson(sub.lessonId), vocabularyRepository)
+                        val viewModel = koinViewModel<VocabularySessionViewModel>(key = "session-${sub.lessonId}") {
+                            parametersOf(VocabSessionSource.Lesson(sub.lessonId))
                         }
                         VocabularySessionScreen(
                             viewModel = viewModel,
@@ -254,9 +288,44 @@ fun MainScreen(
                         )
                     }
 
+                    is MaterialsSubScreen.HandsFreeSession -> {
+                        val viewModel = koinViewModel<VocabularySessionViewModel>(key = "handsfree-${sub.lessonId}") {
+                            parametersOf(VocabSessionSource.Lesson(sub.lessonId))
+                        }
+                        val speechService = evola.composeapp.speech.rememberSpeechService()
+                        evola.composeapp.lessons.HandsFreeSessionScreen(
+                            viewModel = viewModel,
+                            speechService = speechService,
+                            onDone = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) },
+                        )
+                    }
+
+                    is MaterialsSubScreen.BrowseFlashcards -> {
+                        val viewModel = koinViewModel<evola.composeapp.lessons.BrowseFlashcardsViewModel>(key = sub.lessonId) {
+                            parametersOf(sub.lessonId)
+                        }
+                        evola.composeapp.lessons.BrowseFlashcardsScreen(
+                            viewModel = viewModel,
+                            onDone = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) },
+                        )
+                    }
+
                     is MaterialsSubScreen.CategorySession -> {
-                        val viewModel = remember(sub.category) {
-                            VocabularySessionViewModel(VocabSessionSource.Category(goal.id, sub.category), vocabularyRepository)
+                        val viewModel = koinViewModel<VocabularySessionViewModel>(key = "category-${sub.category}") {
+                            parametersOf(VocabSessionSource.Category(goal.id, sub.category))
+                        }
+                        VocabularySessionScreen(
+                            viewModel = viewModel,
+                            onDone = {
+                                selectedTab = MainTab.HOME
+                                materialsSubScreen = MaterialsSubScreen.List
+                            },
+                        )
+                    }
+
+                    is MaterialsSubScreen.ModeSession -> {
+                        val viewModel = koinViewModel<VocabularySessionViewModel>(key = "mode-${sub.mode}") {
+                            parametersOf(VocabSessionSource.Mode(goal.id, sub.mode))
                         }
                         VocabularySessionScreen(
                             viewModel = viewModel,
@@ -269,8 +338,8 @@ fun MainScreen(
 
                     is MaterialsSubScreen.VocabularyList -> {
                         BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) })
-                        val viewModel = remember(sub.lessonId) {
-                            VocabularyListViewModel(sub.lessonId, vocabularyRepository)
+                        val viewModel = koinViewModel<VocabularyListViewModel>(key = sub.lessonId) {
+                            parametersOf(sub.lessonId, goal.id)
                         }
                         VocabularyListScreen(
                             viewModel = viewModel,
@@ -280,8 +349,8 @@ fun MainScreen(
 
                     is MaterialsSubScreen.GrammarTopics -> {
                         BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) })
-                        val viewModel = remember(sub.lessonId) {
-                            GrammarTopicListViewModel(sub.lessonId, grammarRepository)
+                        val viewModel = koinViewModel<GrammarTopicListViewModel>(key = sub.lessonId) {
+                            parametersOf(sub.lessonId)
                         }
                         GrammarTopicListScreen(
                             viewModel = viewModel,
@@ -293,8 +362,8 @@ fun MainScreen(
                     }
 
                     is MaterialsSubScreen.GrammarSession -> {
-                        val viewModel = remember(sub.topicId) {
-                            GrammarExerciseSessionViewModel(sub.topicId, grammarRepository)
+                        val viewModel = koinViewModel<GrammarExerciseSessionViewModel>(key = sub.topicId) {
+                            parametersOf(sub.topicId)
                         }
                         GrammarExerciseSessionScreen(
                             viewModel = viewModel,
@@ -303,13 +372,41 @@ fun MainScreen(
                     }
                 }
 
-                MainTab.PROFILE -> {
-                    val profileViewModel = remember { ProfileViewModel(goalsRepository) }
-                    ProfileScreen(
-                        goal = goal,
-                        viewModel = profileViewModel,
-                        onGoalUpdated = { updated -> goal = updated },
-                    )
+                MainTab.PROFILE -> when (profileSubScreen) {
+                    ProfileSubScreen.Main -> {
+                        val profileViewModel = koinViewModel<ProfileViewModel>()
+                        ProfileScreen(
+                            goal = goal,
+                            viewModel = profileViewModel,
+                            onGoalUpdated = { updated -> goal = updated },
+                            onOpenSettings = { profileSubScreen = ProfileSubScreen.Settings },
+                        )
+                    }
+
+                    ProfileSubScreen.Settings -> {
+                        val settingsViewModel = koinViewModel<SettingsViewModel>()
+                        val reminderScheduler = evola.composeapp.reminders.rememberReminderScheduler()
+                        val currentSettingsState by settingsViewModel.subscribe()
+                        val requestNotificationPermission = evola.composeapp.reminders.rememberNotificationPermissionRequester { granted ->
+                            if (granted) {
+                                reminderScheduler.scheduleDaily(currentSettingsState.settings.reminderHour)
+                            } else {
+                                // Permission denied - the toggle stays visually on (matching the OS's own
+                                // "you can flip this in system settings later" convention) but nothing is
+                                // actually scheduled until the user grants it from system settings.
+                                settingsViewModel.intent(SettingsIntent.SetNotificationsEnabled(false))
+                            }
+                        }
+                        val speechService = evola.composeapp.speech.rememberSpeechService()
+                        SettingsScreen(
+                            viewModel = settingsViewModel,
+                            speechService = speechService,
+                            onBack = { profileSubScreen = ProfileSubScreen.Main },
+                            onNotificationsToggled = { enabled ->
+                                if (enabled) requestNotificationPermission() else reminderScheduler.cancel()
+                            },
+                        )
+                    }
                 }
             }
         }

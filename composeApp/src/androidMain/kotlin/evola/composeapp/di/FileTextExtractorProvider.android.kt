@@ -11,6 +11,7 @@ import evola.shared.files.FileTextExtractor
 import evola.shared.files.MIME_DOCX
 import evola.shared.files.MIME_PDF
 import evola.shared.files.MIME_TEXT_PLAIN
+import evola.shared.files.PAGE_BREAK
 import java.io.ByteArrayInputStream
 import java.util.zip.ZipInputStream
 
@@ -21,8 +22,14 @@ class AndroidFileTextExtractor(context: Context) : FileTextExtractor {
     }
 
     override fun extractText(bytes: ByteArray, mimeType: String): String? = when (mimeType) {
+        // Per-page (not one whole-document strip) so the "pages" organization mode can split back
+        // into pages via PAGE_BREAK - see PageSegmenter.
         MIME_PDF -> runCatching {
-            PDDocument.load(bytes).use { PDFTextStripper().getText(it) }
+            PDDocument.load(bytes).use { doc ->
+                (1..doc.numberOfPages).joinToString(PAGE_BREAK) { pageNum ->
+                    PDFTextStripper().apply { startPage = pageNum; endPage = pageNum }.getText(doc)
+                }
+            }
         }.getOrNull()?.takeIf { it.isNotBlank() }
         MIME_DOCX -> runCatching { extractDocx(bytes) }.getOrNull()?.takeIf { it.isNotBlank() }
         MIME_TEXT_PLAIN -> bytes.decodeToString().takeIf { it.isNotBlank() }
