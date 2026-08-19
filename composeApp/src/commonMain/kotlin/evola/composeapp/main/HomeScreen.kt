@@ -26,6 +26,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -40,10 +42,13 @@ import androidx.compose.ui.unit.dp
 import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.components.RootTopBarTitle
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.Lesson
+import evola.shared.goals.VocabularyBreakdown
+import evola.shared.language.NativeLanguage
 import evola.shared.vocabulary.SessionMode
 import evola.shared.vocabulary.WordCategory
 import kotlin.math.roundToInt
@@ -58,6 +63,7 @@ import evola.composeapp.generated.resources.main_home_retry
 import evola.composeapp.generated.resources.main_home_title
 import evola.composeapp.generated.resources.main_home_your_goal_label
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Home tab / Progress Dashboard (01_PRODUCT_SPEC.md §1.10). Three honest states: the encouraging
  * empty state when the goal has no lessons yet (never a broken 0% chart), a real readiness dial +
@@ -81,40 +87,69 @@ fun HomeScreen(
     onBrowseFlashcards: (Lesson) -> Unit,
 ) {
     val state by viewModel.collectAsState()
-    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
     val newlyUnlockedBadges = (state as? HomeState.Loaded)?.progress?.newlyUnlockedBadges.orEmpty()
     val achievementMessages = newlyUnlockedBadges.map { badge -> stringResource(Res.string.main_home_achievement_unlocked, badge.title) }
     LaunchedEffect(newlyUnlockedBadges) {
         achievementMessages.forEach { message -> snackbarHostState.showSnackbar(message) }
     }
 
+    HomeContent(
+        goal = goal,
+        state = state,
+        snackbarHostState = snackbarHostState,
+        onRetry = { viewModel.refresh() },
+        onGoToMaterials = onGoToMaterials,
+        onContinueLesson = onContinueLesson,
+        onStartCategorySession = onStartCategorySession,
+        onStartModeSession = onStartModeSession,
+        onStartHandsFree = onStartHandsFree,
+        onBrowseFlashcards = onBrowseFlashcards,
+    )
+}
+
+@Composable
+private fun HomeContent(
+    goal: Goal,
+    state: HomeState,
+    snackbarHostState: SnackbarHostState,
+    onRetry: () -> Unit,
+    onGoToMaterials: () -> Unit,
+    onContinueLesson: (Lesson) -> Unit,
+    onStartCategorySession: (WordCategory) -> Unit,
+    onStartModeSession: (SessionMode) -> Unit,
+    onStartHandsFree: (Lesson) -> Unit,
+    onBrowseFlashcards: (Lesson) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
+        modifier = modifier,
         topBar = { TopAppBar(title = { RootTopBarTitle(stringResource(Res.string.main_home_title)) }) },
-        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {
                 Text(stringResource(Res.string.main_home_your_goal_label), style = MaterialTheme.typography.labelLarge, color = EvolaColors.Accent)
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(EvolaSpacing.xs))
                 Text(goal.goalText, style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(EvolaSpacing.xl))
 
-                when (val current = state) {
+                when (state) {
                     is HomeState.Loading -> CenteredBox { ChaseLoadingIndicator() }
 
                     is HomeState.Error -> CenteredBox {
-                        Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                        Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                         Spacer(Modifier.height(EvolaSpacing.md))
-                        Button(onClick = { viewModel.refresh() }) { Text(stringResource(Res.string.main_home_retry)) }
+                        Button(onClick = onRetry) { Text(stringResource(Res.string.main_home_retry)) }
                     }
 
                     is HomeState.Loaded ->
-                        if (!current.hasLessons) {
+                        if (!state.hasLessons) {
                             EmptyState(onGoToMaterials)
                         } else {
                             DashboardBody(
-                                progress = current.progress,
-                                currentLesson = current.currentLesson,
+                                progress = state.progress,
+                                currentLesson = state.currentLesson,
                                 onContinueLesson = onContinueLesson,
                                 onStartCategorySession = onStartCategorySession,
                                 onStartModeSession = onStartModeSession,
@@ -223,5 +258,62 @@ private fun DashboardBody(
                 Text(stringResource(Res.string.main_home_all_complete), style = MaterialTheme.typography.titleMedium)
             }
         }
+    }
+}
+
+private val fakeGoal = Goal(id = "g1", goalText = "Learn German for my trip to Berlin", title = "Berlin Trip", nativeLanguage = NativeLanguage.ENGLISH, isActive = true, createdAt = "2026-01-01")
+
+private val fakeLesson = Lesson(id = "l1", number = 3, title = "Restaurants", status = "ready", vocabProgress = 0.6f, grammarProgress = 0.4f, grammarCount = 2)
+
+private val fakeGoalProgress = GoalProgress(
+    overallPct = 0.42f, currentLessonId = "l1", streakDays = 5, todayCompleted = false,
+    vocabulary = VocabularyBreakdown(notStarted = 12, inProgress = 8, mastered = 20, struggling = 3),
+)
+
+@Preview
+@Composable
+private fun HomeLoadingPreview() {
+    EvolaTheme {
+        HomeContent(
+            goal = fakeGoal, state = HomeState.Loading, snackbarHostState = remember { SnackbarHostState() }, onRetry = {},
+            onGoToMaterials = {}, onContinueLesson = {}, onStartCategorySession = {}, onStartModeSession = {}, onStartHandsFree = {}, onBrowseFlashcards = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun HomeLoadedPreview() {
+    EvolaTheme {
+        HomeContent(
+            goal = fakeGoal,
+            state = HomeState.Loaded(progress = fakeGoalProgress, currentLesson = fakeLesson, hasLessons = true),
+            snackbarHostState = remember { SnackbarHostState() }, onRetry = {},
+            onGoToMaterials = {}, onContinueLesson = {}, onStartCategorySession = {}, onStartModeSession = {}, onStartHandsFree = {}, onBrowseFlashcards = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun HomeEmptyPreview() {
+    EvolaTheme {
+        HomeContent(
+            goal = fakeGoal,
+            state = HomeState.Loaded(progress = fakeGoalProgress, currentLesson = null, hasLessons = false),
+            snackbarHostState = remember { SnackbarHostState() }, onRetry = {},
+            onGoToMaterials = {}, onContinueLesson = {}, onStartCategorySession = {}, onStartModeSession = {}, onStartHandsFree = {}, onBrowseFlashcards = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun HomeErrorPreview() {
+    EvolaTheme {
+        HomeContent(
+            goal = fakeGoal, state = HomeState.Error("Something went wrong."), snackbarHostState = remember { SnackbarHostState() }, onRetry = {},
+            onGoToMaterials = {}, onContinueLesson = {}, onStartCategorySession = {}, onStartModeSession = {}, onStartHandsFree = {}, onBrowseFlashcards = {},
+        )
     }
 }
