@@ -1,10 +1,8 @@
 package evola.composeapp.lessons
 
 import evola.shared.grammar.GrammarExercise
-import pro.respawn.flowmvi.api.MVIIntent
-import pro.respawn.flowmvi.api.MVIState
 
-sealed interface GrammarExerciseSessionState : MVIState {
+sealed interface GrammarExerciseSessionState {
     data object Loading : GrammarExerciseSessionState
     data class InProgress(val currentExercise: GrammarExercise, val answeredCount: Int) : GrammarExerciseSessionState
     data class Summary(val exercisesCompleted: Int, val accuracy: Double) : GrammarExerciseSessionState
@@ -14,9 +12,4 @@ sealed interface GrammarExerciseSessionState : MVIState {
      * this is not an error). */
     data object Empty : GrammarExerciseSessionState
     data class Error(val message: String) : GrammarExerciseSessionState
-}
-
-sealed interface GrammarExerciseSessionIntent : MVIIntent {
-    data object Retry : GrammarExerciseSessionIntent
-    data class SubmitAnswer(val exerciseId: String, val response: String, val correct: Boolean) : GrammarExerciseSessionIntent
 }

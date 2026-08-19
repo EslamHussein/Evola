@@ -48,7 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.BackHandler
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_done
@@ -70,7 +70,7 @@ import evola.shared.grammar.GrammarExercise
  * back arrow and the system back gesture are wired to [onDone] in every state. */
 @Composable
 fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onDone: () -> Unit) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     BackHandler(onBack = onDone)
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
@@ -95,7 +95,7 @@ fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onD
                 is GrammarExerciseSessionState.Error -> CenteredMessage {
                     Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { viewModel.intent(GrammarExerciseSessionIntent.Retry) }) { Text(stringResource(Res.string.lessons_action_retry)) }
+                    Button(onClick = { viewModel.retry() }) { Text(stringResource(Res.string.lessons_action_retry)) }
                 }
 
                 is GrammarExerciseSessionState.Empty -> CenteredMessage {
@@ -112,7 +112,7 @@ fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onD
                     exercise = current.currentExercise,
                     answeredCount = current.answeredCount,
                     onSubmit = { response, correct ->
-                        viewModel.intent(GrammarExerciseSessionIntent.SubmitAnswer(current.currentExercise.exerciseId, response, correct))
+                        viewModel.submitAnswer(current.currentExercise.exerciseId, response, correct)
                     },
                 )
 
