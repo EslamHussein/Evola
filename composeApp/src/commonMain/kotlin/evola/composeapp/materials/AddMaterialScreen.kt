@@ -75,9 +75,11 @@ import evola.composeapp.generated.resources.materials_add_type_pdf
 import evola.composeapp.generated.resources.materials_add_type_text
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.components.SelectableChip
 import evola.shared.materials.MIN_EXTRACTABLE_TEXT_LENGTH
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.orbitmvi.orbit.compose.collectAsState
 
 @Composable
@@ -87,7 +89,6 @@ fun AddMaterialScreen(
     onCancel: () -> Unit,
 ) {
     val state by viewModel.collectAsState()
-    val selectedType = state.selectedType
     var pickedFile by remember { mutableStateOf<PickedFile?>(null) }
     var pastedText by remember { mutableStateOf("") }
     var pickedImages by remember { mutableStateOf<List<PickedFile>>(emptyList()) }
@@ -95,7 +96,6 @@ fun AddMaterialScreen(
     val launchPicker = rememberFilePicker { pickedFile = it }
     val launchImagePicker = rememberImagePicker { pickedImages = pickedImages + it }
     val launchCamera = rememberCameraCapture { pickedImages = pickedImages + it }
-    val focusManager = LocalFocusManager.current
 
     if (showImageSourceDialog) {
         ImageSourceSheet(
@@ -105,6 +105,38 @@ fun AddMaterialScreen(
         )
     }
 
+    AddMaterialContent(
+        state = state,
+        pickedFile = pickedFile,
+        pastedText = pastedText,
+        onPastedTextChange = { pastedText = it },
+        pickedImages = pickedImages,
+        onAddImage = { showImageSourceDialog = true },
+        onRemoveImage = { index -> pickedImages = pickedImages.filterIndexed { i, _ -> i != index } },
+        onLaunchFilePicker = launchPicker,
+        onSelectType = { type -> viewModel.selectType(type) },
+        onContinue = onContinue,
+        onCancel = onCancel,
+    )
+}
+
+@Composable
+private fun AddMaterialContent(
+    state: AddMaterialState,
+    pickedFile: PickedFile?,
+    pastedText: String,
+    onPastedTextChange: (String) -> Unit,
+    pickedImages: List<PickedFile>,
+    onAddImage: () -> Unit,
+    onRemoveImage: (Int) -> Unit,
+    onLaunchFilePicker: () -> Unit,
+    onSelectType: (ResourceType) -> Unit,
+    onContinue: (StagedResource) -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val selectedType = state.selectedType
+    val focusManager = LocalFocusManager.current
     val canContinue = when (selectedType) {
         ResourceType.PDF -> pickedFile != null
         ResourceType.TEXT -> pastedText.trim().length >= MIN_EXTRACTABLE_TEXT_LENGTH
@@ -114,7 +146,7 @@ fun AddMaterialScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = { TopAppBar(title = { Text(stringResource(Res.string.materials_add_title)) }, scrollBehavior = scrollBehavior) },
         bottomBar = {
             Surface(shadowElevation = 4.dp) {
@@ -160,21 +192,21 @@ fun AddMaterialScreen(
                     SelectableChip(
                         label = stringResource(Res.string.materials_add_type_pdf),
                         selected = selectedType == ResourceType.PDF,
-                        onClick = { viewModel.selectType(ResourceType.PDF) },
+                        onClick = { onSelectType(ResourceType.PDF) },
                         icon = Icons.Filled.PictureAsPdf,
                         modifier = Modifier.weight(1f),
                     )
                     SelectableChip(
                         label = stringResource(Res.string.materials_add_type_text),
                         selected = selectedType == ResourceType.TEXT,
-                        onClick = { viewModel.selectType(ResourceType.TEXT) },
+                        onClick = { onSelectType(ResourceType.TEXT) },
                         icon = Icons.Filled.Description,
                         modifier = Modifier.weight(1f),
                     )
                     SelectableChip(
                         label = stringResource(Res.string.materials_add_type_image),
                         selected = selectedType == ResourceType.IMAGE,
-                        onClick = { viewModel.selectType(ResourceType.IMAGE) },
+                        onClick = { onSelectType(ResourceType.IMAGE) },
                         icon = Icons.Filled.Image,
                         modifier = Modifier.weight(1f),
                     )
@@ -186,7 +218,7 @@ fun AddMaterialScreen(
                         val current = pickedFile
                         if (current == null) {
                             Surface(
-                                onClick = launchPicker,
+                                onClick = onLaunchFilePicker,
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = MaterialTheme.shapes.medium,
                                 color = EvolaColors.SurfaceAlt,
@@ -210,7 +242,7 @@ fun AddMaterialScreen(
                                 Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
                                     Text(current.fileName, style = MaterialTheme.typography.titleMedium)
                                     Spacer(Modifier.height(EvolaSpacing.sm))
-                                    TextButton(onClick = launchPicker) {
+                                    TextButton(onClick = onLaunchFilePicker) {
                                         Text(stringResource(Res.string.materials_add_choose_different_file))
                                     }
                                 }
@@ -221,7 +253,7 @@ fun AddMaterialScreen(
                     ResourceType.TEXT -> {
                         OutlinedTextField(
                             value = pastedText,
-                            onValueChange = { pastedText = it },
+                            onValueChange = onPastedTextChange,
                             modifier = Modifier.fillMaxWidth().height(220.dp),
                             placeholder = { Text(stringResource(Res.string.materials_add_text_placeholder)) },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
@@ -237,8 +269,8 @@ fun AddMaterialScreen(
                         Spacer(Modifier.height(EvolaSpacing.md))
                         ImagePickerGrid(
                             images = pickedImages,
-                            onAdd = { showImageSourceDialog = true },
-                            onRemove = { index -> pickedImages = pickedImages.filterIndexed { i, _ -> i != index } },
+                            onAdd = onAddImage,
+                            onRemove = onRemoveImage,
                         )
                     }
                 }
@@ -304,7 +336,7 @@ private fun ImagePickerGrid(images: List<PickedFile>, onAdd: () -> Unit, onRemov
                 ) {
                     Column(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xs), horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Filled.Image, contentDescription = null, tint = EvolaColors.Text3, modifier = Modifier.size(28.dp))
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(EvolaSpacing.xs))
                         Text(
                             image.fileName,
                             style = MaterialTheme.typography.labelSmall,
@@ -338,5 +370,54 @@ private fun ImagePickerGrid(images: List<PickedFile>, onAdd: () -> Unit, onRemov
                 Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.materials_add_add_photo_desc), tint = EvolaColors.Text2)
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun AddMaterialPdfEmptyPreview() {
+    EvolaTheme {
+        AddMaterialContent(
+            state = AddMaterialState(selectedType = ResourceType.PDF), pickedFile = null, pastedText = "", onPastedTextChange = {},
+            pickedImages = emptyList(), onAddImage = {}, onRemoveImage = {}, onLaunchFilePicker = {}, onSelectType = {}, onContinue = {}, onCancel = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun AddMaterialPdfPickedPreview() {
+    EvolaTheme {
+        AddMaterialContent(
+            state = AddMaterialState(selectedType = ResourceType.PDF),
+            pickedFile = PickedFile(fileName = "grammar-book.pdf", mimeType = "application/pdf", bytes = ByteArray(0)),
+            pastedText = "", onPastedTextChange = {}, pickedImages = emptyList(), onAddImage = {}, onRemoveImage = {},
+            onLaunchFilePicker = {}, onSelectType = {}, onContinue = {}, onCancel = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun AddMaterialTextPreview() {
+    EvolaTheme {
+        AddMaterialContent(
+            state = AddMaterialState(selectedType = ResourceType.TEXT), pickedFile = null, pastedText = "Some pasted text to analyze.",
+            onPastedTextChange = {}, pickedImages = emptyList(), onAddImage = {}, onRemoveImage = {},
+            onLaunchFilePicker = {}, onSelectType = {}, onContinue = {}, onCancel = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun AddMaterialImagePreview() {
+    EvolaTheme {
+        AddMaterialContent(
+            state = AddMaterialState(selectedType = ResourceType.IMAGE), pickedFile = null, pastedText = "",
+            onPastedTextChange = {},
+            pickedImages = listOf(PickedFile(fileName = "page1.jpg", mimeType = "image/jpeg", bytes = ByteArray(0))),
+            onAddImage = {}, onRemoveImage = {}, onLaunchFilePicker = {}, onSelectType = {}, onContinue = {}, onCancel = {},
+        )
     }
 }
