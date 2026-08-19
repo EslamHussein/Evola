@@ -31,15 +31,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_grammar_topics_empty
 import evola.composeapp.generated.resources.lessons_grammar_topics_title
 import evola.composeapp.generated.resources.lessons_nav_back
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import evola.shared.grammar.GrammarTopic
 
 /** A lesson's grammar topics (01_PRODUCT_SPEC.md §1.9) - honest empty state when 0 topics were
@@ -47,10 +48,20 @@ import evola.shared.grammar.GrammarTopic
 @Composable
 fun GrammarTopicListScreen(viewModel: GrammarTopicListViewModel, onOpenTopic: (String) -> Unit, onBack: () -> Unit) {
     val state by viewModel.collectAsState()
+    GrammarTopicListContent(state = state, onOpenTopic = onOpenTopic, onBack = onBack)
+}
+
+@Composable
+private fun GrammarTopicListContent(
+    state: GrammarTopicListState,
+    onOpenTopic: (String) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.lessons_grammar_topics_title)) },
@@ -64,18 +75,18 @@ fun GrammarTopicListScreen(viewModel: GrammarTopicListViewModel, onOpenTopic: (S
         },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (val current = state) {
+            when (state) {
                 is GrammarTopicListState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     ChaseLoadingIndicator()
                 }
 
-                is GrammarTopicListState.Error -> Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                    Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                is GrammarTopicListState.Error -> Box(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
+                    Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 }
 
                 is GrammarTopicListState.Loaded -> {
-                    if (current.topics.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                    if (state.topics.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
                             Text(
                                 stringResource(Res.string.lessons_grammar_topics_empty),
                                 style = MaterialTheme.typography.bodyLarge,
@@ -87,7 +98,7 @@ fun GrammarTopicListScreen(viewModel: GrammarTopicListViewModel, onOpenTopic: (S
                             modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg),
                             verticalArrangement = Arrangement.spacedBy(EvolaSpacing.sm),
                         ) {
-                            items(current.topics) { topic -> TopicRow(topic, onClick = { onOpenTopic(topic.topicId) }) }
+                            items(state.topics) { topic -> TopicRow(topic, onClick = { onOpenTopic(topic.topicId) }) }
                         }
                     }
                 }
@@ -112,4 +123,33 @@ private fun TopicRow(topic: GrammarTopic, onClick: () -> Unit) {
             Text(topic.explanation, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
         }
     }
+}
+
+private val fakeGrammarTopics = listOf(
+    GrammarTopic(topicId = "t1", name = "Akkusativ", explanation = "The accusative case marks the direct object.", masteryState = "learning"),
+    GrammarTopic(topicId = "t2", name = "Dativ", explanation = "The dative case marks the indirect object.", masteryState = "new"),
+)
+
+@Preview
+@Composable
+private fun GrammarTopicListLoadingPreview() {
+    EvolaTheme { GrammarTopicListContent(state = GrammarTopicListState.Loading, onOpenTopic = {}, onBack = {}) }
+}
+
+@Preview
+@Composable
+private fun GrammarTopicListLoadedPreview() {
+    EvolaTheme { GrammarTopicListContent(state = GrammarTopicListState.Loaded(fakeGrammarTopics), onOpenTopic = {}, onBack = {}) }
+}
+
+@Preview
+@Composable
+private fun GrammarTopicListEmptyPreview() {
+    EvolaTheme { GrammarTopicListContent(state = GrammarTopicListState.Loaded(emptyList()), onOpenTopic = {}, onBack = {}) }
+}
+
+@Preview
+@Composable
+private fun GrammarTopicListErrorPreview() {
+    EvolaTheme { GrammarTopicListContent(state = GrammarTopicListState.Error("Something went wrong."), onOpenTopic = {}, onBack = {}) }
 }
