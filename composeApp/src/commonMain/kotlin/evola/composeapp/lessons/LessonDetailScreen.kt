@@ -50,7 +50,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.CircularProgressRing
@@ -73,7 +73,7 @@ fun LessonDetailScreen(
     onOpenSection: (key: String) -> Unit,
     onViewVocabularyList: () -> Unit,
 ) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
