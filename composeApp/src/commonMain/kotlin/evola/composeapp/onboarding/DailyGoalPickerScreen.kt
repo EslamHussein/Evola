@@ -20,8 +20,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import evola.composeapp.theme.EvolaColors
+import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.SelectableChip
 import evola.shared.local.LocalSettingsRepository
 import kotlinx.coroutines.launch
@@ -42,19 +42,19 @@ fun DailyGoalPickerScreen(onContinue: () -> Unit) {
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
+            modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             Text("How many new words a day?", style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(EvolaSpacing.sm))
             Text(
                 "You can change this any time in Settings.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = EvolaColors.Text2,
             )
-            Spacer(Modifier.height(24.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Spacer(Modifier.height(EvolaSpacing.xl))
+            Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
                 DAILY_GOAL_OPTIONS.forEach { option ->
                     SelectableChip(
                         label = "$option",
@@ -63,7 +63,7 @@ fun DailyGoalPickerScreen(onContinue: () -> Unit) {
                     )
                 }
             }
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(EvolaSpacing.xxl))
             Button(
                 onClick = {
                     coroutineScope.launch {

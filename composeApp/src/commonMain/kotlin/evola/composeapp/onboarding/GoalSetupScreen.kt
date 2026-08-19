@@ -31,7 +31,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.unit.dp
+import evola.composeapp.theme.EvolaSpacing
 import evola.shared.goals.Goal
 import evola.shared.language.NativeLanguage
 import pro.respawn.flowmvi.compose.dsl.subscribe
@@ -64,17 +64,17 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguag
             ) { focusManager.clearFocus() },
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding().padding(24.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding().padding(EvolaSpacing.xl),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             Text("What are you working toward?", style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(EvolaSpacing.sm))
             Text(
                 "Describe your goal in your own words - we'll build lessons around it.",
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(EvolaSpacing.xl))
             OutlinedTextField(
                 value = goalText,
                 onValueChange = {
@@ -95,14 +95,14 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguag
                 modifier = Modifier.fillMaxWidth(),
             )
             if (wasTruncated) {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(EvolaSpacing.xs))
                 Text(
                     "Goal text is capped at $GOAL_TEXT_SOFT_CAP characters - trimmed to fit.",
                     color = MaterialTheme.colorScheme.tertiary,
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(EvolaSpacing.md))
             OutlinedTextField(
                 value = title,
                 onValueChange = { if (it.length <= 60) title = it },
@@ -114,10 +114,10 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguag
                 modifier = Modifier.fillMaxWidth(),
             )
             errorMessage?.let {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(EvolaSpacing.sm))
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(EvolaSpacing.xl))
             Button(
                 onClick = { viewModel.intent(GoalSetupIntent.CreateGoal(goalText, title, nativeLanguage)) },
                 enabled = !isSubmitting && goalText.trim().length >= 3,

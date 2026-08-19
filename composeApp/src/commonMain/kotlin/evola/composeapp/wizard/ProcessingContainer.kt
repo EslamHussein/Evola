@@ -2,6 +2,7 @@ package evola.composeapp.wizard
 
 import evola.composeapp.core.toUserMessage
 import evola.shared.core.ApiResult
+import evola.shared.materials.MATERIAL_POLL_INTERVAL_MS
 import evola.shared.materials.MaterialStatus
 import evola.shared.materials.MaterialsRepository
 import kotlinx.coroutines.delay
@@ -11,7 +12,6 @@ import pro.respawn.flowmvi.plugins.asyncInit
 import pro.respawn.flowmvi.plugins.reduce
 
 private val TERMINAL_STATUSES = setOf(MaterialStatus.READY, MaterialStatus.FAILED, MaterialStatus.UNSUPPORTED_CONTENT)
-private const val POLL_INTERVAL_MS = 3000L
 
 /** The processing/loading screen the design handoff's own README admits is a gap - polls the
  * just-created material the same way [evola.composeapp.materials.MaterialDetailContainer] polls
@@ -41,7 +41,7 @@ class ProcessingContainer(
                         updateState { ProcessingState.InProgress(result.data) }
                     }
                 }
-                delay(POLL_INTERVAL_MS)
+                delay(MATERIAL_POLL_INTERVAL_MS)
             }
         }
         reduce { }

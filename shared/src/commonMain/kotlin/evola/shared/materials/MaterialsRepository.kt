@@ -7,6 +7,11 @@ import evola.shared.core.ApiResult
  * actually accept. */
 const val MIN_EXTRACTABLE_TEXT_LENGTH = 20
 
+/** Shared poll cadence for the three Containers (MaterialDetail, MaterialsList, Processing) that
+ * poll a material's extraction status - `list()`/`get()` are local SQLDelight queries, not network
+ * calls, so this interval is about UI responsiveness, not request cost. */
+const val MATERIAL_POLL_INTERVAL_MS = 3000L
+
 sealed interface UploadResult {
     data class Success(val materialId: String, val status: MaterialStatus) : UploadResult
     data object GoalNotFound : UploadResult

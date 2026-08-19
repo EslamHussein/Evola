@@ -90,6 +90,8 @@ private data class AnthropicVisionRequest(
     val messages: List<AnthropicVisionMessage>,
 )
 
+private const val LOG_BODY_CHAR_LIMIT = 2000
+
 /**
  * On-device Anthropic Messages client (serverless architecture): calls `api.anthropic.com` directly
  * with the user's own key from [apiKeyProvider] (device secure store). Raw Ktor rather than the
@@ -113,7 +115,18 @@ class AnthropicClient(
         install(ContentNegotiation) { json(json) }
         install(Logging) {
             logger = object : KtorLogger {
-                override fun log(message: String) = EvolaLog.d("http", message)
+                // BODY logging includes the full request/response body - for this app that's the
+                // user's own uploaded study material and AI-generated lesson content, which
+                // shouldn't sit verbatim in a persistent on-device log file indefinitely. Truncated
+                // rather than dropped entirely, so a real failure is still diagnosable from the log.
+                override fun log(message: String) {
+                    val truncated = if (message.length > LOG_BODY_CHAR_LIMIT) {
+                        "${message.take(LOG_BODY_CHAR_LIMIT)}... [truncated, ${message.length} chars total]"
+                    } else {
+                        message
+                    }
+                    EvolaLog.d("http", truncated)
+                }
             }
             // BODY (not HEADERS/ALL) so the `x-api-key` header never lands in the log file.
             level = LogLevel.BODY

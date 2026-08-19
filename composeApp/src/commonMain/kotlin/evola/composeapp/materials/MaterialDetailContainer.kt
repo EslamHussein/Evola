@@ -3,6 +3,7 @@ package evola.composeapp.materials
 import evola.composeapp.core.toUserMessage
 import evola.shared.core.ApiResult
 import evola.shared.core.EvolaLog
+import evola.shared.materials.MATERIAL_POLL_INTERVAL_MS
 import evola.shared.materials.MaterialStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -14,7 +15,6 @@ import pro.respawn.flowmvi.plugins.manageJobs
 import pro.respawn.flowmvi.plugins.reduce
 
 private val TERMINAL_STATUSES = setOf(MaterialStatus.READY, MaterialStatus.FAILED, MaterialStatus.UNSUPPORTED_CONTENT)
-private const val POLL_INTERVAL_MS = 3000L
 private const val POLL_JOB_KEY = "poll"
 
 /** Polls while the material's status isn't terminal yet, so the UI shows real lesson-generation
@@ -42,7 +42,7 @@ class MaterialDetailContainer(
                             is ApiResult.Success -> {
                                 updateState { MaterialDetailState.Loaded(result.data) }
                                 if (result.data.material.status in TERMINAL_STATUSES) return@launch
-                                delay(POLL_INTERVAL_MS)
+                                delay(MATERIAL_POLL_INTERVAL_MS)
                             }
                         }
                     }

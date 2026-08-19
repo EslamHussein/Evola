@@ -90,16 +90,16 @@ fun CategoryPickerScreen(goalId: String, onContinue: () -> Unit) {
             return@Surface
         }
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(EvolaSpacing.xl),
         ) {
             Text("Want a running start?", style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(EvolaSpacing.sm))
             Text(
                 "Pick a level to add as a starter lesson - or skip and build your own from your own materials.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = EvolaColors.Text2,
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(EvolaSpacing.xl))
             currentLevels.forEach { level ->
                 LevelCard(
                     level = level,
@@ -121,7 +121,7 @@ fun CategoryPickerScreen(goalId: String, onContinue: () -> Unit) {
                 )
                 Spacer(Modifier.height(EvolaSpacing.sm))
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(EvolaSpacing.lg))
             Button(
                 onClick = {
                     isSubmitting = true
@@ -147,7 +147,7 @@ fun CategoryPickerScreen(goalId: String, onContinue: () -> Unit) {
                 Text(if (selected.isEmpty()) "Continue" else "Add ${selected.size} and continue")
             }
             if (selected.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(EvolaSpacing.sm))
                 TextButton(onClick = onContinue, enabled = !isSubmitting, modifier = Modifier.fillMaxWidth()) { Text("Skip") }
             }
         }
@@ -178,7 +178,7 @@ private fun LevelCard(
                 } else {
                     Checkbox(checked = selectedCount > 0, onCheckedChange = { onToggleLevel(allSelected) })
                 }
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(EvolaSpacing.sm))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(level.title, style = MaterialTheme.typography.titleSmall)
                     Text(
@@ -212,10 +212,10 @@ private fun LevelCard(
                             .clip(RoundedCornerShape(8.dp))
                             .background(if (checked) EvolaColors.AccentSoft else Color.Transparent)
                             .clickable { onToggleLesson(lesson.id) }
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                            .padding(horizontal = EvolaSpacing.sm, vertical = EvolaSpacing.sm),
                     ) {
                         Checkbox(checked = checked, onCheckedChange = { onToggleLesson(lesson.id) })
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(EvolaSpacing.sm))
                         Column {
                             Text(lesson.title, style = MaterialTheme.typography.bodyMedium)
                             Text("${lesson.words.size} words", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)

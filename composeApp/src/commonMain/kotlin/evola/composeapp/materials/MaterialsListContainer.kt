@@ -4,6 +4,7 @@ import evola.composeapp.core.toUserMessage
 import evola.shared.core.ApiResult
 import evola.shared.core.EvolaLog
 import evola.shared.core.getOrNull
+import evola.shared.materials.MATERIAL_POLL_INTERVAL_MS
 import evola.shared.materials.MaterialStatus
 import evola.shared.materials.MaterialsRepository
 import kotlinx.coroutines.delay
@@ -15,7 +16,6 @@ import pro.respawn.flowmvi.plugins.init
 import pro.respawn.flowmvi.plugins.manageJobs
 import pro.respawn.flowmvi.plugins.reduce
 
-private const val POLL_INTERVAL_MS = 3000L
 private const val POLL_JOB_KEY = "poll"
 
 class MaterialsListContainer(
@@ -33,14 +33,14 @@ class MaterialsListContainer(
                     updateState { MaterialsListState.Loaded(materials.data) }
                     // While any material is still PROCESSING, keep re-fetching so its live progress
                     // (lesson counts) shows up here too without a manual pull-to-refresh - same
-                    // POLL_INTERVAL_MS and "update in place, don't flash back to Loading" shape as
+                    // MATERIAL_POLL_INTERVAL_MS and "update in place, don't flash back to Loading" shape as
                     // MaterialDetailContainer. Stops itself once nothing is processing anymore.
                     if (materials.data.any { it.status == MaterialStatus.PROCESSING }) {
                         pollJobs.putOrReplace(
                             POLL_JOB_KEY,
                             launch {
                                 while (true) {
-                                    delay(POLL_INTERVAL_MS)
+                                    delay(MATERIAL_POLL_INTERVAL_MS)
                                     val next = materialsRepository.list().getOrNull() ?: return@launch
                                     updateState { MaterialsListState.Loaded(next) }
                                     if (next.none { it.status == MaterialStatus.PROCESSING }) return@launch
