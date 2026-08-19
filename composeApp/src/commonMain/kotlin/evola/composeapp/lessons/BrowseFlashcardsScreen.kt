@@ -45,6 +45,7 @@ import evola.composeapp.loading.ChaseLoadingIndicator
 import evola.composeapp.rtl.RtlText
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_browse_ipa
 import evola.composeapp.generated.resources.lessons_browse_next_word
@@ -55,6 +56,7 @@ import evola.composeapp.generated.resources.lessons_empty_vocabulary
 import evola.composeapp.generated.resources.lessons_nav_close
 import evola.composeapp.generated.resources.lessons_word_progress
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import evola.shared.vocabulary.VocabularyItem
 
 /** Reword's "Extra modes (do not affect stats)" - flip through every word in the lesson, tap the
@@ -65,8 +67,19 @@ import evola.shared.vocabulary.VocabularyItem
 fun BrowseFlashcardsScreen(viewModel: BrowseFlashcardsViewModel, onDone: () -> Unit) {
     val state by viewModel.collectAsState()
     BackHandler(onBack = onDone)
+    BrowseFlashcardsContent(state = state, onNext = { viewModel.next() }, onPrevious = { viewModel.previous() }, onDone = onDone)
+}
 
+@Composable
+private fun BrowseFlashcardsContent(
+    state: BrowseFlashcardsState,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.lessons_browse_title)) },
@@ -75,18 +88,18 @@ fun BrowseFlashcardsScreen(viewModel: BrowseFlashcardsViewModel, onDone: () -> U
         },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (val current = state) {
+            when (state) {
                 is BrowseFlashcardsState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { ChaseLoadingIndicator() }
-                is BrowseFlashcardsState.Error -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                    Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                is BrowseFlashcardsState.Error -> Box(Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
+                    Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 }
-                is BrowseFlashcardsState.Empty -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                is BrowseFlashcardsState.Empty -> Box(Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
                     Text(stringResource(Res.string.lessons_empty_vocabulary), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 }
                 is BrowseFlashcardsState.Browsing -> BrowsingBody(
-                    current,
-                    onNext = { viewModel.next() },
-                    onPrevious = { viewModel.previous() },
+                    state,
+                    onNext = onNext,
+                    onPrevious = onPrevious,
                 )
             }
         }
@@ -163,4 +176,40 @@ private fun FlipCard(item: VocabularyItem) {
             }
         }
     }
+}
+
+private val fakeFlashcardItems = listOf(
+    VocabularyItem(itemId = "v1", term = "Hund", meaning = "dog", gender = "der", status = "unseen", ipaPronunciation = "/hʊnt/", exampleSentence = "Der Hund läuft schnell."),
+    VocabularyItem(itemId = "v2", term = "Katze", meaning = "cat", gender = "die", status = "unseen"),
+)
+
+@Preview
+@Composable
+private fun BrowseFlashcardsLoadingPreview() {
+    EvolaTheme { BrowseFlashcardsContent(state = BrowseFlashcardsState.Loading, onNext = {}, onPrevious = {}, onDone = {}) }
+}
+
+@Preview
+@Composable
+private fun BrowseFlashcardsBrowsingPreview() {
+    EvolaTheme {
+        BrowseFlashcardsContent(
+            state = BrowseFlashcardsState.Browsing(fakeFlashcardItems, index = 0),
+            onNext = {},
+            onPrevious = {},
+            onDone = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun BrowseFlashcardsEmptyPreview() {
+    EvolaTheme { BrowseFlashcardsContent(state = BrowseFlashcardsState.Empty, onNext = {}, onPrevious = {}, onDone = {}) }
+}
+
+@Preview
+@Composable
+private fun BrowseFlashcardsErrorPreview() {
+    EvolaTheme { BrowseFlashcardsContent(state = BrowseFlashcardsState.Error("Something went wrong."), onNext = {}, onPrevious = {}, onDone = {}) }
 }
