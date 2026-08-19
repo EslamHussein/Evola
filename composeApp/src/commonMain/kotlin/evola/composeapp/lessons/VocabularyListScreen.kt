@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package evola.composeapp.lessons
 
@@ -6,45 +6,27 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Circle
-import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -73,19 +55,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
-import evola.composeapp.BackHandler
-import evola.composeapp.language.LocalNativeLanguage
 import evola.composeapp.rtl.RtlText
 import evola.composeapp.speech.rememberSpeechService
 import evola.composeapp.theme.EvolaColors
@@ -95,11 +69,45 @@ import evola.shared.vocabulary.VocabularyItem
 import evola.shared.vocabulary.parseWordCsv
 import kotlinx.coroutines.launch
 import pro.respawn.flowmvi.compose.dsl.subscribe
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.lessons_action_cancel
+import evola.composeapp.generated.resources.lessons_action_play_pronunciation
+import evola.composeapp.generated.resources.lessons_content_desc_more
+import evola.composeapp.generated.resources.lessons_content_desc_sort
+import evola.composeapp.generated.resources.lessons_empty_vocabulary
+import evola.composeapp.generated.resources.lessons_fab_word
+import evola.composeapp.generated.resources.lessons_import_button
+import evola.composeapp.generated.resources.lessons_ipa_slash
+import evola.composeapp.generated.resources.lessons_menu_reset_progress
+import evola.composeapp.generated.resources.lessons_nav_back
+import evola.composeapp.generated.resources.lessons_no_words_match
+import evola.composeapp.generated.resources.lessons_reset_progress_confirm
+import evola.composeapp.generated.resources.lessons_reset_progress_text
+import evola.composeapp.generated.resources.lessons_reset_progress_title
+import evola.composeapp.generated.resources.lessons_search_placeholder
+import evola.composeapp.generated.resources.lessons_snackbar_delete_failed
+import evola.composeapp.generated.resources.lessons_snackbar_import_failed
+import evola.composeapp.generated.resources.lessons_snackbar_imported_word
+import evola.composeapp.generated.resources.lessons_snackbar_imported_words
+import evola.composeapp.generated.resources.lessons_snackbar_no_valid_rows
+import evola.composeapp.generated.resources.lessons_snackbar_progress_reset
+import evola.composeapp.generated.resources.lessons_snackbar_progress_reset_failed
+import evola.composeapp.generated.resources.lessons_snackbar_update_failed
+import evola.composeapp.generated.resources.lessons_sort_alphabetical
+import evola.composeapp.generated.resources.lessons_sort_default
+import evola.composeapp.generated.resources.lessons_sort_progress
+import evola.composeapp.generated.resources.lessons_vocab_title
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
-private enum class VocabularySortMode(val label: String) {
-    DEFAULT("Default"),
-    ALPHABETICAL("A–Z"),
-    PROGRESS("Progress"),
+/** The vocabulary list screen's own sub-screens live in sibling files in this package -
+ * [VocabularyWordDetailScreen.kt] (word detail, also home to the shared `vocabularyStatusStyle`
+ * used by [VocabularyRow] below) and [VocabularyEditScreens.kt] (add/edit forms) - kept separate
+ * so this file stays focused on the list itself. */
+private enum class VocabularySortMode(val labelRes: StringResource) {
+    DEFAULT(Res.string.lessons_sort_default),
+    ALPHABETICAL(Res.string.lessons_sort_alphabetical),
+    PROGRESS(Res.string.lessons_sort_progress),
 }
 
 @Composable
@@ -117,36 +125,50 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
     if (showResetConfirm) {
         AlertDialog(
             onDismissRequest = { showResetConfirm = false },
-            title = { Text("Reset progress?") },
-            text = { Text("Every word in this lesson goes back to \"New\". This can't be undone.") },
+            title = { Text(stringResource(Res.string.lessons_reset_progress_title)) },
+            text = { Text(stringResource(Res.string.lessons_reset_progress_text)) },
             confirmButton = {
-                TextButton(onClick = { showResetConfirm = false; viewModel.intent(VocabularyListIntent.ResetProgress) }) { Text("Reset") }
+                TextButton(onClick = { showResetConfirm = false; viewModel.intent(VocabularyListIntent.ResetProgress) }) { Text(stringResource(Res.string.lessons_reset_progress_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showResetConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showResetConfirm = false }) { Text(stringResource(Res.string.lessons_action_cancel)) }
             },
         )
     }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
+    // Snackbar copy must be resolved here (composable context) since it's used inside the
+    // LaunchedEffect's suspend lambda below, where stringResource cannot be called.
+    val updateFailedMsg = stringResource(Res.string.lessons_snackbar_update_failed)
+    val importFailedMsg = stringResource(Res.string.lessons_snackbar_import_failed)
+    val importedCount = (state.event as? VocabularyListEvent.WordsImported)?.count
+    val importedWordMsg = if (importedCount == 1) {
+        stringResource(Res.string.lessons_snackbar_imported_word, importedCount)
+    } else {
+        stringResource(Res.string.lessons_snackbar_imported_words, importedCount ?: 0)
+    }
+    val deleteFailedMsg = stringResource(Res.string.lessons_snackbar_delete_failed)
+    val progressResetMsg = stringResource(Res.string.lessons_snackbar_progress_reset)
+    val progressResetFailedMsg = stringResource(Res.string.lessons_snackbar_progress_reset_failed)
+
     LaunchedEffect(state.event?.id) {
         when (val event = state.event) {
             is VocabularyListEvent.ItemUpdated -> Unit
-            is VocabularyListEvent.ItemUpdateFailed -> snackbarHostState.showSnackbar("Couldn't save that change")
+            is VocabularyListEvent.ItemUpdateFailed -> snackbarHostState.showSnackbar(updateFailedMsg)
             is VocabularyListEvent.MarkedAlreadyKnown -> viewingItem = null
             is VocabularyListEvent.CopiedToPersonalList -> viewingItem = null
             is VocabularyListEvent.WordAdded -> addingWord = false
             is VocabularyListEvent.WordsImported -> {
-                val message = if (event.count == null) "Import failed" else "Imported ${event.count} word${if (event.count == 1) "" else "s"}"
+                val message = if (event.count == null) importFailedMsg else importedWordMsg
                 snackbarHostState.showSnackbar(message)
             }
             is VocabularyListEvent.ItemDeleted -> {
                 viewingItem = null
-                if (!event.success) snackbarHostState.showSnackbar("Couldn't remove that word")
+                if (!event.success) snackbarHostState.showSnackbar(deleteFailedMsg)
             }
             is VocabularyListEvent.ProgressReset -> {
-                snackbarHostState.showSnackbar(if (event.success) "Progress reset" else "Couldn't reset progress")
+                snackbarHostState.showSnackbar(if (event.success) progressResetMsg else progressResetFailedMsg)
             }
             null -> Unit
         }
@@ -189,10 +211,11 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val speechService = rememberSpeechService()
+    val noValidRowsMsg = stringResource(Res.string.lessons_snackbar_no_valid_rows)
     val importCsv = rememberCsvFilePicker { text ->
         val rows = parseWordCsv(text)
         if (rows.isEmpty()) {
-            coroutineScope.launch { snackbarHostState.showSnackbar("No valid rows found in that file") }
+            coroutineScope.launch { snackbarHostState.showSnackbar(noValidRowsMsg) }
         } else {
             viewModel.intent(VocabularyListIntent.ImportWords(rows))
         }
@@ -202,21 +225,21 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text("Vocabulary") },
+                title = { Text(stringResource(Res.string.lessons_vocab_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.lessons_nav_back))
                     }
                 },
                 actions = {
                     Box {
                         IconButton(onClick = { sortMenuExpanded = true }) {
-                            Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort")
+                            Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = stringResource(Res.string.lessons_content_desc_sort))
                         }
                         DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
                             VocabularySortMode.entries.forEach { mode ->
                                 DropdownMenuItem(
-                                    text = { Text(mode.label) },
+                                    text = { Text(stringResource(mode.labelRes)) },
                                     onClick = { sortMode = mode; sortMenuExpanded = false },
                                     leadingIcon = if (mode == sortMode) {
                                         { Icon(Icons.Filled.Check, contentDescription = null) }
@@ -227,14 +250,14 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                             }
                         }
                     }
-                    TextButton(onClick = importCsv) { Text("IMPORT") }
+                    TextButton(onClick = importCsv) { Text(stringResource(Res.string.lessons_import_button)) }
                     Box {
                         IconButton(onClick = { overflowMenuExpanded = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = "More")
+                            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(Res.string.lessons_content_desc_more))
                         }
                         DropdownMenu(expanded = overflowMenuExpanded, onDismissRequest = { overflowMenuExpanded = false }) {
                             DropdownMenuItem(
-                                text = { Text("Reset progress") },
+                                text = { Text(stringResource(Res.string.lessons_menu_reset_progress)) },
                                 onClick = { overflowMenuExpanded = false; showResetConfirm = true },
                             )
                         }
@@ -247,7 +270,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
             ExtendedFloatingActionButton(
                 onClick = { addingWord = true },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Word") },
+                text = { Text(stringResource(Res.string.lessons_fab_word)) },
                 containerColor = EvolaColors.Accent,
                 contentColor = Color.White,
             )
@@ -268,7 +291,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                     if (current.items.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                             Text(
-                                "No vocabulary yet for this lesson.",
+                                stringResource(Res.string.lessons_empty_vocabulary),
                                 style = MaterialTheme.typography.bodyLarge,
                                 textAlign = TextAlign.Center,
                             )
@@ -294,7 +317,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                             OutlinedTextField(
                                 value = query,
                                 onValueChange = { query = it },
-                                placeholder = { Text("Search for words…") },
+                                placeholder = { Text(stringResource(Res.string.lessons_search_placeholder)) },
                                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = EvolaColors.Text3) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(28.dp),
@@ -310,7 +333,7 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                             )
                             if (filtered.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                                    Text("No words match \"$query\".", style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
+                                    Text(stringResource(Res.string.lessons_no_words_match, query), style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
                                 }
                             } else {
                                 LazyColumn(
@@ -359,7 +382,7 @@ private fun VocabularyRow(item: VocabularyItem, onClick: () -> Unit, onPlay: () 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(item.term, style = MaterialTheme.typography.titleMedium, color = EvolaColors.Text)
                 item.ipaPronunciation?.let {
-                    Text("/$it/", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
+                    Text(stringResource(Res.string.lessons_ipa_slash, it), style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
                 }
             }
             val meaningLine = listOfNotNull(item.meaning, item.nativeMeaning?.takeIf { it != item.meaning }).joinToString(", ")
@@ -373,353 +396,8 @@ private fun VocabularyRow(item: VocabularyItem, onClick: () -> Unit, onPlay: () 
             modifier = Modifier.padding(end = EvolaSpacing.md).size(36.dp),
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = "Play pronunciation", tint = EvolaColors.Accent, modifier = Modifier.size(18.dp))
+                Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(Res.string.lessons_action_play_pronunciation), tint = EvolaColors.Accent, modifier = Modifier.size(18.dp))
             }
-        }
-    }
-}
-
-/** Maps the raw SRS status (unseen/introduced/learning/review/mastered - see VocabularySrs.STATUSES)
- * onto the same color scale [HomeScreen]'s word-breakdown cards already use for the same tiers, so
- * a learner sees one consistent color language for "where a word stands" across the whole app. */
-@Composable
-private fun vocabularyStatusStyle(status: String): Pair<Color, String> = when (status) {
-    "unseen" -> EvolaColors.Text3 to "NEW"
-    "introduced" -> EvolaColors.Ink2 to "INTRODUCED"
-    "learning" -> EvolaColors.Amber to "LEARNING"
-    "review" -> EvolaColors.Rust to "REVIEW"
-    "mastered" -> EvolaColors.Teal to "MASTERED"
-    else -> EvolaColors.Text3 to status.uppercase()
-}
-
-/** Kept for the word-detail screen, which has room for an icon + label rather than the list row's
- * compact rail + caption. */
-@Composable
-private fun VocabularyStatusBadge(status: String) {
-    val (icon, label) = when (status) {
-        "unseen" -> Icons.Filled.RadioButtonUnchecked to "New"
-        "introduced" -> Icons.Filled.Circle to "Introduced"
-        "learning" -> Icons.Filled.HourglassBottom to "Learning"
-        "review" -> Icons.Filled.Replay to "Review"
-        "mastered" -> Icons.Filled.CheckCircle to "Mastered"
-        else -> Icons.Filled.RadioButtonUnchecked to status.replaceFirstChar { it.uppercase() }
-    }
-    val (color, _) = vocabularyStatusStyle(status)
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
-        Text(label, style = MaterialTheme.typography.labelMedium, color = color)
-    }
-}
-
-/** [icon]/[tint] tell difficulty, frequency, and related-word chips apart at a glance - previously
- * all three rendered identically, so a learner had no way to tell what a given pill meant without
- * reading its text and guessing from context. */
-@Composable
-private fun Tag(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: androidx.compose.ui.graphics.Color) {
-    Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.SurfaceAlt) {
-        Row(
-            modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(12.dp))
-            Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text2)
-        }
-    }
-}
-
-/** Read-only "everything about this word" screen, reached by tapping a row - the row itself only
- * has room for a handful of fields, and grammar_note/example_sentence_translation aren't shown
- * anywhere in the list at all. Full screen rather than a dialog, matching EditVocabularyScreen's
- * own choice for the same reason (room to breathe, no cramped fixed height). */
-@Composable
-private fun VocabularyWordDetailScreen(
-    item: VocabularyItem,
-    onBack: () -> Unit,
-    onEdit: () -> Unit,
-    onMarkAlreadyKnown: () -> Unit,
-    onCopyToPersonalList: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    BackHandler(onBack = onBack)
-    var showDeleteConfirm by remember { mutableStateOf(false) }
-
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Remove this word?") },
-            text = { Text("Are you sure you want to remove \"${item.term}\"? This can't be undone.") },
-            confirmButton = {
-                TextButton(onClick = { showDeleteConfirm = false; onDelete() }) { Text("Remove") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
-            },
-        )
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Word details") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = { TextButton(onClick = onEdit) { Text("Edit") } },
-            )
-        },
-    ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(EvolaSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(EvolaSpacing.lg),
-        ) {
-            Row(verticalAlignment = Alignment.Top) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            item.gender?.let { "$it ${item.term}" } ?: item.term,
-                            style = MaterialTheme.typography.headlineSmall,
-                        )
-                        item.ipaPronunciation?.let {
-                            Text("/$it/", style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
-                        }
-                    }
-                    val subLine = listOfNotNull(item.partOfSpeech, item.plural?.let { "plural: $it" }).joinToString(" · ")
-                    if (subLine.isNotEmpty()) {
-                        Spacer(Modifier.height(2.dp))
-                        Text(subLine, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
-                    }
-                }
-                VocabularyStatusBadge(item.status)
-            }
-
-            DetailSection("Meaning") {
-                Text(item.meaning, style = MaterialTheme.typography.bodyLarge)
-                item.nativeMeaning?.let {
-                    Spacer(Modifier.height(EvolaSpacing.xs))
-                    RtlText(it, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
-                }
-            }
-
-            item.exampleSentence?.let { sentence ->
-                DetailSection("Example") {
-                    Text(sentence, style = MaterialTheme.typography.bodyLarge)
-                    item.exampleSentenceTranslation?.let {
-                        Spacer(Modifier.height(EvolaSpacing.xs))
-                        Text(it, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
-                    }
-                }
-            }
-
-            item.grammarNote?.let { DetailSection("Grammar") { Text(it, style = MaterialTheme.typography.bodyMedium) } }
-            item.memoryTip?.let { DetailSection("Memory tip") { Text(it, style = MaterialTheme.typography.bodyMedium) } }
-
-            if (item.difficultyRating != null || item.frequencyRating != null || item.relatedWords.isNotEmpty()) {
-                DetailSection("Details") {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs), verticalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
-                        item.difficultyRating?.let { Tag(it, Icons.Filled.Speed, EvolaColors.Gold) }
-                        item.frequencyRating?.let { Tag(it, Icons.AutoMirrored.Filled.TrendingUp, EvolaColors.Ink2) }
-                        item.relatedWords.forEach { Tag(it, Icons.Filled.Link, EvolaColors.Text2) }
-                    }
-                }
-            }
-
-            DetailSection("Actions") {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    WordActionRow(Icons.Filled.CheckCircle, "Mark as already known", onClick = onMarkAlreadyKnown)
-                    WordActionRow(Icons.Filled.ContentCopy, "Copy to \"Eigene Vokabeln\"", onClick = onCopyToPersonalList)
-                    WordActionRow(Icons.Filled.Delete, "Remove", onClick = { showDeleteConfirm = true }, tint = EvolaColors.Rust)
-                }
-            }
-        }
-    }
-}
-
-/** A single row in the word-detail sheet's "Actions" section - same icon+label shape as
- * [Tag]/[AppRow] elsewhere in this app, sized for a full-width tap target rather than a chip. */
-@Composable
-private fun WordActionRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    tint: androidx.compose.ui.graphics.Color = EvolaColors.Accent,
-) {
-    Surface(onClick = onClick, shape = MaterialTheme.shapes.small, color = EvolaColors.SurfaceAlt, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(horizontal = EvolaSpacing.md, vertical = EvolaSpacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm),
-        ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
-            Text(label, style = MaterialTheme.typography.bodyMedium, color = tint)
-        }
-    }
-}
-
-@Composable
-private fun DetailSection(title: String, content: @Composable () -> Unit) {
-    Column {
-        Text(
-            title,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.tertiary,
-            modifier = Modifier.semantics { heading() },
-        )
-        Spacer(Modifier.height(EvolaSpacing.xs))
-        content()
-    }
-}
-
-/** Reword-style "add your own word" - same shape as [EditVocabularyScreen] but starting from blank
- * fields and landing in whichever lesson is currently open (Evola's content is lesson-scoped, so
- * there's no separate "personal" deck the way Reword's "Eigene Vokabeln" list is). */
-@Composable
-private fun AddVocabularyScreen(onBack: () -> Unit, onSave: (term: String, meaning: String, nativeMeaning: String?) -> Unit) {
-    var term by remember { mutableStateOf("") }
-    var meaning by remember { mutableStateOf("") }
-    var nativeMeaning by remember { mutableStateOf("") }
-    val nativeLanguage = LocalNativeLanguage.current
-    val canSave = term.isNotBlank() && meaning.isNotBlank()
-    val focusManager = LocalFocusManager.current
-
-    BackHandler(onBack = onBack)
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Add word") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel")
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { onSave(term.trim(), meaning.trim(), nativeMeaning.trim().ifBlank { null }) },
-                        enabled = canSave,
-                    ) { Text("Save") }
-                },
-            )
-        },
-    ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) { focusManager.clearFocus() }
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(EvolaSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(EvolaSpacing.md),
-        ) {
-            OutlinedTextField(
-                value = term,
-                onValueChange = { term = it },
-                label = { Text("Term") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = meaning,
-                onValueChange = { meaning = it },
-                label = { Text("Meaning") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = nativeMeaning,
-                onValueChange = { nativeMeaning = it },
-                label = { Text("${nativeLanguage.englishName} meaning (optional)") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
-}
-
-/** Full screen rather than a popup dialog - editing needs enough room for the on-screen keyboard
- * plus three fields (one of them RTL-aware) without the dialog's cramped fixed height. */
-@Composable
-private fun EditVocabularyScreen(
-    item: VocabularyItem,
-    onBack: () -> Unit,
-    onSave: (term: String, meaning: String, nativeMeaning: String?) -> Unit,
-) {
-    var term by remember(item.itemId) { mutableStateOf(item.term) }
-    var meaning by remember(item.itemId) { mutableStateOf(item.meaning) }
-    var nativeMeaning by remember(item.itemId) { mutableStateOf(item.nativeMeaning ?: "") }
-    val nativeLanguage = LocalNativeLanguage.current
-    val canSave = term.isNotBlank() && meaning.isNotBlank()
-    val focusManager = LocalFocusManager.current
-
-    BackHandler(onBack = onBack)
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Edit word") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel")
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { onSave(term.trim(), meaning.trim(), nativeMeaning.trim().ifBlank { null }) },
-                        enabled = canSave,
-                    ) { Text("Save") }
-                },
-            )
-        },
-    ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding)
-                // Tapping anywhere outside a text field dismisses the keyboard.
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) { focusManager.clearFocus() }
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(EvolaSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(EvolaSpacing.md),
-        ) {
-            OutlinedTextField(
-                value = term,
-                onValueChange = { term = it },
-                label = { Text("Term") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = meaning,
-                onValueChange = { meaning = it },
-                label = { Text("Meaning") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = nativeMeaning,
-                onValueChange = { nativeMeaning = it },
-                label = { Text("${nativeLanguage.englishName} meaning (optional)") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
     }
 }
