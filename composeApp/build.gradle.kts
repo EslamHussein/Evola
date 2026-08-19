@@ -36,6 +36,12 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.haze)
+            implementation(libs.flowmvi.core)
+            implementation(libs.flowmvi.compose)
+            implementation(libs.flowmvi.android)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
         }
         androidMain.dependencies {
             implementation(libs.androidx.security.crypto)
@@ -44,6 +50,7 @@ kotlin {
             implementation(libs.sqldelight.android.driver)
             implementation(libs.pdfbox.android)
             implementation(libs.kermit.io)
+            implementation(libs.androidx.work.runtime.ktx)
             // Not debug-scoped: the KMP androidMain DSL doesn't expose build-type-specific
             // configurations. Small tooling dependency, acceptable to ship in release too.
             implementation(compose.uiTooling)
