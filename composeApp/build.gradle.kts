@@ -36,12 +36,6 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.haze)
-            implementation(libs.flowmvi.core)
-            implementation(libs.flowmvi.compose)
-            implementation(libs.flowmvi.android)
-            // Orbit MVI, added alongside FlowMVI during the incremental Container-by-Container
-            // migration (see docs/ROADMAP.md) - flowmvi-* is removed once all 16 features are
-            // converted, not before.
             implementation(libs.orbit.core)
             implementation(libs.orbit.viewmodel)
             implementation(libs.orbit.compose)
@@ -66,16 +60,15 @@ kotlin {
             implementation(libs.sqldelight.native.driver)
             implementation(libs.kermit.io)
         }
-        // JVM-backed unit tests for the FlowMVI Containers - no Android framework/emulator
-        // needed since Containers are plain Kotlin depending only on :shared. Mirrors :shared's
-        // own jvmTest setup (JdbcSqliteDriver backing a real EvolaDatabase + real Local*Repository
-        // implementations, not mocks) so a Container test exercises the same code path production
+        // JVM-backed unit tests for the Orbit ViewModels - no Android framework/emulator needed
+        // since ViewModels are plain Kotlin depending only on :shared. Mirrors :shared's own
+        // jvmTest setup (JdbcSqliteDriver backing a real EvolaDatabase + real Local*Repository
+        // implementations, not mocks) so a ViewModel test exercises the same code path production
         // does.
         androidUnitTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.sqldelight.sqlite.driver)
-            implementation(libs.flowmvi.test)
             implementation(libs.orbit.test)
             implementation(libs.ktor.client.mock)
         }

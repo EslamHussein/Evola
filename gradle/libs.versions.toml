@@ -23,7 +23,6 @@ pdfboxAndroid = "2.0.27.0"
 haze = "1.6.5"
 kermit = "2.0.5"
 androidxWork = "2.10.0"
-flowmvi = "3.1.0"
 koin = "4.0.4"
 orbit = "12.0.0"
 
@@ -92,11 +91,6 @@ haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 kermit-io = { module = "co.touchlab:kermit-io", version.ref = "kermit" }
-
-flowmvi-core = { module = "pro.respawn.flowmvi:core", version.ref = "flowmvi" }
-flowmvi-compose = { module = "pro.respawn.flowmvi:compose", version.ref = "flowmvi" }
-flowmvi-android = { module = "pro.respawn.flowmvi:android", version.ref = "flowmvi" }
-flowmvi-test = { module = "pro.respawn.flowmvi:test", version.ref = "flowmvi" }
 
 orbit-core = { module = "org.orbit-mvi:orbit-core", version.ref = "orbit" }
 orbit-viewmodel = { module = "org.orbit-mvi:orbit-viewmodel", version.ref = "orbit" }
