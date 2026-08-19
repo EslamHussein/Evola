@@ -39,6 +39,12 @@ kotlin {
             implementation(libs.flowmvi.core)
             implementation(libs.flowmvi.compose)
             implementation(libs.flowmvi.android)
+            // Orbit MVI, added alongside FlowMVI during the incremental Container-by-Container
+            // migration (see docs/ROADMAP.md) - flowmvi-* is removed once all 16 features are
+            // converted, not before.
+            implementation(libs.orbit.core)
+            implementation(libs.orbit.viewmodel)
+            implementation(libs.orbit.compose)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
@@ -70,6 +76,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.sqldelight.sqlite.driver)
             implementation(libs.flowmvi.test)
+            implementation(libs.orbit.test)
             implementation(libs.ktor.client.mock)
         }
     }
