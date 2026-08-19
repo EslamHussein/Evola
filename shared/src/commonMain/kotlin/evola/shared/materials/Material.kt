@@ -5,6 +5,10 @@ import kotlinx.serialization.Serializable
 
 enum class MaterialStatus { UPLOADED, PROCESSING, READY, UNSUPPORTED_CONTENT, FAILED }
 
+/** A material stops polling once it reaches one of these - shared by every poll-until-terminal
+ * ViewModel (MaterialDetail, Processing) so the definition of "done" can't drift between them. */
+val MATERIAL_TERMINAL_STATUSES = setOf(MaterialStatus.READY, MaterialStatus.FAILED, MaterialStatus.UNSUPPORTED_CONTENT)
+
 @Serializable
 data class Material(
     val id: String,

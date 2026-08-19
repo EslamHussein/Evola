@@ -5,14 +5,12 @@ import evola.composeapp.core.toUserMessage
 import evola.shared.core.ApiResult
 import evola.shared.core.EvolaLog
 import evola.shared.materials.MATERIAL_POLL_INTERVAL_MS
-import evola.shared.materials.MaterialStatus
+import evola.shared.materials.MATERIAL_TERMINAL_STATUSES
 import evola.shared.materials.MaterialsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
-
-private val TERMINAL_STATUSES = setOf(MaterialStatus.READY, MaterialStatus.FAILED, MaterialStatus.UNSUPPORTED_CONTENT)
 
 /** Polls while the material's status isn't terminal yet, so the UI shows real lesson-generation
  * progress. Tracks the poll job manually (cancel-then-replace) so [retry]/[deleteLesson] restart
@@ -38,7 +36,7 @@ class MaterialDetailViewModel(
                     }
                     is ApiResult.Success -> {
                         reduce { MaterialDetailState.Loaded(result.data) }
-                        if (result.data.material.status in TERMINAL_STATUSES) return@intent
+                        if (result.data.material.status in MATERIAL_TERMINAL_STATUSES) return@intent
                         delay(MATERIAL_POLL_INTERVAL_MS)
                     }
                 }
