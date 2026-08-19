@@ -47,7 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.materials_detail_back_desc
 import evola.composeapp.generated.resources.materials_detail_delete_lesson_desc
@@ -87,7 +87,7 @@ import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit, onOpenLesson: (String) -> Unit) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
@@ -110,9 +110,9 @@ fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit,
                 is MaterialDetailState.Error -> CenteredMessage(current.message)
                 is MaterialDetailState.Loaded -> LoadedBody(
                     current.detail,
-                    onRetry = { viewModel.intent(MaterialDetailIntent.Retry) },
+                    onRetry = { viewModel.retry() },
                     onOpenLesson = onOpenLesson,
-                    onDeleteLesson = { lessonId -> viewModel.intent(MaterialDetailIntent.DeleteLesson(lessonId)) },
+                    onDeleteLesson = { lessonId -> viewModel.deleteLesson(lessonId) },
                 )
             }
         }
