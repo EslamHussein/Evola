@@ -45,11 +45,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import evola.composeapp.loading.ChaseLoadingIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.TopAppBarDefaults
@@ -86,10 +90,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.BackHandler
 import evola.composeapp.rtl.RtlText
+import evola.composeapp.speech.SpeechService
+import evola.composeapp.speech.rememberSpeechService
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.widget.rememberWidgetRefresher
+import evola.shared.local.AppSettings
 import evola.shared.vocabulary.VocabularyAnswerResult
 import evola.shared.vocabulary.VocabularyCard
+import evola.shared.vocabulary.VocabularySessionState
+import evola.shared.vocabulary.VocabularySessionSummary
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_already_know
 import evola.composeapp.generated.resources.lessons_action_done
@@ -133,6 +144,7 @@ import evola.composeapp.generated.resources.lessons_whats_the_word_for
 import evola.composeapp.generated.resources.lessons_word_mastered
 import evola.composeapp.generated.resources.lessons_word_progress
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** A due review's swipe labels differ from a still-learning word's - both are stored as
  * [VocabularyCard.Practice], distinguished by [evola.shared.vocabulary.VocabularySessionState.origin]. */
@@ -154,10 +166,55 @@ private fun statusPillLabel(origin: String, card: VocabularyCard): String = when
 fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () -> Unit) {
     val state by viewModel.collectAsState()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    val speechService = evola.composeapp.speech.rememberSpeechService()
+    val speechService = rememberSpeechService()
     BackHandler(onBack = onDone)
+
+    VocabularySessionContent(
+        state = state,
+        settings = settings,
+        speechService = speechService,
+        onDone = onDone,
+        onUndo = viewModel::undoLastGrade,
+        onRetry = viewModel::retry,
+        onStartNextSession = viewModel::startNextSession,
+        onMarkSwipeTutorialSeen = viewModel::markSwipeTutorialSeen,
+        onAlreadyKnown = viewModel::submitAlreadyKnown,
+        onStartLearning = viewModel::submitStartLearning,
+        onToggleBookmark = viewModel::toggleBookmark,
+        onToggleDifficult = viewModel::toggleDifficult,
+        onExplain = viewModel::explainWord,
+        onSelfGrade = viewModel::submitSelfGrade,
+        onKeepShowing = viewModel::submitKeepShowing,
+        onSelectChoice = viewModel::submitChoice,
+        onCheckTyped = viewModel::submitTyped,
+        onContinue = viewModel::continueToNext,
+    )
+}
+
+@Composable
+private fun VocabularySessionContent(
+    state: VocabularySessionUiState,
+    settings: AppSettings,
+    speechService: SpeechService,
+    onDone: () -> Unit,
+    onUndo: (sessionId: String) -> Unit,
+    onRetry: () -> Unit,
+    onStartNextSession: () -> Unit,
+    onMarkSwipeTutorialSeen: () -> Unit,
+    onAlreadyKnown: (sessionId: String, itemId: String) -> Unit,
+    onStartLearning: (sessionId: String, itemId: String) -> Unit,
+    onToggleBookmark: (itemId: String, newValue: Boolean) -> Unit,
+    onToggleDifficult: (itemId: String, newValue: Boolean) -> Unit,
+    onExplain: (itemId: String) -> Unit,
+    onSelfGrade: (sessionId: String, itemId: String, correct: Boolean) -> Unit,
+    onKeepShowing: (sessionId: String, itemId: String) -> Unit,
+    onSelectChoice: (sessionId: String, itemId: String, choice: String) -> Unit,
+    onCheckTyped: (sessionId: String, itemId: String, response: String) -> Unit,
+    onContinue: (sessionId: String, next: VocabularySessionState?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
     val justMasteredItemId = (state as? VocabularySessionUiState.InProgress)
         ?.takeIf { it.answered?.justMastered == true }?.session?.card?.itemId
     val wordMasteredMsg = stringResource(Res.string.lessons_word_mastered)
@@ -166,8 +223,8 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
     }
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Column {
                 TopAppBar(
@@ -180,7 +237,7 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
                     actions = {
                         (state as? VocabularySessionUiState.InProgress)?.let { inProgress ->
                             if (inProgress.canUndo) {
-                                IconButton(onClick = { viewModel.undoLastGrade(inProgress.session.sessionId) }) {
+                                IconButton(onClick = { onUndo(inProgress.session.sessionId) }) {
                                     Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(Res.string.lessons_undo_last_answer), tint = EvolaColors.Accent)
                                 }
                             }
@@ -218,8 +275,8 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
 
                 is VocabularySessionUiState.Error -> CenteredMessage {
                     Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(16.dp))
-                    Button(onClick = { viewModel.retry() }) { Text(stringResource(Res.string.lessons_action_retry)) }
+                    Spacer(Modifier.height(EvolaSpacing.lg))
+                    Button(onClick = onRetry) { Text(stringResource(Res.string.lessons_action_retry)) }
                 }
 
                 is VocabularySessionUiState.Empty -> CenteredMessage {
@@ -228,25 +285,39 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(EvolaSpacing.lg))
                     Button(onClick = onDone) { Text(stringResource(Res.string.lessons_action_done)) }
                 }
 
-                is VocabularySessionUiState.InProgress -> CardBody(current, viewModel, settings, speechService)
+                is VocabularySessionUiState.InProgress -> CardBody(
+                    state = current,
+                    settings = settings,
+                    speechService = speechService,
+                    onAlreadyKnown = onAlreadyKnown,
+                    onStartLearning = onStartLearning,
+                    onToggleBookmark = onToggleBookmark,
+                    onToggleDifficult = onToggleDifficult,
+                    onExplain = onExplain,
+                    onSelfGrade = onSelfGrade,
+                    onKeepShowing = onKeepShowing,
+                    onSelectChoice = onSelectChoice,
+                    onCheckTyped = onCheckTyped,
+                    onContinue = onContinue,
+                )
 
                 is VocabularySessionUiState.Summary -> {
-                    val refreshWidget = evola.composeapp.widget.rememberWidgetRefresher()
+                    val refreshWidget = rememberWidgetRefresher()
                     LaunchedEffect(current.summary) { refreshWidget() }
                     SessionSummaryScreen(
                         summary = current.summary,
-                        onContinueToNextSession = { viewModel.startNextSession() },
+                        onContinueToNextSession = onStartNextSession,
                         onDone = onDone,
                     )
                 }
             }
 
             if (state is VocabularySessionUiState.InProgress && !settings.hasSeenSwipeTutorial) {
-                SwipeTutorialOverlay(invertSwipe = settings.invertSwipe, onDismiss = viewModel::markSwipeTutorialSeen)
+                SwipeTutorialOverlay(invertSwipe = settings.invertSwipe, onDismiss = onMarkSwipeTutorialSeen)
             }
         }
     }
@@ -317,7 +388,7 @@ private fun SwipeTutorialOverlay(invertSwipe: Boolean, onDismiss: () -> Unit) {
  * single continuous bar once there are only a handful of words. */
 @Composable
 private fun SegmentedProgressDashes(total: Int, filled: Int, modifier: Modifier = Modifier) {
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
         repeat(total) { index ->
             Box(
                 modifier = Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp))
@@ -329,7 +400,7 @@ private fun SegmentedProgressDashes(total: Int, filled: Int, modifier: Modifier 
 
 @Composable
 private fun CenteredMessage(content: @Composable () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) { content() }
     }
 }
@@ -337,9 +408,18 @@ private fun CenteredMessage(content: @Composable () -> Unit) {
 @Composable
 private fun CardBody(
     state: VocabularySessionUiState.InProgress,
-    viewModel: VocabularySessionViewModel,
-    settings: evola.shared.local.AppSettings,
-    speechService: evola.composeapp.speech.SpeechService,
+    settings: AppSettings,
+    speechService: SpeechService,
+    onAlreadyKnown: (sessionId: String, itemId: String) -> Unit,
+    onStartLearning: (sessionId: String, itemId: String) -> Unit,
+    onToggleBookmark: (itemId: String, newValue: Boolean) -> Unit,
+    onToggleDifficult: (itemId: String, newValue: Boolean) -> Unit,
+    onExplain: (itemId: String) -> Unit,
+    onSelfGrade: (sessionId: String, itemId: String, correct: Boolean) -> Unit,
+    onKeepShowing: (sessionId: String, itemId: String) -> Unit,
+    onSelectChoice: (sessionId: String, itemId: String, choice: String) -> Unit,
+    onCheckTyped: (sessionId: String, itemId: String, response: String) -> Unit,
+    onContinue: (sessionId: String, next: VocabularySessionState?) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     val card = state.session.card
@@ -391,11 +471,11 @@ private fun CardBody(
                         explainLoading = state.explainLoading,
                         invertSwipe = settings.invertSwipe,
                         showTranscription = settings.showTranscription,
-                        onAlreadyKnown = { viewModel.submitAlreadyKnown(state.session.sessionId, card.itemId) },
-                        onStartLearning = { viewModel.submitStartLearning(state.session.sessionId, card.itemId) },
-                        onToggleBookmark = { viewModel.toggleBookmark(card.itemId, !card.isBookmarked) },
-                        onToggleDifficult = { viewModel.toggleDifficult(card.itemId, !card.markedDifficult) },
-                        onExplain = { viewModel.explainWord(card.itemId) },
+                        onAlreadyKnown = { onAlreadyKnown(state.session.sessionId, card.itemId) },
+                        onStartLearning = { onStartLearning(state.session.sessionId, card.itemId) },
+                        onToggleBookmark = { onToggleBookmark(card.itemId, !card.isBookmarked) },
+                        onToggleDifficult = { onToggleDifficult(card.itemId, !card.markedDifficult) },
+                        onExplain = { onExplain(card.itemId) },
                         // A manual tap-to-hear is always available regardless of the "Speak words aloud"
                         // setting - that setting governs auto-play (hands-free mode's narration), not this
                         // explicit user action.
@@ -409,18 +489,18 @@ private fun CardBody(
                         keyboardExerciseEnabled = settings.keyboardExerciseEnabled,
                         multipleChoiceExerciseEnabled = settings.multipleChoiceExerciseEnabled,
                         onSelfGrade = { correct ->
-                            viewModel.submitSelfGrade(state.session.sessionId, card.itemId, correct)
+                            onSelfGrade(state.session.sessionId, card.itemId, correct)
                         },
-                        onKeepShowing = { viewModel.submitKeepShowing(state.session.sessionId, card.itemId) },
+                        onKeepShowing = { onKeepShowing(state.session.sessionId, card.itemId) },
                         onSelectChoice = { choice ->
-                            viewModel.submitChoice(state.session.sessionId, card.itemId, choice)
+                            onSelectChoice(state.session.sessionId, card.itemId, choice)
                         },
                         onCheckTyped = { response ->
-                            viewModel.submitTyped(state.session.sessionId, card.itemId, response)
+                            onCheckTyped(state.session.sessionId, card.itemId, response)
                         },
-                        onContinue = { viewModel.continueToNext(state.session.sessionId, state.answered?.next) },
-                        onToggleBookmark = { viewModel.toggleBookmark(card.itemId, !card.isBookmarked) },
-                        onToggleDifficult = { viewModel.toggleDifficult(card.itemId, !card.markedDifficult) },
+                        onContinue = { onContinue(state.session.sessionId, state.answered?.next) },
+                        onToggleBookmark = { onToggleBookmark(card.itemId, !card.isBookmarked) },
+                        onToggleDifficult = { onToggleDifficult(card.itemId, !card.markedDifficult) },
                     )
                 }
             }
@@ -620,7 +700,7 @@ private fun NewCard(
                     Column(modifier = Modifier.padding(EvolaSpacing.md)) {
                         Text(sentence, style = MaterialTheme.typography.bodyMedium)
                         card.exampleSentenceTranslation?.let {
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.height(EvolaSpacing.xs))
                             Text(it, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
                         }
                     }
@@ -637,7 +717,7 @@ private fun NewCard(
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
                     card.relatedWords.forEach { related ->
                         Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.SurfaceAlt) {
-                            Text(related, modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = 4.dp), style = MaterialTheme.typography.labelSmall)
+                            Text(related, modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = EvolaSpacing.xs), style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
@@ -647,16 +727,16 @@ private fun NewCard(
             Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
                 card.difficultyRating?.let {
                     Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.GoldSoft) {
-                        Row(modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = EvolaSpacing.xs), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.Speed, contentDescription = null, tint = EvolaColors.Gold, modifier = Modifier.size(14.dp))
-                            Spacer(Modifier.width(4.dp))
+                            Spacer(Modifier.width(EvolaSpacing.xs))
                             Text(it, style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
                 card.frequencyRating?.let {
                     Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.Surface, border = BorderStroke(1.dp, EvolaColors.Border)) {
-                        Text(it, modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = 4.dp), style = MaterialTheme.typography.labelSmall)
+                        Text(it, modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = EvolaSpacing.xs), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
@@ -675,7 +755,7 @@ private fun NewCard(
                         Spacer(Modifier.width(EvolaSpacing.sm))
                     } else {
                         Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(EvolaSpacing.xs))
                     }
                     Text(stringResource(Res.string.lessons_ai_explain))
                 }
@@ -697,7 +777,7 @@ private fun NewCard(
                     tint = if (card.markedDifficult) EvolaColors.Rust else EvolaColors.Text3,
                     modifier = Modifier.size(16.dp),
                 )
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(EvolaSpacing.xs))
                 Text(if (card.markedDifficult) stringResource(Res.string.lessons_marked_difficult) else stringResource(Res.string.lessons_mark_difficult))
             }
         }
@@ -957,6 +1037,112 @@ private fun InlineFillSentence(
         }
         Text(suffix, style = style)
     }
+}
+
+private val fakeNewCard = VocabularyCard.New(
+    itemId = "v1", term = "Hund", gender = "der", partOfSpeech = "noun", plural = "Hunde", ipaPronunciation = "/hʊnt/",
+    meaning = "dog", exampleSentence = "Der Hund läuft schnell.", exampleSentenceTranslation = "The dog runs fast.",
+    grammarNote = null, relatedWords = listOf("Welpe", "Katze"), difficultyRating = null, frequencyRating = null,
+    memoryTip = null, isBookmarked = false, markedDifficult = false,
+)
+
+private val fakePracticeCard = VocabularyCard.Practice(
+    itemId = "v2", meaning = "house", grammarNote = null, exampleSentence = null, exampleSentenceTranslation = null,
+    isBookmarked = false, markedDifficult = false, choices = listOf("das Haus", "die Straße", "der Baum", "das Auto"),
+)
+
+private val fakeNewCardSession = VocabularySessionState(
+    sessionId = "s1", sessionNumber = 1, cardsCompleted = 2, cardsRemaining = 5,
+    card = fakeNewCard, origin = "new", wordIndex = 3, totalWords = 8,
+)
+
+private val fakePracticeCardSession = VocabularySessionState(
+    sessionId = "s1", sessionNumber = 1, cardsCompleted = 4, cardsRemaining = 3,
+    card = fakePracticeCard, origin = "due_review", wordIndex = 5, totalWords = 8,
+)
+
+private val fakeSessionSummary = VocabularySessionSummary(
+    sessionNumber = 1, wordsLearned = 8, accuracy = 87.5, timeSeconds = 240, newWordsCount = 5, reviewWordsCount = 3,
+)
+
+private val fakeVocabularySessionActions = object {
+    val onDone: () -> Unit = {}
+    val onUndo: (String) -> Unit = {}
+    val onRetry: () -> Unit = {}
+    val onStartNextSession: () -> Unit = {}
+    val onMarkSwipeTutorialSeen: () -> Unit = {}
+    val onAlreadyKnown: (String, String) -> Unit = { _, _ -> }
+    val onStartLearning: (String, String) -> Unit = { _, _ -> }
+    val onToggleBookmark: (String, Boolean) -> Unit = { _, _ -> }
+    val onToggleDifficult: (String, Boolean) -> Unit = { _, _ -> }
+    val onExplain: (String) -> Unit = {}
+    val onSelfGrade: (String, String, Boolean) -> Unit = { _, _, _ -> }
+    val onKeepShowing: (String, String) -> Unit = { _, _ -> }
+    val onSelectChoice: (String, String, String) -> Unit = { _, _, _ -> }
+    val onCheckTyped: (String, String, String) -> Unit = { _, _, _ -> }
+    val onContinue: (String, VocabularySessionState?) -> Unit = { _, _ -> }
+}
+
+@Composable
+private fun PreviewVocabularySessionContent(state: VocabularySessionUiState, settings: AppSettings = AppSettings(hasSeenSwipeTutorial = true)) {
+    EvolaTheme {
+        VocabularySessionContent(
+            state = state,
+            settings = settings,
+            speechService = rememberSpeechService(),
+            onDone = fakeVocabularySessionActions.onDone,
+            onUndo = fakeVocabularySessionActions.onUndo,
+            onRetry = fakeVocabularySessionActions.onRetry,
+            onStartNextSession = fakeVocabularySessionActions.onStartNextSession,
+            onMarkSwipeTutorialSeen = fakeVocabularySessionActions.onMarkSwipeTutorialSeen,
+            onAlreadyKnown = fakeVocabularySessionActions.onAlreadyKnown,
+            onStartLearning = fakeVocabularySessionActions.onStartLearning,
+            onToggleBookmark = fakeVocabularySessionActions.onToggleBookmark,
+            onToggleDifficult = fakeVocabularySessionActions.onToggleDifficult,
+            onExplain = fakeVocabularySessionActions.onExplain,
+            onSelfGrade = fakeVocabularySessionActions.onSelfGrade,
+            onKeepShowing = fakeVocabularySessionActions.onKeepShowing,
+            onSelectChoice = fakeVocabularySessionActions.onSelectChoice,
+            onCheckTyped = fakeVocabularySessionActions.onCheckTyped,
+            onContinue = fakeVocabularySessionActions.onContinue,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun VocabularySessionContentLoadingPreview() {
+    PreviewVocabularySessionContent(state = VocabularySessionUiState.Loading)
+}
+
+@Preview
+@Composable
+private fun VocabularySessionContentNewCardPreview() {
+    PreviewVocabularySessionContent(state = VocabularySessionUiState.InProgress(session = fakeNewCardSession))
+}
+
+@Preview
+@Composable
+private fun VocabularySessionContentPracticeCardPreview() {
+    PreviewVocabularySessionContent(state = VocabularySessionUiState.InProgress(session = fakePracticeCardSession))
+}
+
+@Preview
+@Composable
+private fun VocabularySessionContentEmptyPreview() {
+    PreviewVocabularySessionContent(state = VocabularySessionUiState.Empty)
+}
+
+@Preview
+@Composable
+private fun VocabularySessionContentErrorPreview() {
+    PreviewVocabularySessionContent(state = VocabularySessionUiState.Error("Couldn't load your session"))
+}
+
+@Preview
+@Composable
+private fun VocabularySessionContentSummaryPreview() {
+    PreviewVocabularySessionContent(state = VocabularySessionUiState.Summary(fakeSessionSummary))
 }
 
 /** Answer revealed inline (correct term highlighted within the sentence) once graded, matching
