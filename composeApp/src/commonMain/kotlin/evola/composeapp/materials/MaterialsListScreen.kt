@@ -39,7 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.materials_list_add_material_desc
 import evola.composeapp.generated.resources.materials_list_delete_desc
@@ -64,7 +64,7 @@ fun MaterialsListScreen(
     onAddMaterial: () -> Unit,
     onOpenMaterial: (String) -> Unit,
 ) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
@@ -79,11 +79,11 @@ fun MaterialsListScreen(
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
                 is MaterialsListState.Loading -> LoadingBody()
-                is MaterialsListState.Error -> ErrorBody(current.message, onRetry = { viewModel.intent(MaterialsListIntent.Refresh) })
+                is MaterialsListState.Error -> ErrorBody(current.message, onRetry = { viewModel.refresh() })
                 is MaterialsListState.Loaded -> MaterialsListBody(
                     materials = current.materials,
                     onOpenMaterial = onOpenMaterial,
-                    onDeleteMaterial = { materialId -> viewModel.intent(MaterialsListIntent.Delete(materialId)) },
+                    onDeleteMaterial = { materialId -> viewModel.delete(materialId) },
                 )
             }
         }

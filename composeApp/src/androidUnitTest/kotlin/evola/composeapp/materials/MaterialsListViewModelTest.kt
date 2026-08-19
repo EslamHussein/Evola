@@ -16,21 +16,19 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import pro.respawn.flowmvi.test.subscribeAndTest
+import org.orbitmvi.orbit.test.testWithInternalState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-/** Same convention as [evola.composeapp.main.HomeContainerTest]: a real [LocalMaterialsRepository]
- * backed by an in-memory SQLite [EvolaDatabase]. `init { refresh() }` is a direct (non-launched)
- * suspend call, so the first `Loaded`/`Error` state is already settled by the time the test body
- * runs - only the follow-up `Refresh`/`Delete` intents need `states.first { <specific predicate> }`
- * (see [MaterialDetailContainerTest]'s doc comment for why `wait()` isn't reliable here - both
- * Containers share the same `manageJobs()`-based poll-restart shape). */
-class MaterialsListContainerTest {
+/** Same convention as [evola.composeapp.main.HomeViewModelTest]: a real [LocalMaterialsRepository]
+ * backed by an in-memory SQLite [EvolaDatabase], driven through [MaterialsListViewModel] via the
+ * official `org.orbit-mvi:orbit-test` DSL. Every seeded material is READY (never PROCESSING), so
+ * `onCreate`'s poll loop never actually starts polling - no `cancelAndIgnoreRemainingItems()`
+ * needed here (compare [MaterialDetailViewModelTest], which does exercise that path). */
+class MaterialsListViewModelTest {
 
     private fun repository(materialCount: Int = 2): MaterialsRepository {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
@@ -60,40 +58,50 @@ class MaterialsListContainerTest {
 
     @Test
     fun `loads every seeded material`() = runTest {
-        MaterialsListContainer(repository(materialCount = 3)).store.subscribeAndTest {
-            val loaded = assertIs<MaterialsListState.Loaded>(states.value)
+        val viewModel = MaterialsListViewModel(repository(materialCount = 3))
+        viewModel.testWithInternalState(this, MaterialsListState.Loading) {
+            runOnCreate()
+            val loaded = assertIs<MaterialsListState.Loaded>(awaitInternalState())
             assertEquals(3, loaded.materials.size)
         }
     }
 
     @Test
     fun `an empty goal loads as an empty list, not a crash`() = runTest {
-        MaterialsListContainer(repository(materialCount = 0)).store.subscribeAndTest {
-            val loaded = assertIs<MaterialsListState.Loaded>(states.value)
+        val viewModel = MaterialsListViewModel(repository(materialCount = 0))
+        viewModel.testWithInternalState(this, MaterialsListState.Loading) {
+            runOnCreate()
+            val loaded = assertIs<MaterialsListState.Loaded>(awaitInternalState())
             assertTrue(loaded.materials.isEmpty())
         }
     }
 
     @Test
     fun `Delete removes exactly the targeted material and reloads the rest`() = runTest {
-        MaterialsListContainer(repository(materialCount = 2)).store.subscribeAndTest {
-            assertIs<MaterialsListState.Loaded>(states.value)
-            intent(MaterialsListIntent.Delete("m0"))
-            val loaded = assertIs<MaterialsListState.Loaded>(
-                states.first { it is MaterialsListState.Loaded && it.materials.size == 1 },
-            )
+        val viewModel = MaterialsListViewModel(repository(materialCount = 2))
+        viewModel.testWithInternalState(this, MaterialsListState.Loading) {
+            runOnCreate()
+            assertIs<MaterialsListState.Loaded>(awaitInternalState())
+
+            containerHost.delete("m0")
+            val loading = awaitInternalState()
+            assertIs<MaterialsListState.Loading>(loading)
+            val loaded = assertIs<MaterialsListState.Loaded>(awaitInternalState())
+            assertEquals(1, loaded.materials.size)
             assertTrue(loaded.materials.none { it.id == "m0" })
         }
     }
 
     @Test
     fun `Refresh re-fetches and still reports every material`() = runTest {
-        MaterialsListContainer(repository(materialCount = 2)).store.subscribeAndTest {
-            assertIs<MaterialsListState.Loaded>(states.value)
-            intent(MaterialsListIntent.Refresh)
-            val loaded = assertIs<MaterialsListState.Loaded>(
-                states.first { it is MaterialsListState.Loaded && it.materials.size == 2 },
-            )
+        val viewModel = MaterialsListViewModel(repository(materialCount = 2))
+        viewModel.testWithInternalState(this, MaterialsListState.Loading) {
+            runOnCreate()
+            assertIs<MaterialsListState.Loaded>(awaitInternalState())
+
+            containerHost.refresh()
+            assertIs<MaterialsListState.Loading>(awaitInternalState())
+            val loaded = assertIs<MaterialsListState.Loaded>(awaitInternalState())
             assertEquals(setOf("m0", "m1"), loaded.materials.map { it.id }.toSet())
         }
     }
