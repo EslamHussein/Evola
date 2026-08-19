@@ -39,7 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.BackHandler
 import evola.composeapp.loading.ChaseLoadingIndicator
 import evola.composeapp.rtl.RtlText
@@ -63,7 +63,7 @@ import evola.shared.vocabulary.VocabularyItem
  * reveal" framing even though nothing here is graded. */
 @Composable
 fun BrowseFlashcardsScreen(viewModel: BrowseFlashcardsViewModel, onDone: () -> Unit) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     BackHandler(onBack = onDone)
 
     Scaffold(
@@ -85,8 +85,8 @@ fun BrowseFlashcardsScreen(viewModel: BrowseFlashcardsViewModel, onDone: () -> U
                 }
                 is BrowseFlashcardsState.Browsing -> BrowsingBody(
                     current,
-                    onNext = { viewModel.intent(BrowseFlashcardsIntent.Next) },
-                    onPrevious = { viewModel.intent(BrowseFlashcardsIntent.Previous) },
+                    onNext = { viewModel.next() },
+                    onPrevious = { viewModel.previous() },
                 )
             }
         }

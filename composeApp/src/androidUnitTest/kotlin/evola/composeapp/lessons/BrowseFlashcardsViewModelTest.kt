@@ -10,16 +10,15 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
-import pro.respawn.flowmvi.test.subscribeAndTest
-import pro.respawn.flowmvi.test.wait
+import org.orbitmvi.orbit.test.testWithInternalState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
-/** [BrowseFlashcardsContainer] is a plain local flip-through of [LocalVocabularyRepository.listVocabulary]
- * with no repository writes at all - these tests exercise the local index math (Next/Previous, clamped
- * at both ends) against a real vocabulary repository, same convention as [evola.composeapp.main.HomeContainerTest]. */
-class BrowseFlashcardsContainerTest {
+/** [BrowseFlashcardsViewModel] is a plain local flip-through of [LocalVocabularyRepository.listVocabulary]
+ * with no repository writes at all - these tests exercise the local index math (next/previous, clamped
+ * at both ends) against a real vocabulary repository, same convention as [evola.composeapp.main.HomeViewModelTest]. */
+class BrowseFlashcardsViewModelTest {
 
     private fun vocabularyRepository(itemCount: Int, lessonId: String = "l1"): LocalVocabularyRepository {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
@@ -43,9 +42,11 @@ class BrowseFlashcardsContainerTest {
     @Test
     fun `loads every word in the lesson and starts on the first one`() = runTest {
         val repository = vocabularyRepository(itemCount = 3)
+        val viewModel = BrowseFlashcardsViewModel("l1", repository)
 
-        BrowseFlashcardsContainer("l1", repository).store.subscribeAndTest {
-            val browsing = assertIs<BrowseFlashcardsState.Browsing>(states.value)
+        viewModel.testWithInternalState(this, BrowseFlashcardsState.Loading) {
+            runOnCreate()
+            val browsing = assertIs<BrowseFlashcardsState.Browsing>(awaitInternalState())
             assertEquals(3, browsing.items.size)
             assertEquals(0, browsing.index)
             assertEquals("Wort0", browsing.items.first().term)
@@ -55,35 +56,33 @@ class BrowseFlashcardsContainerTest {
     @Test
     fun `Next and Previous move the index and clamp at both ends`() = runTest {
         val repository = vocabularyRepository(itemCount = 3)
+        val viewModel = BrowseFlashcardsViewModel("l1", repository)
 
-        BrowseFlashcardsContainer("l1", repository).store.subscribeAndTest {
-            // Previous at index 0 is a no-op.
-            BrowseFlashcardsIntent.Previous resultsIn {
-                wait()
-                assertEquals(0, assertIs<BrowseFlashcardsState.Browsing>(states.value).index)
-            }
-            BrowseFlashcardsIntent.Next resultsIn {
-                wait()
-                assertEquals(1, assertIs<BrowseFlashcardsState.Browsing>(states.value).index)
-            }
-            BrowseFlashcardsIntent.Next resultsIn {
-                wait()
-                assertEquals(2, assertIs<BrowseFlashcardsState.Browsing>(states.value).index)
-            }
-            // Next at the last index is a no-op - stays clamped at 2, not 3 (out of bounds).
-            BrowseFlashcardsIntent.Next resultsIn {
-                wait()
-                assertEquals(2, assertIs<BrowseFlashcardsState.Browsing>(states.value).index)
-            }
+        viewModel.testWithInternalState(this, BrowseFlashcardsState.Loading) {
+            runOnCreate()
+            awaitInternalState()
+
+            // Previous at index 0 is a no-op - it never reduces, so there's nothing new to await.
+            containerHost.previous()
+
+            containerHost.next()
+            assertEquals(1, assertIs<BrowseFlashcardsState.Browsing>(awaitInternalState()).index)
+            containerHost.next()
+            assertEquals(2, assertIs<BrowseFlashcardsState.Browsing>(awaitInternalState()).index)
+
+            // Next at the last index is a no-op too - stays clamped at 2, not 3 (out of bounds).
+            containerHost.next()
         }
     }
 
     @Test
     fun `a lesson with no vocabulary yields Empty, not a crash`() = runTest {
         val repository = vocabularyRepository(itemCount = 0)
+        val viewModel = BrowseFlashcardsViewModel("l1", repository)
 
-        BrowseFlashcardsContainer("l1", repository).store.subscribeAndTest {
-            assertIs<BrowseFlashcardsState.Empty>(states.value)
+        viewModel.testWithInternalState(this, BrowseFlashcardsState.Loading) {
+            runOnCreate()
+            assertIs<BrowseFlashcardsState.Empty>(awaitInternalState())
         }
     }
 }
