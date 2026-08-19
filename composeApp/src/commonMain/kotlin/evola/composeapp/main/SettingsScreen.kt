@@ -42,9 +42,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import evola.composeapp.BackHandler
 import evola.composeapp.speech.SpeechService
+import evola.composeapp.speech.rememberSpeechService
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.components.SelectableChip
+import evola.shared.local.AppSettings
 import evola.shared.local.AppTheme
 import kotlin.math.roundToInt
 import org.orbitmvi.orbit.compose.collectAsState
@@ -90,6 +93,7 @@ import evola.composeapp.generated.resources.main_settings_voice_default
 import evola.composeapp.generated.resources.main_settings_voice_picker_subtitle
 import evola.composeapp.generated.resources.main_settings_voice_picker_title
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Every user-tunable knob Evola has, grouped the way Reword's own Settings screen does (General /
@@ -107,10 +111,59 @@ fun SettingsScreen(
     onNotificationsToggled: (Boolean) -> Unit,
 ) {
     val state by viewModel.collectAsState()
-    val settings = state.settings
     BackHandler(onBack = onBack)
 
+    SettingsContent(
+        settings = state.settings,
+        speechService = speechService,
+        onBack = onBack,
+        onSetAppTheme = viewModel::setAppTheme,
+        onSetReducedMotion = viewModel::setReducedMotion,
+        onSetDailyNewWordGoal = viewModel::setDailyNewWordGoal,
+        onSetKeyboardExerciseEnabled = viewModel::setKeyboardExerciseEnabled,
+        onSetMultipleChoiceExerciseEnabled = viewModel::setMultipleChoiceExerciseEnabled,
+        onSetInvertSwipe = viewModel::setInvertSwipe,
+        onSetTtsEnabled = viewModel::setTtsEnabled,
+        onSetAutoPronounce = viewModel::setAutoPronounce,
+        onSetTtsRate = viewModel::setTtsRate,
+        onSetTtsVoiceName = viewModel::setTtsVoiceName,
+        onSetShowTranscription = viewModel::setShowTranscription,
+        onSetNotificationsEnabled = { enabled ->
+            viewModel.setNotificationsEnabled(enabled)
+            onNotificationsToggled(enabled)
+        },
+        onSetReminderHour = viewModel::setReminderHour,
+        onSetSilentHoursStart = viewModel::setSilentHoursStart,
+        onSetSilentHoursEnd = viewModel::setSilentHoursEnd,
+        onSetNotificationFrequencyLimitHours = viewModel::setNotificationFrequencyLimitHours,
+    )
+}
+
+@Composable
+private fun SettingsContent(
+    settings: AppSettings,
+    speechService: SpeechService,
+    onBack: () -> Unit,
+    onSetAppTheme: (AppTheme) -> Unit,
+    onSetReducedMotion: (Boolean) -> Unit,
+    onSetDailyNewWordGoal: (Int) -> Unit,
+    onSetKeyboardExerciseEnabled: (Boolean) -> Unit,
+    onSetMultipleChoiceExerciseEnabled: (Boolean) -> Unit,
+    onSetInvertSwipe: (Boolean) -> Unit,
+    onSetTtsEnabled: (Boolean) -> Unit,
+    onSetAutoPronounce: (Boolean) -> Unit,
+    onSetTtsRate: (Float) -> Unit,
+    onSetTtsVoiceName: (String?) -> Unit,
+    onSetShowTranscription: (Boolean) -> Unit,
+    onSetNotificationsEnabled: (Boolean) -> Unit,
+    onSetReminderHour: (Int) -> Unit,
+    onSetSilentHoursStart: (Int) -> Unit,
+    onSetSilentHoursEnd: (Int) -> Unit,
+    onSetNotificationFrequencyLimitHours: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.main_settings_title)) },
@@ -136,7 +189,7 @@ fun SettingsScreen(
                                 SelectableChip(
                                     label = theme.name.lowercase().replaceFirstChar { it.uppercase() },
                                     selected = settings.appTheme == theme,
-                                    onClick = { viewModel.setAppTheme(theme) },
+                                    onClick = { onSetAppTheme(theme) },
                                 )
                             }
                         }
@@ -146,7 +199,7 @@ fun SettingsScreen(
                         title = stringResource(Res.string.main_settings_reduce_motion_title),
                         subtitle = stringResource(Res.string.main_settings_reduce_motion_subtitle),
                         checked = settings.reducedMotion,
-                        onCheckedChange = { value -> viewModel.setReducedMotion(value) },
+                        onCheckedChange = onSetReducedMotion,
                     )
                 }
 
@@ -160,28 +213,28 @@ fun SettingsScreen(
                             value = settings.dailyNewWordGoal,
                             range = 3..40,
                             step = 1,
-                            onChange = { value -> viewModel.setDailyNewWordGoal(value) },
+                            onChange = onSetDailyNewWordGoal,
                         )
                         DividerRow()
                         ToggleRow(
                             title = stringResource(Res.string.main_settings_typed_exercise_title),
                             subtitle = stringResource(Res.string.main_settings_typed_exercise_subtitle),
                             checked = settings.keyboardExerciseEnabled,
-                            onCheckedChange = { value -> viewModel.setKeyboardExerciseEnabled(value) },
+                            onCheckedChange = onSetKeyboardExerciseEnabled,
                         )
                         DividerRow()
                         ToggleRow(
                             title = stringResource(Res.string.main_settings_mc_exercise_title),
                             subtitle = stringResource(Res.string.main_settings_mc_exercise_subtitle),
                             checked = settings.multipleChoiceExerciseEnabled,
-                            onCheckedChange = { value -> viewModel.setMultipleChoiceExerciseEnabled(value) },
+                            onCheckedChange = onSetMultipleChoiceExerciseEnabled,
                         )
                         DividerRow()
                         ToggleRow(
                             title = stringResource(Res.string.main_settings_invert_swipe_title),
                             subtitle = stringResource(Res.string.main_settings_invert_swipe_subtitle),
                             checked = settings.invertSwipe,
-                            onCheckedChange = { value -> viewModel.setInvertSwipe(value) },
+                            onCheckedChange = onSetInvertSwipe,
                         )
                     }
                 }
@@ -194,7 +247,7 @@ fun SettingsScreen(
                             title = stringResource(Res.string.main_settings_tts_enabled_title),
                             subtitle = stringResource(Res.string.main_settings_tts_enabled_subtitle),
                             checked = settings.ttsEnabled,
-                            onCheckedChange = { value -> viewModel.setTtsEnabled(value) },
+                            onCheckedChange = onSetTtsEnabled,
                         )
                         if (settings.ttsEnabled) {
                             DividerRow()
@@ -202,15 +255,15 @@ fun SettingsScreen(
                                 title = stringResource(Res.string.main_settings_auto_pronounce_title),
                                 subtitle = stringResource(Res.string.main_settings_auto_pronounce_subtitle),
                                 checked = settings.autoPronounce,
-                                onCheckedChange = { value -> viewModel.setAutoPronounce(value) },
+                                onCheckedChange = onSetAutoPronounce,
                             )
                             DividerRow()
-                            SpeechRateRow(rate = settings.ttsRate, onChange = { value -> viewModel.setTtsRate(value) })
+                            SpeechRateRow(rate = settings.ttsRate, onChange = onSetTtsRate)
                             DividerRow()
                             VoicePickerRow(
                                 speechService = speechService,
                                 selected = settings.ttsVoiceName,
-                                onSelect = { value -> viewModel.setTtsVoiceName(value) },
+                                onSelect = onSetTtsVoiceName,
                             )
                         }
                         DividerRow()
@@ -218,7 +271,7 @@ fun SettingsScreen(
                             title = stringResource(Res.string.main_settings_show_transcription_title),
                             subtitle = stringResource(Res.string.main_settings_show_transcription_subtitle),
                             checked = settings.showTranscription,
-                            onCheckedChange = { value -> viewModel.setShowTranscription(value) },
+                            onCheckedChange = onSetShowTranscription,
                         )
                     }
                 }
@@ -231,10 +284,7 @@ fun SettingsScreen(
                             title = stringResource(Res.string.main_settings_review_reminders_title),
                             subtitle = stringResource(Res.string.main_settings_review_reminders_subtitle),
                             checked = settings.notificationsEnabled,
-                            onCheckedChange = { enabled ->
-                                viewModel.setNotificationsEnabled(enabled)
-                                onNotificationsToggled(enabled)
-                            },
+                            onCheckedChange = onSetNotificationsEnabled,
                         )
                         if (settings.notificationsEnabled) {
                             DividerRow()
@@ -244,7 +294,7 @@ fun SettingsScreen(
                                 value = settings.reminderHour,
                                 range = 0..23,
                                 step = 1,
-                                onChange = { value -> viewModel.setReminderHour(value) },
+                                onChange = onSetReminderHour,
                             )
                             DividerRow()
                             StepperRow(
@@ -253,7 +303,7 @@ fun SettingsScreen(
                                 value = settings.silentHoursStart,
                                 range = 0..23,
                                 step = 1,
-                                onChange = { value -> viewModel.setSilentHoursStart(value) },
+                                onChange = onSetSilentHoursStart,
                             )
                             DividerRow()
                             StepperRow(
@@ -262,7 +312,7 @@ fun SettingsScreen(
                                 value = settings.silentHoursEnd,
                                 range = 0..23,
                                 step = 1,
-                                onChange = { value -> viewModel.setSilentHoursEnd(value) },
+                                onChange = onSetSilentHoursEnd,
                             )
                             DividerRow()
                             StepperRow(
@@ -271,7 +321,7 @@ fun SettingsScreen(
                                 value = settings.notificationFrequencyLimitHours,
                                 range = 1..24,
                                 step = 1,
-                                onChange = { value -> viewModel.setNotificationFrequencyLimitHours(value) },
+                                onChange = onSetNotificationFrequencyLimitHours,
                             )
                         }
                     }
@@ -380,5 +430,109 @@ private fun SpeechRateRow(rate: Float, onChange: (Float) -> Unit) {
             Text(stringResource(Res.string.main_settings_speech_rate_value, (rate * 100).roundToInt()), style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
         }
         Slider(value = rate, onValueChange = onChange, valueRange = 0.5f..2f)
+    }
+}
+
+private val fakeSettingsContentActions = object {
+    val onBack: () -> Unit = {}
+    val onSetAppTheme: (AppTheme) -> Unit = {}
+    val onSetReducedMotion: (Boolean) -> Unit = {}
+    val onSetDailyNewWordGoal: (Int) -> Unit = {}
+    val onSetKeyboardExerciseEnabled: (Boolean) -> Unit = {}
+    val onSetMultipleChoiceExerciseEnabled: (Boolean) -> Unit = {}
+    val onSetInvertSwipe: (Boolean) -> Unit = {}
+    val onSetTtsEnabled: (Boolean) -> Unit = {}
+    val onSetAutoPronounce: (Boolean) -> Unit = {}
+    val onSetTtsRate: (Float) -> Unit = {}
+    val onSetTtsVoiceName: (String?) -> Unit = {}
+    val onSetShowTranscription: (Boolean) -> Unit = {}
+    val onSetNotificationsEnabled: (Boolean) -> Unit = {}
+    val onSetReminderHour: (Int) -> Unit = {}
+    val onSetSilentHoursStart: (Int) -> Unit = {}
+    val onSetSilentHoursEnd: (Int) -> Unit = {}
+    val onSetNotificationFrequencyLimitHours: (Int) -> Unit = {}
+}
+
+@Preview
+@Composable
+private fun SettingsContentDefaultPreview() {
+    EvolaTheme {
+        SettingsContent(
+            settings = AppSettings(),
+            speechService = rememberSpeechService(),
+            onBack = fakeSettingsContentActions.onBack,
+            onSetAppTheme = fakeSettingsContentActions.onSetAppTheme,
+            onSetReducedMotion = fakeSettingsContentActions.onSetReducedMotion,
+            onSetDailyNewWordGoal = fakeSettingsContentActions.onSetDailyNewWordGoal,
+            onSetKeyboardExerciseEnabled = fakeSettingsContentActions.onSetKeyboardExerciseEnabled,
+            onSetMultipleChoiceExerciseEnabled = fakeSettingsContentActions.onSetMultipleChoiceExerciseEnabled,
+            onSetInvertSwipe = fakeSettingsContentActions.onSetInvertSwipe,
+            onSetTtsEnabled = fakeSettingsContentActions.onSetTtsEnabled,
+            onSetAutoPronounce = fakeSettingsContentActions.onSetAutoPronounce,
+            onSetTtsRate = fakeSettingsContentActions.onSetTtsRate,
+            onSetTtsVoiceName = fakeSettingsContentActions.onSetTtsVoiceName,
+            onSetShowTranscription = fakeSettingsContentActions.onSetShowTranscription,
+            onSetNotificationsEnabled = fakeSettingsContentActions.onSetNotificationsEnabled,
+            onSetReminderHour = fakeSettingsContentActions.onSetReminderHour,
+            onSetSilentHoursStart = fakeSettingsContentActions.onSetSilentHoursStart,
+            onSetSilentHoursEnd = fakeSettingsContentActions.onSetSilentHoursEnd,
+            onSetNotificationFrequencyLimitHours = fakeSettingsContentActions.onSetNotificationFrequencyLimitHours,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun SettingsContentPronunciationExpandedPreview() {
+    EvolaTheme {
+        SettingsContent(
+            settings = AppSettings(ttsEnabled = true, autoPronounce = true, ttsRate = 1f),
+            speechService = rememberSpeechService(),
+            onBack = fakeSettingsContentActions.onBack,
+            onSetAppTheme = fakeSettingsContentActions.onSetAppTheme,
+            onSetReducedMotion = fakeSettingsContentActions.onSetReducedMotion,
+            onSetDailyNewWordGoal = fakeSettingsContentActions.onSetDailyNewWordGoal,
+            onSetKeyboardExerciseEnabled = fakeSettingsContentActions.onSetKeyboardExerciseEnabled,
+            onSetMultipleChoiceExerciseEnabled = fakeSettingsContentActions.onSetMultipleChoiceExerciseEnabled,
+            onSetInvertSwipe = fakeSettingsContentActions.onSetInvertSwipe,
+            onSetTtsEnabled = fakeSettingsContentActions.onSetTtsEnabled,
+            onSetAutoPronounce = fakeSettingsContentActions.onSetAutoPronounce,
+            onSetTtsRate = fakeSettingsContentActions.onSetTtsRate,
+            onSetTtsVoiceName = fakeSettingsContentActions.onSetTtsVoiceName,
+            onSetShowTranscription = fakeSettingsContentActions.onSetShowTranscription,
+            onSetNotificationsEnabled = fakeSettingsContentActions.onSetNotificationsEnabled,
+            onSetReminderHour = fakeSettingsContentActions.onSetReminderHour,
+            onSetSilentHoursStart = fakeSettingsContentActions.onSetSilentHoursStart,
+            onSetSilentHoursEnd = fakeSettingsContentActions.onSetSilentHoursEnd,
+            onSetNotificationFrequencyLimitHours = fakeSettingsContentActions.onSetNotificationFrequencyLimitHours,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun SettingsContentNotificationsExpandedPreview() {
+    EvolaTheme {
+        SettingsContent(
+            settings = AppSettings(notificationsEnabled = true, reminderHour = 19, silentHoursStart = 22, silentHoursEnd = 7),
+            speechService = rememberSpeechService(),
+            onBack = fakeSettingsContentActions.onBack,
+            onSetAppTheme = fakeSettingsContentActions.onSetAppTheme,
+            onSetReducedMotion = fakeSettingsContentActions.onSetReducedMotion,
+            onSetDailyNewWordGoal = fakeSettingsContentActions.onSetDailyNewWordGoal,
+            onSetKeyboardExerciseEnabled = fakeSettingsContentActions.onSetKeyboardExerciseEnabled,
+            onSetMultipleChoiceExerciseEnabled = fakeSettingsContentActions.onSetMultipleChoiceExerciseEnabled,
+            onSetInvertSwipe = fakeSettingsContentActions.onSetInvertSwipe,
+            onSetTtsEnabled = fakeSettingsContentActions.onSetTtsEnabled,
+            onSetAutoPronounce = fakeSettingsContentActions.onSetAutoPronounce,
+            onSetTtsRate = fakeSettingsContentActions.onSetTtsRate,
+            onSetTtsVoiceName = fakeSettingsContentActions.onSetTtsVoiceName,
+            onSetShowTranscription = fakeSettingsContentActions.onSetShowTranscription,
+            onSetNotificationsEnabled = fakeSettingsContentActions.onSetNotificationsEnabled,
+            onSetReminderHour = fakeSettingsContentActions.onSetReminderHour,
+            onSetSilentHoursStart = fakeSettingsContentActions.onSetSilentHoursStart,
+            onSetSilentHoursEnd = fakeSettingsContentActions.onSetSilentHoursEnd,
+            onSetNotificationFrequencyLimitHours = fakeSettingsContentActions.onSetNotificationFrequencyLimitHours,
+        )
     }
 }
