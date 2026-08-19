@@ -582,6 +582,380 @@ the Anthropic key re-entered in Profile after the wipe.
 
 ---
 
+## Reword-inspired feature pass: swipe session, settings, hands-free, TTS, reminders
+
+Goal: bring in the parts of a competitive teardown (Reword, an ad-supported vocabulary app) worth
+having, adapted to this app's own architecture rather than copied wholesale - the 3-tab IA and
+lesson-scoped (AI-extracted, not pre-loaded-deck) content model were kept as-is on purpose; see the
+"what's explicitly not done" note below.
+
+**Vocabulary session model swap** (own pass, done first): replaced the forced 5-step ladder
+(Intro→Recognition→WordBank→Hint→Blind) with a Reword-style swipe model - `VocabularyCard` collapses
+to `New`/`Practice`; `New` swipe-left ("already know it") fast-tracks straight into the review
+schedule (the one place that bypasses `VocabularySrs`'s pure functions, documented inline), swipe-
+right starts learning; `Practice` swipe-left grades correct, swipe-right is either a graded miss (due
+review) or a non-graded "keep showing" (still-learning word) - deliberately two different repository
+calls so a real miss and "not ready yet" never share one code path. Typed/multiple-choice remain
+available as opt-in checks on `Practice` cards, gated by new Settings toggles.
+
+- [x] `Vocabulary.kt`/`Vocabulary.sq`/`LocalVocabularyRepository` rewritten around the two-card model
+- [x] `VocabularySessionScreen` rebuilt: two-direction `SwipeToDismissBox` + tappable labels (both
+      paths fire the same action - accessible, testable without gesture simulation)
+- [x] `LocalVocabularyRepositoryTest` rewritten (12 cases: graduation loop, demote-and-repeat
+      positioning, keep-showing's zero SRS mutation, typed/multiple-choice parity with self-grade)
+
+**Settings** - new `user_settings` KV table (`Settings.sq`) + `LocalSettingsRepository` (reactive,
+`Flow<AppSettings>`), a new `SettingsScreen` off Profile: daily new-word goal (replaces the old
+hardcoded `NEW_WORDS_TARGET=8`), per-exercise-type toggles, invert-swipe, TTS on/off + rate,
+notification on/off + reminder hour.
+
+**Home** - weekly 7-day streak strip + stacked new/review activity chart + "Learned today X/Y"
+against the configurable goal, additive alongside the existing readiness ring/word-breakdown (kept -
+a stronger design than Reword's own streak-only view). `vocabulary_sessions` gained a `local_date`
+column (the caller's own already-computed local date, not derived from a UTC instant) so the chart
+groups by the learner's real day boundary.
+
+**Vocabulary browsing** - client-side search in `VocabularyListScreen`; a "add your own word" flow
+(`VocabularyRepository.addCustomWord`) landing in whichever lesson is open, since there's no
+pre-loaded-deck model to hang a separate "personal list" off of the way Reword's "Eigene Vokabeln" can.
+
+**Backup/restore** - `BackupRepository` (JSON snapshot via kotlinx.serialization, not a raw SQLite
+file copy - sidesteps WAL/open-handle issues) covering goals/materials/lessons/vocabulary/daily-
+activity/settings; grammar tables and in-progress session/queue state excluded on purpose
+(regenerable, not source data). `BackupFile` expect/actual (Android SAF `CreateDocument`/
+`OpenDocument`; iOS share sheet + document picker) + two new rows on Profile.
+
+**Real TTS and real local notifications** - both were explicitly out of scope per this file's own
+"Decisions already locked in" table ("TTS: Skipped for now, no voice in this build"); overridden on
+purpose for this pass, not by accident. `SpeechService` expect/actual (Android
+`android.speech.tts.TextToSpeech`, iOS `AVSpeechSynthesizer`), German-only, wired into the session's
+previously-inert audio button. `ReminderScheduler` expect/actual (Android: notification channel +
+daily `WorkManager` `PeriodicWorkRequest` whose Worker computes a real due-count via a new
+`dueCountForUser` query and only posts when non-zero; iOS: repeating `UNCalendarNotificationTrigger`
+with a static body - iOS can't run Kotlin inside a trigger to compute a live count, a deliberate,
+disclosed platform asymmetry). `POST_NOTIFICATIONS` permission requested contextually (when the
+Settings toggle is turned on), not during onboarding.
+
+**Hands-free mode** - new `HandsFreeSessionScreen` reusing `VocabularySessionViewModel`'s queue/SRS
+engine completely unchanged: narrates each card via TTS, two oversized tap targets replace the swipe
+gesture and the typed/multiple-choice options (narrating a prompt then asking for a typed answer
+defeats the point of not looking at the screen). A `Practice` card's term is never sent to the client
+before grading, so only the native-language meaning can be narrated - recall is still on the learner.
+Reachable from Home's "Continue Lesson" area.
+
+**Explicitly not done**: no Reword-style Learn/Vocabulary/Menu tab restructuring (this app's 3-tab
+consolidation was a deliberate earlier decision, see `MainScreen.kt`'s own doc comment); no
+category-picker onboarding step (no pre-loaded-category content model exists to pick from); no ads
+(never existed here, staying that way).
+
+Verified: `./gradlew :shared:jvmTest`, `:shared:test` (all targets), `:composeApp:
+compileDebugKotlinAndroid`, `:composeApp:compileKotlinIosSimulatorArm64`, `:androidApp:assembleDebug`
+all green - 3 new repository test files (`LocalSettingsRepositoryTest`, `BackupRepositoryTest`,
+extended `LocalGoalsRepositoryTest`/`LocalVocabularyRepositoryTest`), every `expect`/`actual` pair
+compiles on both platforms.
+
+**Live on-emulator pass (Android, follow-up to this entry)**: fresh install → onboarding → goal
+creation, DB seeded directly (no Anthropic key available) with a lesson + 6 words spanning every
+status. Confirmed live: Home's streak strip/activity chart/daily-goal render with real data; a full
+session exercising every path (due-review self-grade, typed check, multiple-choice check, New-card
+swipe via real drag gesture, Learning-card graduation loop, session summary) completes correctly;
+Settings toggles persist and immediately change session behavior; the notification permission prompt
+fires and a real `#ReviewReminderWorker#` job is confirmed scheduled via `dumpsys jobscheduler`; TTS
+invokes the real `com.google.android.tts` engine with no crash; vocabulary search filters correctly;
+a custom-added word persists and appears in the list; backup export produces a real, valid,
+complete JSON file via the real Android "Save file" system picker. Zero crashes across the whole
+pass (`logcat` checked for `FATAL EXCEPTION`).
+
+**One real bug found and fixed by this pass**: `HomeScreen`'s dashboard had no scroll container - it
+relied on a `weight(1f)` spacer to pin the CTA to the bottom, which assumed all content fit one
+screen. The new weekly-activity card (plus a 6-word breakdown, nudge card, and the new hands-free
+button) pushed content past that assumption on real device heights, making the "Continue Lesson"
+and "Hands-free practice" buttons completely unreachable. Fixed: `DashboardBody`'s Column is now
+`verticalScroll`-wrapped and the CTAs are the last items in the scrollable content instead of pinned
+- confirmed by scrolling to and successfully using both buttons after the fix.
+
+---
+
+## FlowMVI + Koin migration, and the remaining Reword-parity gap items
+
+**FlowMVI + Koin migration** — all 16 hand-rolled `ViewModel`s (`MutableStateFlow<XyzState>` + public
+functions + callback-lambda outcomes) converted to `pro.respawn.flowmvi` `Container`/`Store` +
+`StoreViewModel`, and every repository construction site moved from a manually-threaded `AppModule`
+class (repositories passed as composable params down to `MainScreen.kt`) to Koin 4.0.4 (`koinInject`/
+`koinViewModel`). Callback outcomes (`onDone: (T) -> Unit)` params) became state-based one-shot events
+(`XyzEvent(val id: Long = Random.nextLong())`, consumed via `LaunchedEffect(state.event?.id)`) rather
+than `MVIAction`, since `subscribeConsume` doesn't resolve from `commonMain` in FlowMVI 3.1.0 (confirmed
+via a real build failure, not assumed). `AppModule` deleted; `MainScreen.kt`/`App.kt` no longer thread
+repositories as params to screens that resolve their own dependencies from Koin instead.
+
+- [x] Phase 0 — Koin infra (`evolaModule`, `KoinApplication` wrap in `App.kt`)
+- [x] Phase 1/2 — all 16 ViewModels converted (`AddMaterialViewModel` → `HomeViewModel` →
+      `LessonDetailViewModel` → `ProfileViewModel` as the 4 validation cases, then the remaining 12)
+- [x] Phase 3 — `AppModule` class deleted, `MainScreen.kt`/`App.kt` param lists shrunk to only what's
+      actually referenced inside them
+
+**Gap-closure pass** — remaining items from this session's Reword teardown comparison, worked through
+to completion (P0 → P3):
+
+- [x] **Delete vocabulary word** — word-detail "Remove" action, confirmed via `AlertDialog`, cascades
+      via the DB schema's own foreign key
+- [x] **Auto-pronounce + Show-transcription toggles** — two new Settings > Pronunciation rows;
+      auto-pronounce fires only for `VocabularyCard.New` (never `Practice`, which would leak the
+      answer the recall exercise is testing for)
+- [x] **Best-streak tracking** — `computeBestStreak` (longest run in a sorted date set) alongside the
+      existing current-streak calc; Home shows "best: N days" only when it exceeds the current streak
+- [x] **Vocabulary list sort control** — Default/A–Z/Progress, a `DropdownMenu` off a new toolbar icon
+- [x] **Reset progress** — per-lesson (`VocabularyListScreen`'s overflow menu) and global
+      (`ProfileScreen`'s new "Danger zone" section), both behind a confirming `AlertDialog`; new
+      `resetLessonProgress`/`resetAllProgress` repository methods + SQL queries
+- [x] **First-run swipe tutorial** — a one-time full-screen overlay on a learner's first in-progress
+      session card (gated by a new `hasSeenSwipeTutorial` setting), showing both swipe directions with
+      labels that respect the invert-swipe setting; dismissed by a tap anywhere
+- [x] **Daily-goal picker onboarding step** — inserted between Goal Setup and Main
+      (`DailyGoalPickerScreen`), sets the same `dailyNewWordGoal` setting Settings already exposed;
+      no separate category-picker model exists to hang a Reword-style category step off (documented
+      as out of scope for that specific reason, unchanged from the earlier Reword-parity pass)
+- [x] **Dark mode** — `EvolaColors` (previously a plain `object` of static `Color` vals) rebuilt as a
+      `CompositionLocal`-backed `EvolaColorPalette`, with a hand-tuned (not inverted) dark palette and
+      a `Settings > Appearance` System/Light/Dark picker (`AppTheme`, threaded from `App.kt` through
+      `EvolaTheme(appTheme = ...)`); every one of the ~20 screens referencing `EvolaColors.*` needed no
+      call-site changes since the same property syntax resolves through the CompositionLocal now - a
+      handful of non-composable call sites (a `drawBehind`/`Canvas` DrawScope color, a plain `when`
+      returning a `Color`, three file-level `val`s) had to move to `@Composable` scope or hoist the
+      color into a local `val` before the draw-phase lambda, since `@DelicateStoreApi`-style
+      composition reads can't cross into a non-composable lambda
+- [x] **Milestone toast: word mastered** — `VocabularyAnswerResult` gains `justMastered: Boolean`
+      (true exactly on the answer that transitions a word's status into `"mastered"`, computed by
+      comparing before/after status in `gradePracticeAndAdvance`), surfaced as a session-screen
+      snackbar
+- [x] **Reduced-motion setting** — new `reducedMotion` toggle in Settings > Appearance, persisted and
+      exposed via `AppSettings`. **Not yet wired to any animation spec**: the app has no custom
+      `tween`/`animateFloat`/`AnimatedContent` calls anywhere to gate today (the swipe gesture uses
+      `SwipeToDismissBox`'s built-in physics) - the setting is real and live, ready for any future
+      animation work to read, but has no visible effect yet. Flagged rather than forcing a change with
+      nothing to change.
+
+**Deliberately deferred, not silently skipped:**
+
+- **Undo last swipe** (P1) — not implemented. A real undo needs to revert the word's SRS state
+  (`vocabulary_progress` row) exactly as it was before the swipe, not just cosmetically animate the
+  card back - the current repository API has no "undo last grade" operation, and building one safely
+  (concurrent due-review recompute, session-queue position) is real repository-layer work, not a
+  session-screen tweak. Left for a dedicated follow-up rather than shipping a misleading undo that
+  only reverses the UI, not the actual progress.
+- **SRS interval philosophy** (P2) — kept the existing day-based `[1, 3, 7, 14, 30]` ladder
+  (`VocabularySrs.intervalDaysFor`) rather than adding Reword's 30-minute first-interval tier. Changing
+  the core spaced-repetition algorithm is a correctness-sensitive change better done as its own
+  reviewed pass, not folded into this gap-closure sweep.
+
+Verified: `./gradlew :shared:compileKotlinJvm :shared:jvmTest :shared:test`,
+`:composeApp:compileDebugKotlinAndroid`, `:composeApp:compileKotlinIosSimulatorArm64` all green after
+every logical step in this pass (not batched to the end). No emulator walkthrough of the new screens
+(dark mode toggle, swipe tutorial, daily-goal picker, reset-progress dialogs, mastery toast) yet - a
+manual pass is a follow-up.
+
+---
+
+## Gap-closure pass #2: reduced motion, streak freeze, achievements, share, starter categories, widget
+
+Follow-up to the previous gap-closure pass, working through the remaining items from a fresh-eyes
+Reword comparison. Two categories were explicitly scoped OUT after discussion rather than built:
+**ads and accounts/login/cloud sync** stay excluded (reversing either would undo the local-first
+pivot on purpose, not by oversight) - see the "Decisions already locked in" table below.
+
+- [x] **Reduced-motion, now real** - the session screen's card-to-card transition is an
+      `AnimatedContent` keyed on `card.itemId` (fade+slide by default, `snap()` zero-duration
+      crossfade when `reducedMotion` is on) - the setting was previously stored but read nowhere.
+- [x] **Streak freeze/repair** - `streak_freeze_dates` table (Activity.sq) + a `streakFreezesAvailable`
+      setting (default 2, not auto-replenished - kept simpler than Duolingo's regrant model on
+      purpose). `LocalGoalsRepository.maybeApplyStreakFreeze` spends one freeze at most once per gap
+      (idempotent via the table's own unique constraint + an `alreadyFrozen` guard) whenever
+      yesterday would otherwise break today's streak; frozen dates count for streak continuity only,
+      never for the weekly activity chart's real-activity dots. Home shows the remaining freeze count
+      next to the streak card.
+- [x] **Achievement badges** - a fixed, code-defined 7-badge set (`evola.shared.achievements.
+      ALL_BADGES`: first/10/50/100 words mastered, 3/7/30-day streaks), a new `achievements` table,
+      `AchievementsRepository.checkAndUnlock` called from the same `getProgress` call that already
+      computes mastered-count and streak (no extra call site needed). Newly-unlocked badges surface
+      as a Home snackbar; Profile gets a full locked/unlocked grid (seeing what's still ahead is part
+      of the point, not just what's earned).
+- [x] **Export/share progress** - a new `rememberShareText()` expect/actual (Android `ACTION_SEND`,
+      iOS `UIActivityViewController` with plain text, no temp file needed unlike the JSON backup
+      path) wired to a "Share progress" row on Profile, building a one-line summary from the latest
+      `GoalProgress`. Deliberately separate from Backup/restore's JSON snapshot - this is a
+      human-readable brag line, not a data file.
+- [x] **Starter-category picker onboarding step** - Evola's real content model stays lesson-scoped/
+      AI-extracted (unchanged), but a small hand-authored `STARTER_CATEGORIES` set (Greetings/Travel/
+      Food/Numbers, ~8 words each) lets onboarding optionally pre-seed a lesson via
+      `VocabularyRepository.createLessonFromStarterCategory` - each becomes an ordinary lesson,
+      indistinguishable from any AI-extracted one afterwards. Fully skippable; not a parallel content
+      pipeline, just a fast optional running start.
+- [x] **Android home-screen widget** - `HomeWidgetProvider` (streak + due-word count, tap opens the
+      app), refreshed on its own `updatePeriodMillis` schedule and immediately after finishing a
+      session (`rememberWidgetRefresher()`). Opens its own short-lived DB connection the same way the
+      review-reminder Worker does, and deliberately reads streak/due-count directly rather than via
+      `getProgress` to avoid also triggering that call's achievement-unlock side effect from a
+      background refresh. **iOS has no equivalent** - a WidgetKit extension is a separate Swift/Xcode
+      target that Compose Multiplatform/Kotlin cannot produce through Gradle; the existing
+      `iosApp.xcodeproj` would need a manually-added widget extension target, which is out of scope
+      for this pass and disclosed here rather than silently skipped.
+
+**Explicitly declined, not silently skipped:**
+- **Ads** - would reverse this app's own "no ads (never existed here, staying that way)" decision.
+- **Accounts/login/cloud sync** - would reverse the Local-First pivot (deleted backend/auth) above.
+- **Pre-built curriculum as the primary content model** - the starter-category picker above is the
+  scoped-in version of this; a *competing* full pre-loaded deck system alongside the AI-extraction
+  pipeline was not built, since the two would fight over how a lesson's content originates.
+
+Verified: `./gradlew :shared:compileKotlinJvm :shared:jvmTest :shared:test`,
+`:composeApp:compileDebugKotlinAndroid`, `:composeApp:compileKotlinIosSimulatorArm64`, and
+`:androidApp:assembleDebug` (to catch the new widget's manifest/resource merge) all green after
+every step. No emulator walkthrough of the new screens yet (streak-freeze triggering across two real
+calendar days, achievement unlock toasts, starter-category import, the widget actually placed on a
+home screen) - a manual pass is a follow-up.
+
+---
+
+## Session-screen fix pass: real device comparison against Reword
+
+A live side-by-side against the real Reword app (installed on the dev emulator under its actual
+package `ru.poas.englishwords`, screenshotted directly - not a store listing) surfaced one genuine
+regression and several real UI gaps, all fixed:
+
+- [x] **Regression fixed: the reduced-motion `AnimatedContent`** added in the previous gap-closure
+      pass was colliding with `SwipeToDismissBox`'s own internal drag/dismiss state lifecycle,
+      producing a broken layout on a real device - missing card content, overlapping swipe labels,
+      a near-empty screen. Confirmed via a live screenshot, then reverted; `reducedMotion` is back to
+      stored-but-unwired (disclosed, not silently dropped) pending a safer approach.
+- [x] **Card chrome** - `VocabularySessionScreen`'s New/Practice card content previously sat directly
+      on the page background with no visible boundary and was top-pinned, leaving most of the screen
+      empty below short content. Now wrapped in a bordered `Card`, vertically centered via
+      `Arrangement.Center` on the scrollable container (falls back to normal top-aligned scrolling
+      once content overflows, e.g. the typed-check keyboard).
+- [x] **Segmented progress dashes** - replaced the single continuous `LinearProgressIndicator` with
+      one dash per distinct word (matching the existing "Word X of Y" text), Reword-style.
+- [x] **Reveal/peek icon** - a third exercise icon (`Visibility`) alongside typed/multiple-choice;
+      tapping it always grades the card as a miss via the existing `submitSelfGrade(false)` path
+      (revealing the answer costs the "correct" credit, matching Reword's behavior) rather than
+      needing a separate ungraded reveal endpoint - no change to the "term never sent before
+      grading" guarantee.
+- [x] **Bookmark/mark-difficult on Practice cards** - previously only `New` cards exposed these; a
+      new "..." overflow menu (matching Reword's own per-card menu placement) brings Practice cards
+      to parity, reusing the existing `ToggleBookmark`/`ToggleDifficult` intents.
+- [x] **Real per-card undo** - the one item from the earlier gap-closure pass explicitly deferred as
+      "needs real SRS-state reversal, not cosmetic" is now implemented for graded `Practice` answers
+      (self-grade/typed/multiple-choice): `VocabularyRepository.undoLastGrade` reverts the word's
+      progress row, un-answers the queue row, deletes any repeat-queue row the grade inserted, and
+      reverts the session's correct/incorrect counters - snapshotted in-memory (not DB-persisted) at
+      grade time, consumed on undo or superseded by the next grade. Scoped to graded Practice answers
+      only (not `submitAlreadyKnown`/`submitStartLearning`/`submitKeepShowing`), disclosed rather than
+      silently expanded to every action. Verified live: grading a card shows the undo icon, tapping it
+      reverts the card to its unanswered state with the SRS/session state genuinely rolled back, not
+      just the visible UI.
+
+Also delivered in the same session as the pass above (level/lesson picker refinement, prompted by a
+"Das Leben A2"-style real-course scenario): the onboarding starter picker
+(`CategoryPickerScreen`/`STARTER_LEVELS`) now models A1/A2 as levels containing individually
+selectable lessons (A2 splits into 4 Lektion) rather than one lesson per level, with a
+`TriStateCheckbox` on multi-lesson levels reflecting all/none/some selected and toggling every lesson
+in that level at once. A1 and A2 selections are fully independent (confirmed: neither the UI nor
+`VocabularyRepository.createStarterLesson` treat them as mutually exclusive).
+
+Verified: `:shared:compileKotlinJvm :shared:jvmTest :shared:test`,
+`:composeApp:compileDebugKotlinAndroid`, `:composeApp:compileKotlinIosSimulatorArm64` all green.
+Manually verified live on the Android emulator (not just compiled) via real screenshots and taps:
+fresh install onboarding, a Practice card's full render, grading, the undo icon appearing and
+correctly reverting.
+
+---
+
+## Home screen: match Reword's structure/pattern (own wording, own tab names)
+
+A second live comparison, this time of the Home/Learn tab (not the session card), found real
+structural/IA gaps versus Reword - addressed to match Reword's *pattern*, not a literal clone (per
+explicit scoping: Evola's own branding/wording throughout, no renamed tabs, no fabricated
+"categories" concept that doesn't exist in this app's content model).
+
+- [x] **New goal-wide session modes** - Reword's "Learn new words"/"Review words"/"Mixed mode" rows
+      didn't have a real equivalent: every prior session was either lesson-scoped
+      (`startOrResumeSession`) or filtered by mastery bucket (`startCategorySession`), never
+      "only new" or "only due" across the whole goal. Added `SessionMode` (`NEW_ONLY`/`REVIEW_ONLY`/
+      `MIXED`) + `VocabularyRepository.startModeSession`, backed by two new goal-wide queries
+      (`newItemsForGoal`/`dueItemsForGoal`) - `MIXED` is exactly `startOrResumeSession`'s own
+      due+new selection logic, just goal-wide instead of one lesson. Home's new "Study" section shows
+      all three as rows with live counts ("Learned today: X of Y", "Words to review: N"), each
+      disabled (not hidden) when nothing's available - verified live: tapping "Learn new words"
+      launched a real session showing the correct new-word count and a genuine New card.
+- [x] **"Extra modes" section** - Browse flashcards / Hands-free mode, previously only reachable as
+      small text buttons under the "Continue Lesson" CTA, now their own Home section mirroring
+      Reword's placement (same current-lesson scope as before, no new capability - a visibility fix).
+- [x] **Empty-week activity chart fixed** - a week with zero activity used to render as invisible
+      flat hairlines with no other signal; now shows "No activity yet this week" instead, matching
+      the rest of the dashboard's "never an ambiguous empty state" convention.
+
+**Deliberately not matched** (per explicit scoping in this pass): Reword's centered wordmark-as-header
+branding, its "N categories chosen" row (no pre-loaded-category model exists here), and its
+Learn/Vocabulary/Menu tab names (Evola's Home/Materials/Profile cover different scopes, renaming them
+would misrepresent what those tabs do).
+
+**Follow-up refinement** (same pass, after a second live comparison found the section *order* still
+didn't match): reordered to Study → Extra modes → one combined Stats card, mirroring Reword's real
+structure exactly instead of interleaving Evola's own readiness ring between them. `StatsSection` now
+owns all streak content in one place (day strip + big side-by-side Current/Best streak tiles + freeze
+count + Share row, reusing the same `rememberShareText()` share sheet as Profile's row) - the old
+`TopTilesRow` streak tile was fully redundant with this and removed, `TopTilesRow` is now just the
+readiness ring. The "Learned today X/Y" readout no longer appears twice (was in both the old
+`WeeklyActivityCard` and the new Study row) - kept only in Study's "Learn new words" subtitle. The
+activity bar chart survives as its own `ActivityChartCard`, since Reword's Stats card has no
+equivalent chart - an Evola-original addition, now clearly separated rather than folded into the
+matched section.
+
+Verified: `:shared:compileKotlinJvm :shared:jvmTest :shared:test`,
+`:composeApp:compileDebugKotlinAndroid`, `:composeApp:compileKotlinIosSimulatorArm64`,
+`:androidApp:assembleDebug` all green. Live-verified on the Android emulator via screenshots (both
+before and after the reorder): Study section renders with real counts, "Review words" correctly
+disables at zero, tapping "Learn new words" launches a genuine goal-wide new-word session, and the
+final section order/grouping was confirmed to match Reword's own Home tab screenshot side by side.
+
+---
+
+## Real "Das Leben" A1/A2 vocabulary replaces the sample starter content
+
+The starter-category picker's placeholder sample (4 hand-authored topic lists) is replaced with the
+**real** German-Arabic glossary from the user's own purchased "Das Leben" A1/A2 (Cornelsen) textbooks -
+extracted from the actual PDFs, not approximated or fabricated. Treated strictly as personal-use
+content for this single local install, consistent with the app's local-first, single-user design -
+not redistributed or published anywhere.
+
+- [x] **Extraction** - two PDFs (82 + 146 pages) parsed chapter-by-chapter (each numbered "Kapitel"
+      becomes one lesson; un-numbered topical sub-headings and A2's "Plateau" review sections folded
+      into their parent chapter, not split out) into `starter_a1.json`/`starter_a2.json`. **1,356
+      words across 17 A1 lessons + 1,604 words across 16 A2 lessons = 2,960 real vocabulary entries**,
+      each a term (article + noun, or bare infinitive for verbs, matching the app's existing German
+      formatting convention) paired with its Arabic meaning exactly as printed in the glossary.
+- [x] **Architecture change**: `StarterLevel`/`StarterLesson`/`StarterWord` are now `@Serializable`
+      and loaded at runtime from bundled JSON resources (`composeResources/files/`, same pattern the
+      German-noun CSV already used) instead of hardcoded Kotlin - the content is far too large now to
+      live as literal data, and this also means updating the bundled content later never needs a code
+      change. `VocabularyRepository.createStarterLesson` no longer looks anything up by id from a
+      static list - the caller (which already parsed the JSON) passes the lesson's title/words
+      directly, decoupling the repository entirely from where the starter content actually lives.
+- [x] **CategoryPickerScreen** now loads both JSON assets lazily on first composition (a loading
+      spinner covers the brief parse), otherwise unchanged - the existing tri-state-checkbox/
+      multi-select UI needed no rework to handle 17+16 real lessons instead of 2 sample levels.
+
+**Verified live on a real Android device pull-through** (not just compiled): fresh onboarding →
+selected Kapitel 1 (A1) and Kapitel 15 (A2) → both real lessons created → Home's "Learn new words"
+launched a genuine session → first card showed "hallo" / "مرحبا" exactly as printed in the source
+glossary, Arabic rendering correctly via the existing `RtlText` support, card chrome/icons/undo all
+intact. No crashes in logcat throughout the full flow.
+
+Verified: `:shared:compileKotlinJvm :shared:jvmTest :shared:test`,
+`:composeApp:compileDebugKotlinAndroid`, `:composeApp:compileKotlinIosSimulatorArm64`,
+`:androidApp:assembleDebug` all green.
+
+---
+
 ## M9 — Hardening
 
 - [ ] Real email provider for password reset + verification (currently server-logged only)
