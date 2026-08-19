@@ -2,10 +2,8 @@ package evola.composeapp.main
 
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.Lesson
-import pro.respawn.flowmvi.api.MVIIntent
-import pro.respawn.flowmvi.api.MVIState
 
-sealed interface HomeState : MVIState {
+sealed interface HomeState {
     data object Loading : HomeState
 
     /** [currentLesson] is resolved by cross-referencing [GoalProgress.currentLessonId] against the
@@ -18,8 +16,4 @@ sealed interface HomeState : MVIState {
     ) : HomeState
 
     data class Error(val message: String) : HomeState
-}
-
-sealed interface HomeIntent : MVIIntent {
-    data object Refresh : HomeIntent
 }

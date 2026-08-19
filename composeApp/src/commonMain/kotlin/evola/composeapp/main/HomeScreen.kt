@@ -37,7 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.RootTopBarTitle
@@ -80,7 +80,7 @@ fun HomeScreen(
     onStartHandsFree: (Lesson) -> Unit,
     onBrowseFlashcards: (Lesson) -> Unit,
 ) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
     val newlyUnlockedBadges = (state as? HomeState.Loaded)?.progress?.newlyUnlockedBadges.orEmpty()
     val achievementMessages = newlyUnlockedBadges.map { badge -> stringResource(Res.string.main_home_achievement_unlocked, badge.title) }
@@ -105,7 +105,7 @@ fun HomeScreen(
                     is HomeState.Error -> CenteredBox {
                         Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                         Spacer(Modifier.height(EvolaSpacing.md))
-                        Button(onClick = { viewModel.intent(HomeIntent.Refresh) }) { Text(stringResource(Res.string.main_home_retry)) }
+                        Button(onClick = { viewModel.refresh() }) { Text(stringResource(Res.string.main_home_retry)) }
                     }
 
                     is HomeState.Loaded ->
