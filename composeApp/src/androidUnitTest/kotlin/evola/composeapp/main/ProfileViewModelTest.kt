@@ -11,21 +11,21 @@ import evola.shared.local.LocalSettingsRepository
 import evola.shared.local.LocalVocabularyRepository
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.test.runTest
-import pro.respawn.flowmvi.test.subscribeAndTest
-import pro.respawn.flowmvi.test.wait
+import org.orbitmvi.orbit.test.testWithInternalState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** [ProfileContainer] now owns the achievement-badge and progress-summary reads that used to be
- * fetched straight from the composable (see the Container's own doc comment) - these tests cover
- * both that `init` load and the two intents, driven through the real [ProfileContainer.store] via
- * the `pro.respawn.flowmvi:test` DSL (same pattern as [HomeContainerTest]), backed by real
+/** [ProfileViewModel] now owns the achievement-badge and progress-summary reads that used to be
+ * fetched straight from the composable (see the ViewModel's own doc comment) - these tests cover
+ * both that `onCreate` load and the two intents, driven through the real [ProfileViewModel] via
+ * the `org.orbit-mvi:orbit-test` DSL (same pattern as [HomeViewModelTest]), backed by real
  * Local*Repository implementations sharing one in-memory SQLite [EvolaDatabase] - never mocks. */
-class ProfileContainerTest {
+class ProfileViewModelTest {
 
     private class Repos(
         val db: EvolaDatabase,
@@ -41,7 +41,7 @@ class ProfileContainerTest {
         val settings = LocalSettingsRepository(db)
         val achievements = LocalAchievementsRepository(db)
         val goals = LocalGoalsRepository(db, settings, achievements)
-        // resetAllProgress/the vocabulary reads ProfileContainer touches never call the AI client -
+        // resetAllProgress/the vocabulary reads ProfileViewModel touches never call the AI client -
         // a MockEngine that errors on any request makes that an enforced assumption, not a guess.
         val client = AnthropicClient(MockEngine { error("AI must not be called by this test") }) { "test-key" }
         val vocabulary = LocalVocabularyRepository(db, client, settings)
@@ -57,33 +57,35 @@ class ProfileContainerTest {
     fun `a freshly created goal loads zeroed progress and no unlocked badges`() = runTest {
         val repos = repos()
         val goalId = createGoal(repos)
+        val viewModel = ProfileViewModel(goalId, repos.goals, repos.vocabulary, repos.achievements)
 
-        ProfileContainer(goalId, repos.goals, repos.vocabulary, repos.achievements).store.subscribeAndTest {
-            val state = states.value
+        viewModel.testWithInternalState(this, ProfileState()) {
+            runOnCreate()
+            val state = awaitInternalState()
             assertEquals(emptySet(), state.unlockedBadgeIds)
             val progress = assertNotNull(state.progress)
             assertEquals(0f, progress.overallPct)
             assertEquals(0, progress.streakDays)
             assertFalse(state.isSubmitting)
-            assertNull(state.errorMessage)
         }
     }
 
     @Test
-    fun `UpdateGoal with valid text updates the goal and publishes a GoalUpdateEvent`() = runTest {
+    fun `UpdateGoal with valid text updates the goal and posts a GoalUpdated side effect`() = runTest {
         val repos = repos()
         val goalId = createGoal(repos)
+        val viewModel = ProfileViewModel(goalId, repos.goals, repos.vocabulary, repos.achievements)
 
-        ProfileContainer(goalId, repos.goals, repos.vocabulary, repos.achievements).store.subscribeAndTest {
-            ProfileIntent.UpdateGoal(goalId, "Learn Spanish for my trip", "My Trip", NativeLanguage.GERMAN) resultsIn {
-                wait()
-                val event = assertNotNull(states.value.goalUpdated)
-                assertEquals("Learn Spanish for my trip", event.goal.goalText)
-                assertEquals("My Trip", event.goal.title)
-                assertEquals(NativeLanguage.GERMAN, event.goal.nativeLanguage)
-                assertNull(states.value.errorMessage)
-                assertFalse(states.value.isSubmitting)
-            }
+        viewModel.testWithInternalState(this, ProfileState()) {
+            containerHost.updateGoal(goalId, "Learn Spanish for my trip", "My Trip", NativeLanguage.GERMAN)
+            assertTrue(awaitInternalState().isSubmitting)
+            val effect = assertIs<ProfileSideEffect.GoalUpdated>(awaitSideEffect())
+            assertEquals("Learn Spanish for my trip", effect.goal.goalText)
+            assertEquals("My Trip", effect.goal.title)
+            assertEquals(NativeLanguage.GERMAN, effect.goal.nativeLanguage)
+            val finalState = awaitInternalState()
+            assertFalse(finalState.isSubmitting)
+            assertNull(finalState.errorMessage)
         }
     }
 
@@ -91,14 +93,15 @@ class ProfileContainerTest {
     fun `UpdateGoal with too-short text surfaces a validation error instead of updating`() = runTest {
         val repos = repos()
         val goalId = createGoal(repos)
+        val viewModel = ProfileViewModel(goalId, repos.goals, repos.vocabulary, repos.achievements)
 
-        ProfileContainer(goalId, repos.goals, repos.vocabulary, repos.achievements).store.subscribeAndTest {
-            ProfileIntent.UpdateGoal(goalId, "ab", null, NativeLanguage.ENGLISH) resultsIn {
-                wait()
-                assertEquals("Goal text must be 3-200 characters.", states.value.errorMessage)
-                assertNull(states.value.goalUpdated)
-                assertFalse(states.value.isSubmitting)
-            }
+        viewModel.testWithInternalState(this, ProfileState()) {
+            containerHost.updateGoal(goalId, "ab", null, NativeLanguage.ENGLISH)
+            assertTrue(awaitInternalState().isSubmitting)
+            val errorState = awaitInternalState()
+            assertEquals("Goal text must be 3-200 characters.", errorState.errorMessage)
+            val finalState = awaitInternalState()
+            assertFalse(finalState.isSubmitting)
         }
     }
 
@@ -106,14 +109,14 @@ class ProfileContainerTest {
     fun `ResetAllProgress clears vocabulary progress and refreshes the progress summary`() = runTest {
         val repos = repos()
         val goalId = createGoal(repos)
+        val viewModel = ProfileViewModel(goalId, repos.goals, repos.vocabulary, repos.achievements)
 
-        ProfileContainer(goalId, repos.goals, repos.vocabulary, repos.achievements).store.subscribeAndTest {
-            ProfileIntent.ResetAllProgress resultsIn {
-                wait()
-                val event = assertNotNull(states.value.progressReset)
-                assertTrue(event.success)
-                assertNotNull(states.value.progress)
-            }
+        viewModel.testWithInternalState(this, ProfileState()) {
+            containerHost.resetAllProgress()
+            val state = awaitInternalState()
+            assertNotNull(state.progress)
+            val effect = assertIs<ProfileSideEffect.ProgressReset>(awaitSideEffect())
+            assertTrue(effect.success)
         }
     }
 }

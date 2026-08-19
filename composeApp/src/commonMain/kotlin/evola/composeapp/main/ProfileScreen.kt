@@ -40,7 +40,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,7 +55,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.IconTile
@@ -114,23 +114,23 @@ fun ProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     val isSubmitting = state.isSubmitting
     val errorMessage = state.errorMessage
     var showResetAllConfirm by remember { mutableStateOf(false) }
     val goalUpdatedMessage = stringResource(Res.string.main_profile_goal_updated_snackbar)
     val progressResetMessage = stringResource(Res.string.main_profile_progress_reset_snackbar)
     val progressResetFailedMessage = stringResource(Res.string.main_profile_progress_reset_failed_snackbar)
-    LaunchedEffect(state.goalUpdated?.id) {
-        state.goalUpdated?.let { event ->
-            onGoalUpdated(event.goal)
-            isEditingGoal = false
-            snackbarHostState.showSnackbar(goalUpdatedMessage)
-        }
-    }
-    LaunchedEffect(state.progressReset?.id) {
-        state.progressReset?.let { event ->
-            snackbarHostState.showSnackbar(if (event.success) progressResetMessage else progressResetFailedMessage)
+    viewModel.collectSideEffect { effect ->
+        when (effect) {
+            is ProfileSideEffect.GoalUpdated -> {
+                onGoalUpdated(effect.goal)
+                isEditingGoal = false
+                snackbarHostState.showSnackbar(goalUpdatedMessage)
+            }
+            is ProfileSideEffect.ProgressReset -> {
+                snackbarHostState.showSnackbar(if (effect.success) progressResetMessage else progressResetFailedMessage)
+            }
         }
     }
 
@@ -143,7 +143,7 @@ fun ProfileScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showResetAllConfirm = false
-                    viewModel.intent(ProfileIntent.ResetAllProgress)
+                    viewModel.resetAllProgress()
                 }) { Text(stringResource(Res.string.main_profile_reset_all_confirm)) }
             },
             dismissButton = { TextButton(onClick = { showResetAllConfirm = false }) { Text(stringResource(Res.string.main_profile_cancel)) } },
@@ -220,7 +220,7 @@ fun ProfileScreen(
                                 TextButton(onClick = { isEditingGoal = false }, enabled = !isSubmitting) { Text(stringResource(Res.string.main_profile_cancel)) }
                                 Button(
                                     onClick = {
-                                        viewModel.intent(ProfileIntent.UpdateGoal(goal.id, goalText, title, nativeLanguage))
+                                        viewModel.updateGoal(goal.id, goalText, title, nativeLanguage)
                                     },
                                     enabled = !isSubmitting && goalText.trim().length >= 3,
                                 ) {
