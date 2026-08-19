@@ -30,7 +30,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.runtime.LaunchedEffect
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.onboarding_goal_char_cap
 import evola.composeapp.generated.resources.onboarding_goal_description
@@ -45,7 +44,8 @@ import evola.composeapp.theme.EvolaSpacing
 import evola.shared.goals.Goal
 import evola.shared.language.NativeLanguage
 import org.jetbrains.compose.resources.stringResource
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 
 private const val GOAL_TEXT_SOFT_CAP = 200
 
@@ -53,15 +53,17 @@ private const val GOAL_TEXT_SOFT_CAP = 200
  * was already chosen on the preceding onboarding step and is saved atomically with the goal. */
 @Composable
 fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguage, onGoalCreated: (Goal) -> Unit) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     val isSubmitting = state.isSubmitting
     val errorMessage = state.errorMessage
     var goalText by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var wasTruncated by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
-    LaunchedEffect(state.goalCreated?.id) {
-        state.goalCreated?.let { event -> onGoalCreated(event.goal) }
+    viewModel.collectSideEffect { effect ->
+        when (effect) {
+            is GoalSetupSideEffect.GoalCreated -> onGoalCreated(effect.goal)
+        }
     }
 
     Surface(
@@ -130,7 +132,7 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguag
             }
             Spacer(Modifier.height(EvolaSpacing.xl))
             Button(
-                onClick = { viewModel.intent(GoalSetupIntent.CreateGoal(goalText, title, nativeLanguage)) },
+                onClick = { viewModel.createGoal(goalText, title, nativeLanguage) },
                 enabled = !isSubmitting && goalText.trim().length >= 3,
                 modifier = Modifier.fillMaxWidth(),
             ) {
