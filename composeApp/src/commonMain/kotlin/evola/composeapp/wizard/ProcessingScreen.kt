@@ -29,8 +29,13 @@ import evola.composeapp.generated.resources.wizard_processing_splitting
 import evola.composeapp.generated.resources.wizard_processing_splitting_description
 import evola.composeapp.loading.ChaseLoadingIndicator
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
+import evola.shared.materials.Lesson
+import evola.shared.materials.Material
 import evola.shared.materials.MaterialDetail
+import evola.shared.materials.MaterialStatus
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ProcessingScreen(
@@ -51,13 +56,18 @@ fun ProcessingScreen(
     // Done already lands on, which shows the same live progress this screen does.
     BackHandler(onBack = { onDone(materialId) })
 
-    Surface(modifier = Modifier.fillMaxSize()) {
+    ProcessingContent(state = state, onContinueInBackground = { onDone(materialId) })
+}
+
+@Composable
+private fun ProcessingContent(state: ProcessingState, onContinueInBackground: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            when (val current = state) {
+            when (state) {
                 ProcessingState.Loading -> {
                     ChaseLoadingIndicator()
                     Spacer(Modifier.height(EvolaSpacing.md))
@@ -65,7 +75,7 @@ fun ProcessingScreen(
                 }
 
                 is ProcessingState.InProgress -> {
-                    InProgressContent(current.detail)
+                    InProgressContent(state.detail)
                 }
 
                 is ProcessingState.Done -> {
@@ -74,13 +84,13 @@ fun ProcessingScreen(
 
                 is ProcessingState.Error -> {
                     Text(stringResource(Res.string.wizard_processing_error_title), style = MaterialTheme.typography.titleMedium)
-                    Text(current.message, style = MaterialTheme.typography.bodyMedium)
+                    Text(state.message, style = MaterialTheme.typography.bodyMedium)
                 }
             }
 
             if (state is ProcessingState.Loading || state is ProcessingState.InProgress) {
                 Spacer(Modifier.height(EvolaSpacing.lg))
-                TextButton(onClick = { onDone(materialId) }) { Text(stringResource(Res.string.wizard_processing_continue_background)) }
+                TextButton(onClick = onContinueInBackground) { Text(stringResource(Res.string.wizard_processing_continue_background)) }
             }
         }
     }
@@ -124,4 +134,42 @@ private fun InProgressContent(detail: MaterialDetail) {
         progress = { readyCount / total.toFloat() },
         modifier = Modifier.fillMaxWidth(),
     )
+}
+
+private val fakeMaterial = Material(
+    id = "m1", userId = "u1", goalId = "g1", filename = "grammar-book.pdf", contentHash = "h1",
+    status = MaterialStatus.PROCESSING, mimeType = "application/pdf", sizeBytes = 204_800L,
+)
+
+private val fakeInProgressDetail = MaterialDetail(
+    material = fakeMaterial,
+    lessons = listOf(
+        Lesson(id = "l1", materialId = "m1", goalId = "g1", number = 1, title = "Lesson 1", status = "ready"),
+        Lesson(id = "l2", materialId = "m1", goalId = "g1", number = 2, title = "Lesson 2", status = "extracting"),
+        Lesson(id = "l3", materialId = "m1", goalId = "g1", number = 3, title = "Lesson 3", status = "pending"),
+    ),
+)
+
+@Preview
+@Composable
+private fun ProcessingLoadingPreview() {
+    EvolaTheme { ProcessingContent(state = ProcessingState.Loading, onContinueInBackground = {}) }
+}
+
+@Preview
+@Composable
+private fun ProcessingSplittingPreview() {
+    EvolaTheme { ProcessingContent(state = ProcessingState.InProgress(fakeInProgressDetail.copy(lessons = emptyList())), onContinueInBackground = {}) }
+}
+
+@Preview
+@Composable
+private fun ProcessingInProgressPreview() {
+    EvolaTheme { ProcessingContent(state = ProcessingState.InProgress(fakeInProgressDetail), onContinueInBackground = {}) }
+}
+
+@Preview
+@Composable
+private fun ProcessingErrorPreview() {
+    EvolaTheme { ProcessingContent(state = ProcessingState.Error("Upload failed. Please try again."), onContinueInBackground = {}) }
 }
