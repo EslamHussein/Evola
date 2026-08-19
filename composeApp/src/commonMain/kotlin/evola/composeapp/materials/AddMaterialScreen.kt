@@ -78,7 +78,7 @@ import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.SelectableChip
 import evola.shared.materials.MIN_EXTRACTABLE_TEXT_LENGTH
 import org.jetbrains.compose.resources.stringResource
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 
 @Composable
 fun AddMaterialScreen(
@@ -86,7 +86,7 @@ fun AddMaterialScreen(
     onContinue: (StagedResource) -> Unit,
     onCancel: () -> Unit,
 ) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     val selectedType = state.selectedType
     var pickedFile by remember { mutableStateOf<PickedFile?>(null) }
     var pastedText by remember { mutableStateOf("") }
@@ -160,21 +160,21 @@ fun AddMaterialScreen(
                     SelectableChip(
                         label = stringResource(Res.string.materials_add_type_pdf),
                         selected = selectedType == ResourceType.PDF,
-                        onClick = { viewModel.intent(AddMaterialIntent.SelectType(ResourceType.PDF)) },
+                        onClick = { viewModel.selectType(ResourceType.PDF) },
                         icon = Icons.Filled.PictureAsPdf,
                         modifier = Modifier.weight(1f),
                     )
                     SelectableChip(
                         label = stringResource(Res.string.materials_add_type_text),
                         selected = selectedType == ResourceType.TEXT,
-                        onClick = { viewModel.intent(AddMaterialIntent.SelectType(ResourceType.TEXT)) },
+                        onClick = { viewModel.selectType(ResourceType.TEXT) },
                         icon = Icons.Filled.Description,
                         modifier = Modifier.weight(1f),
                     )
                     SelectableChip(
                         label = stringResource(Res.string.materials_add_type_image),
                         selected = selectedType == ResourceType.IMAGE,
-                        onClick = { viewModel.intent(AddMaterialIntent.SelectType(ResourceType.IMAGE)) },
+                        onClick = { viewModel.selectType(ResourceType.IMAGE) },
                         icon = Icons.Filled.Image,
                         modifier = Modifier.weight(1f),
                     )

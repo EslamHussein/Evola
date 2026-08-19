@@ -1,6 +1,14 @@
 package evola.composeapp.materials
 
-import pro.respawn.flowmvi.android.StoreViewModel
+import androidx.lifecycle.ViewModel
+import org.orbitmvi.orbit.OrbitContainerHost
+import org.orbitmvi.orbit.viewmodel.orbitContainer
 
-class AddMaterialViewModel :
-    StoreViewModel<AddMaterialState, AddMaterialIntent, Nothing>(AddMaterialContainer())
+class AddMaterialViewModel : ViewModel(), OrbitContainerHost<AddMaterialState, AddMaterialState, Nothing> {
+
+    override val container = orbitContainer<AddMaterialState, Nothing>(AddMaterialState())
+
+    fun selectType(type: ResourceType) = intent {
+        reduce { state.copy(selectedType = type) }
+    }
+}
