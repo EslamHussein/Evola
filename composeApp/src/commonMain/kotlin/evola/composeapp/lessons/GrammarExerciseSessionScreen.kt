@@ -47,9 +47,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.dp
 import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.BackHandler
+import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_done
 import evola.composeapp.generated.resources.lessons_action_retry
@@ -62,6 +63,7 @@ import evola.composeapp.generated.resources.lessons_grammar_summary
 import evola.composeapp.generated.resources.lessons_grammar_type_missing_word
 import evola.composeapp.generated.resources.lessons_nav_back
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import evola.shared.grammar.GrammarExercise
 
 /** Grammar's exercise session (01_PRODUCT_SPEC.md §1.9): a flat multiple-choice/fill-in-blank
@@ -72,10 +74,26 @@ import evola.shared.grammar.GrammarExercise
 fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onDone: () -> Unit) {
     val state by viewModel.collectAsState()
     BackHandler(onBack = onDone)
+    GrammarExerciseSessionContent(
+        state = state,
+        onDone = onDone,
+        onRetry = { viewModel.retry() },
+        onSubmit = { exerciseId, response, correct -> viewModel.submitAnswer(exerciseId, response, correct) },
+    )
+}
+
+@Composable
+private fun GrammarExerciseSessionContent(
+    state: GrammarExerciseSessionState,
+    onDone: () -> Unit,
+    onRetry: () -> Unit,
+    onSubmit: (exerciseId: String, response: String, correct: Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.lessons_grammar_practice_title)) },
@@ -89,13 +107,13 @@ fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onD
         },
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (val current = state) {
+            when (state) {
                 is GrammarExerciseSessionState.Loading -> CenteredMessage { ChaseLoadingIndicator() }
 
                 is GrammarExerciseSessionState.Error -> CenteredMessage {
-                    Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(16.dp))
-                    Button(onClick = { viewModel.retry() }) { Text(stringResource(Res.string.lessons_action_retry)) }
+                    Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(EvolaSpacing.lg))
+                    Button(onClick = onRetry) { Text(stringResource(Res.string.lessons_action_retry)) }
                 }
 
                 is GrammarExerciseSessionState.Empty -> CenteredMessage {
@@ -104,26 +122,26 @@ fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onD
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(EvolaSpacing.lg))
                     Button(onClick = onDone) { Text(stringResource(Res.string.lessons_action_done)) }
                 }
 
                 is GrammarExerciseSessionState.InProgress -> ExerciseBody(
-                    exercise = current.currentExercise,
-                    answeredCount = current.answeredCount,
+                    exercise = state.currentExercise,
+                    answeredCount = state.answeredCount,
                     onSubmit = { response, correct ->
-                        viewModel.submitAnswer(current.currentExercise.exerciseId, response, correct)
+                        onSubmit(state.currentExercise.exerciseId, response, correct)
                     },
                 )
 
                 is GrammarExerciseSessionState.Summary -> CenteredMessage {
                     Text(stringResource(Res.string.lessons_grammar_complete), style = MaterialTheme.typography.headlineSmall)
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(EvolaSpacing.sm))
                     Text(
-                        stringResource(Res.string.lessons_grammar_summary, current.exercisesCompleted, current.accuracy.toInt()),
+                        stringResource(Res.string.lessons_grammar_summary, state.exercisesCompleted, state.accuracy.toInt()),
                         style = MaterialTheme.typography.bodyLarge,
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(EvolaSpacing.lg))
                     Button(onClick = onDone) { Text(stringResource(Res.string.lessons_action_done)) }
                 }
             }
@@ -133,7 +151,7 @@ fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onD
 
 @Composable
 private fun CenteredMessage(content: @Composable () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) { content() }
     }
 }
@@ -149,10 +167,10 @@ private fun ExerciseBody(exercise: GrammarExercise, answeredCount: Int, onSubmit
             ) { focusManager.clearFocus() }
             .verticalScroll(rememberScrollState())
             .imePadding()
-            .padding(24.dp),
+            .padding(EvolaSpacing.xl),
     ) {
         Text(stringResource(Res.string.lessons_grammar_answered_count, answeredCount), style = MaterialTheme.typography.labelMedium)
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(EvolaSpacing.xl))
 
         if (exercise.isMultipleChoice) {
             MultipleChoiceDrill(exercise, onSubmit)
@@ -165,9 +183,9 @@ private fun ExerciseBody(exercise: GrammarExercise, answeredCount: Int, onSubmit
 @Composable
 private fun MultipleChoiceDrill(exercise: GrammarExercise, onSubmit: (String, Boolean) -> Unit) {
     Text(blankedPrompt(exercise.prompt), style = MaterialTheme.typography.headlineSmall)
-    Spacer(Modifier.height(32.dp))
+    Spacer(Modifier.height(EvolaSpacing.xxl))
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
         exercise.choices.forEach { choice ->
             OutlinedButton(
                 onClick = { onSubmit(choice, exercise.grade(choice)) },
@@ -182,7 +200,7 @@ private fun MultipleChoiceDrill(exercise: GrammarExercise, onSubmit: (String, Bo
 @Composable
 private fun FillInBlankDrill(exercise: GrammarExercise, onSubmit: (String, Boolean) -> Unit) {
     Text(blankedPrompt(exercise.prompt), style = MaterialTheme.typography.headlineSmall)
-    Spacer(Modifier.height(32.dp))
+    Spacer(Modifier.height(EvolaSpacing.xxl))
 
     var typedAnswer by remember(exercise.exerciseId) { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
@@ -195,7 +213,7 @@ private fun FillInBlankDrill(exercise: GrammarExercise, onSubmit: (String, Boole
         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
         modifier = Modifier.fillMaxWidth(),
     )
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(EvolaSpacing.lg))
     Button(
         onClick = { onSubmit(typedAnswer, exercise.grade(typedAnswer)) },
         modifier = Modifier.fillMaxWidth(),
@@ -213,4 +231,66 @@ private fun blankedPrompt(prompt: String): AnnotatedString = buildAnnotatedStrin
     append(prompt.substring(0, idx))
     withStyle(SpanStyle(textDecoration = TextDecoration.Underline)) { append("_____") }
     append(prompt.substring(idx + 3))
+}
+
+private val fakeMultipleChoiceExercise = GrammarExercise(
+    exerciseId = "e1", type = "multiple_choice", prompt = "Ich sehe ___ Hund.", answerKey = "den",
+    choices = listOf("der", "den", "dem", "des"),
+)
+
+private val fakeFillInBlankExercise = GrammarExercise(
+    exerciseId = "e2", type = "fill_in_blank", prompt = "Ich sehe ___ Hund.", answerKey = "den",
+)
+
+@Preview
+@Composable
+private fun GrammarExerciseSessionLoadingPreview() {
+    EvolaTheme { GrammarExerciseSessionContent(state = GrammarExerciseSessionState.Loading, onDone = {}, onRetry = {}, onSubmit = { _, _, _ -> }) }
+}
+
+@Preview
+@Composable
+private fun GrammarExerciseSessionMultipleChoicePreview() {
+    EvolaTheme {
+        GrammarExerciseSessionContent(
+            state = GrammarExerciseSessionState.InProgress(fakeMultipleChoiceExercise, answeredCount = 2),
+            onDone = {}, onRetry = {}, onSubmit = { _, _, _ -> },
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun GrammarExerciseSessionFillInBlankPreview() {
+    EvolaTheme {
+        GrammarExerciseSessionContent(
+            state = GrammarExerciseSessionState.InProgress(fakeFillInBlankExercise, answeredCount = 3),
+            onDone = {}, onRetry = {}, onSubmit = { _, _, _ -> },
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun GrammarExerciseSessionEmptyPreview() {
+    EvolaTheme { GrammarExerciseSessionContent(state = GrammarExerciseSessionState.Empty, onDone = {}, onRetry = {}, onSubmit = { _, _, _ -> }) }
+}
+
+@Preview
+@Composable
+private fun GrammarExerciseSessionSummaryPreview() {
+    EvolaTheme {
+        GrammarExerciseSessionContent(
+            state = GrammarExerciseSessionState.Summary(exercisesCompleted = 8, accuracy = 87.5),
+            onDone = {}, onRetry = {}, onSubmit = { _, _, _ -> },
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun GrammarExerciseSessionErrorPreview() {
+    EvolaTheme {
+        GrammarExerciseSessionContent(state = GrammarExerciseSessionState.Error("Something went wrong."), onDone = {}, onRetry = {}, onSubmit = { _, _, _ -> })
+    }
 }
