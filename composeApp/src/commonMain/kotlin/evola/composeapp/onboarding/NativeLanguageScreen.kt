@@ -19,9 +19,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.misc_continue
+import evola.composeapp.generated.resources.misc_native_language_subtitle
+import evola.composeapp.generated.resources.misc_native_language_title
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.SelectableChip
 import evola.shared.language.NativeLanguage
+import org.jetbrains.compose.resources.stringResource
 
 /** Onboarding step between Welcome and Goal Setup: pick the learner's native language. The
  * selection is carried forward as plain UI state and saved atomically with the goal itself (see
@@ -36,10 +41,10 @@ fun NativeLanguageScreen(onContinue: (NativeLanguage) -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text("What's your native language?", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(Res.string.misc_native_language_title), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(8.dp))
             Text(
-                "We'll translate new words into this language for you.",
+                stringResource(Res.string.misc_native_language_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(24.dp))
@@ -59,7 +64,7 @@ fun NativeLanguageScreen(onContinue: (NativeLanguage) -> Unit) {
                 enabled = selected != null,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Continue")
+                Text(stringResource(Res.string.misc_continue))
             }
         }
     }

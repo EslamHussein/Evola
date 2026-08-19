@@ -19,9 +19,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import pro.respawn.flowmvi.compose.dsl.subscribe
 import evola.composeapp.BackHandler
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.wizard_processing_analyzing
+import evola.composeapp.generated.resources.wizard_processing_continue_background
+import evola.composeapp.generated.resources.wizard_processing_error_title
+import evola.composeapp.generated.resources.wizard_processing_extracting
+import evola.composeapp.generated.resources.wizard_processing_lesson_of_total
+import evola.composeapp.generated.resources.wizard_processing_splitting
+import evola.composeapp.generated.resources.wizard_processing_splitting_description
 import evola.composeapp.loading.ChaseLoadingIndicator
 import evola.composeapp.theme.EvolaSpacing
 import evola.shared.materials.MaterialDetail
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ProcessingScreen(
@@ -52,7 +61,7 @@ fun ProcessingScreen(
                 ProcessingState.Loading -> {
                     ChaseLoadingIndicator()
                     Spacer(Modifier.height(EvolaSpacing.md))
-                    Text("Analyzing your resource...", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(Res.string.wizard_processing_analyzing), style = MaterialTheme.typography.titleMedium)
                 }
 
                 is ProcessingState.InProgress -> {
@@ -64,14 +73,14 @@ fun ProcessingScreen(
                 }
 
                 is ProcessingState.Error -> {
-                    Text("Something went wrong", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(Res.string.wizard_processing_error_title), style = MaterialTheme.typography.titleMedium)
                     Text(current.message, style = MaterialTheme.typography.bodyMedium)
                 }
             }
 
             if (state is ProcessingState.Loading || state is ProcessingState.InProgress) {
                 Spacer(Modifier.height(EvolaSpacing.lg))
-                TextButton(onClick = { onDone(materialId) }) { Text("Continue in background") }
+                TextButton(onClick = { onDone(materialId) }) { Text(stringResource(Res.string.wizard_processing_continue_background)) }
             }
         }
     }
@@ -84,9 +93,9 @@ private fun InProgressContent(detail: MaterialDetail) {
         // Segmentation phase: no lesson rows exist yet.
         ChaseLoadingIndicator()
         Spacer(Modifier.height(EvolaSpacing.md))
-        Text("Splitting your resource into lessons...", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(Res.string.wizard_processing_splitting), style = MaterialTheme.typography.titleMedium)
         Text(
-            "This can take a moment while we split it into lessons.",
+            stringResource(Res.string.wizard_processing_splitting_description),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -99,10 +108,13 @@ private fun InProgressContent(detail: MaterialDetail) {
 
     ChaseLoadingIndicator()
     Spacer(Modifier.height(EvolaSpacing.md))
-    Text("Lesson ${current?.number ?: (readyCount + 1).coerceAtMost(total)} of $total", style = MaterialTheme.typography.titleMedium)
+    Text(
+        stringResource(Res.string.wizard_processing_lesson_of_total, current?.number ?: (readyCount + 1).coerceAtMost(total), total),
+        style = MaterialTheme.typography.titleMedium,
+    )
     if (current != null) {
         Text(
-            "Extracting vocabulary...",
+            stringResource(Res.string.wizard_processing_extracting),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

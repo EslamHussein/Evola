@@ -31,8 +31,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.misc_app_name
+import evola.composeapp.generated.resources.misc_splash_tagline
 import evola.composeapp.theme.EvolaColors
 import kotlin.math.sin
+import org.jetbrains.compose.resources.stringResource
 
 // Timeline cues (seconds), from SPLASH_SCREEN_HANDOFF.md - Build[0,2.2) Beat[2.2,2.6) Reveal[2.6,3.6) Hold[3.6,...).
 // The Build phase itself is never replayed here - the OS-level system splash (ic_splash_mark)
@@ -121,7 +125,7 @@ private fun Wordmark(t: Float, fadeAlpha: Float) {
     val p = EaseOutCubic.transform(((t - CUE_REVEAL) / 0.6f).coerceIn(0f, 1f))
     val rise = 10.dp * (1f - p)
     Text(
-        "Evola",
+        stringResource(Res.string.misc_app_name),
         modifier = Modifier.offset(y = rise).alpha(p * fadeAlpha),
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 36.sp, letterSpacing = 0.36.sp),
         color = EvolaColors.Text,
@@ -133,7 +137,7 @@ private fun Tagline(t: Float, fadeAlpha: Float) {
     val p = EaseOutCubic.transform(((t - CUE_HOLD) / 0.55f).coerceIn(0f, 1f))
     val rise = 8.dp * (1f - p)
     Text(
-        "Let's get things done.",
+        stringResource(Res.string.misc_splash_tagline),
         modifier = Modifier.offset(y = rise).alpha(p * fadeAlpha),
         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium, fontSize = 15.sp, letterSpacing = 0.3.sp),
         color = EvolaColors.Text2,

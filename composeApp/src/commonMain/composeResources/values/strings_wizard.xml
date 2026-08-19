@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+    <string name="wizard_duplicate_title">Already uploaded</string>
+    <string name="wizard_duplicate_message">You\'ve already uploaded this content. Would you like to view it instead?</string>
+    <string name="wizard_view_existing_material">View existing material</string>
+    <string name="wizard_cancel">Cancel</string>
+    <string name="wizard_back">Back</string>
+    <string name="wizard_starting">Starting...</string>
+    <string name="wizard_start_analysis">Start Analysis</string>
+    <string name="wizard_continue">Continue</string>
+    <string name="wizard_resource_info_prompt">What kind of resource is this?</string>
+    <string name="wizard_organization_prompt">How should we organize this?</string>
+    <string name="wizard_coming_soon">Coming soon</string>
+    <string name="wizard_add_lesson_range">Add lesson range</string>
+    <string name="wizard_focus_prompt">What do you want to learn?</string>
+    <string name="wizard_focus_vocabulary">Vocabulary</string>
+    <string name="wizard_focus_grammar">Grammar</string>
+    <string name="wizard_focus_reading">Reading</string>
+    <string name="wizard_focus_writing">Writing</string>
+    <string name="wizard_focus_speaking">Speaking</string>
+    <string name="wizard_focus_listening">Listening</string>
+    <string name="wizard_instructions_prompt">Anything specific you\'d like the AI to focus on?</string>
+    <string name="wizard_instructions_placeholder">Optional - e.g. \"Focus on food vocabulary\"</string>
+
+    <string name="wizard_processing_analyzing">Analyzing your resource...</string>
+    <string name="wizard_processing_error_title">Something went wrong</string>
+    <string name="wizard_processing_continue_background">Continue in background</string>
+    <string name="wizard_processing_splitting">Splitting your resource into lessons...</string>
+    <string name="wizard_processing_splitting_description">This can take a moment while we split it into lessons.</string>
+    <string name="wizard_processing_lesson_of_total">Lesson %1$d of %2$d</string>
+    <string name="wizard_processing_extracting">Extracting vocabulary...</string>
+</resources>

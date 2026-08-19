@@ -37,6 +37,17 @@ import evola.composeapp.rtl.RtlText
 import evola.composeapp.speech.SpeechService
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.lessons_action_already_know
+import evola.composeapp.generated.resources.lessons_action_got_it
+import evola.composeapp.generated.resources.lessons_action_keep_showing
+import evola.composeapp.generated.resources.lessons_action_memorized
+import evola.composeapp.generated.resources.lessons_action_missed_it
+import evola.composeapp.generated.resources.lessons_action_start_learning
+import evola.composeapp.generated.resources.lessons_handsfree_empty
+import evola.composeapp.generated.resources.lessons_handsfree_title
+import evola.composeapp.generated.resources.lessons_nav_close
+import org.jetbrains.compose.resources.stringResource
 import evola.shared.vocabulary.VocabularyCard
 
 /**
@@ -62,9 +73,9 @@ fun HandsFreeSessionScreen(viewModel: VocabularySessionViewModel, speechService:
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Hands-free practice") },
+                title = { Text(stringResource(Res.string.lessons_handsfree_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onDone) { Icon(Icons.Filled.Close, contentDescription = "Close") }
+                    IconButton(onClick = onDone) { Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.lessons_nav_close)) }
                 },
             )
         },
@@ -78,7 +89,7 @@ fun HandsFreeSessionScreen(viewModel: VocabularySessionViewModel, speechService:
                 }
 
                 is VocabularySessionUiState.Empty -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                    Text("Nothing to practice right now.", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                    Text(stringResource(Res.string.lessons_handsfree_empty), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 }
 
                 is VocabularySessionUiState.Summary -> SessionSummaryScreen(
@@ -133,12 +144,18 @@ private fun HandsFreeCard(
         speechService.speak(spokenText, rate = ttsRate, voiceName = ttsVoiceName)
     }
 
+    val alreadyKnowLabel = stringResource(Res.string.lessons_action_already_know)
+    val startLearningLabel = stringResource(Res.string.lessons_action_start_learning)
+    val gotItLabel = stringResource(Res.string.lessons_action_got_it)
+    val missedItLabel = stringResource(Res.string.lessons_action_missed_it)
+    val memorizedLabel = stringResource(Res.string.lessons_action_memorized)
+    val keepShowingLabel = stringResource(Res.string.lessons_action_keep_showing)
     val (leftLabel, rightLabel, onLeft, onRight) = when (card) {
-        is VocabularyCard.New -> HandsFreeActions("I already know this", "Start learning this word", onAlreadyKnown, onStartLearning)
+        is VocabularyCard.New -> HandsFreeActions(alreadyKnowLabel, startLearningLabel, onAlreadyKnown, onStartLearning)
         is VocabularyCard.Practice -> if (dueReview) {
-            HandsFreeActions("Got it", "Missed it", { onSelfGrade(true) }, { onSelfGrade(false) })
+            HandsFreeActions(gotItLabel, missedItLabel, { onSelfGrade(true) }, { onSelfGrade(false) })
         } else {
-            HandsFreeActions("I've memorized it", "Keep showing this word", { onSelfGrade(true) }, onKeepShowing)
+            HandsFreeActions(memorizedLabel, keepShowingLabel, { onSelfGrade(true) }, onKeepShowing)
         }
     }
 

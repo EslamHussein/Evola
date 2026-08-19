@@ -35,6 +35,11 @@ import androidx.compose.ui.unit.dp
 import pro.respawn.flowmvi.compose.dsl.subscribe
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.lessons_grammar_topics_empty
+import evola.composeapp.generated.resources.lessons_grammar_topics_title
+import evola.composeapp.generated.resources.lessons_nav_back
+import org.jetbrains.compose.resources.stringResource
 import evola.shared.grammar.GrammarTopic
 
 /** A lesson's grammar topics (01_PRODUCT_SPEC.md §1.9) - honest empty state when 0 topics were
@@ -48,10 +53,10 @@ fun GrammarTopicListScreen(viewModel: GrammarTopicListViewModel, onOpenTopic: (S
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text("Grammar") },
+                title = { Text(stringResource(Res.string.lessons_grammar_topics_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.lessons_nav_back))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -72,7 +77,7 @@ fun GrammarTopicListScreen(viewModel: GrammarTopicListViewModel, onOpenTopic: (S
                     if (current.topics.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                             Text(
-                                "No grammar topics for this lesson yet.",
+                                stringResource(Res.string.lessons_grammar_topics_empty),
                                 style = MaterialTheme.typography.bodyLarge,
                                 textAlign = TextAlign.Center,
                             )

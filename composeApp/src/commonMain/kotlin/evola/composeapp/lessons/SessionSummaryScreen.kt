@@ -22,9 +22,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.misc_back_to_lesson
+import evola.composeapp.generated.resources.misc_continue
+import evola.composeapp.generated.resources.misc_duration_min_sec
+import evola.composeapp.generated.resources.misc_duration_sec
+import evola.composeapp.generated.resources.misc_session_complete
+import evola.composeapp.generated.resources.misc_session_subtitle
+import evola.composeapp.generated.resources.misc_stat_accuracy
+import evola.composeapp.generated.resources.misc_stat_time
+import evola.composeapp.generated.resources.misc_stat_words
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.shared.vocabulary.VocabularySessionSummary
+import org.jetbrains.compose.resources.stringResource
 
 /** Session completion screen for the Lingvist-style flat SRS queue: confetti icon, headline, 3 stat
  * cards, and a primary action to start the next session or head back to Lesson Details. */
@@ -38,29 +49,36 @@ fun SessionSummaryScreen(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = EvolaColors.Gold, modifier = Modifier.height(56.dp))
             Spacer(Modifier.height(EvolaSpacing.md))
-            Text("Session complete!", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+            Text(stringResource(Res.string.misc_session_complete), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
             Spacer(Modifier.height(EvolaSpacing.sm))
             Text(
-                "Great work - keep it up!",
+                stringResource(Res.string.misc_session_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
                 color = EvolaColors.Text2,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(EvolaSpacing.xl))
 
+            val durationMinutes = (summary.timeSeconds / 60).toInt()
+            val durationSeconds = (summary.timeSeconds % 60).toInt()
+            val durationText = if (durationMinutes > 0) {
+                stringResource(Res.string.misc_duration_min_sec, durationMinutes, durationSeconds)
+            } else {
+                stringResource(Res.string.misc_duration_sec, durationSeconds)
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-                StatCard("${summary.wordsLearned}", "Words")
-                StatCard("${summary.accuracy.toInt()}%", "Accuracy")
-                StatCard(formatDuration(summary.timeSeconds), "Time")
+                StatCard("${summary.wordsLearned}", stringResource(Res.string.misc_stat_words))
+                StatCard("${summary.accuracy.toInt()}%", stringResource(Res.string.misc_stat_accuracy))
+                StatCard(durationText, stringResource(Res.string.misc_stat_time))
             }
             Spacer(Modifier.height(EvolaSpacing.xl))
 
             Button(onClick = onContinueToNextSession, modifier = Modifier.fillMaxWidth()) {
-                Text("Continue")
+                Text(stringResource(Res.string.misc_continue))
             }
             Spacer(Modifier.height(EvolaSpacing.sm))
             OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
-                Text("Back to Lesson")
+                Text(stringResource(Res.string.misc_back_to_lesson))
             }
         }
     }
@@ -77,10 +95,4 @@ private fun StatCard(value: String, label: String) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text3)
         }
     }
-}
-
-private fun formatDuration(seconds: Long): String {
-    val minutes = seconds / 60
-    val remainingSeconds = seconds % 60
-    return if (minutes > 0) "${minutes}m ${remainingSeconds}s" else "${remainingSeconds}s"
 }

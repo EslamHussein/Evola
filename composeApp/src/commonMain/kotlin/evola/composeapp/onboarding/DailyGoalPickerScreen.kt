@@ -20,11 +20,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.onboarding_daily_goal_continue
+import evola.composeapp.generated.resources.onboarding_daily_goal_description
+import evola.composeapp.generated.resources.onboarding_daily_goal_prompt
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.SelectableChip
 import evola.shared.local.LocalSettingsRepository
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 private val DAILY_GOAL_OPTIONS = listOf(5, 8, 12, 20)
@@ -46,10 +51,10 @@ fun DailyGoalPickerScreen(onContinue: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text("How many new words a day?", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(Res.string.onboarding_daily_goal_prompt), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(EvolaSpacing.sm))
             Text(
-                "You can change this any time in Settings.",
+                stringResource(Res.string.onboarding_daily_goal_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = EvolaColors.Text2,
             )
@@ -73,7 +78,7 @@ fun DailyGoalPickerScreen(onContinue: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Continue")
+                Text(stringResource(Res.string.onboarding_daily_goal_continue))
             }
         }
     }

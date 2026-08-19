@@ -57,11 +57,34 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
 import evola.composeapp.BackHandler
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.wizard_add_lesson_range
+import evola.composeapp.generated.resources.wizard_back
+import evola.composeapp.generated.resources.wizard_cancel
+import evola.composeapp.generated.resources.wizard_coming_soon
+import evola.composeapp.generated.resources.wizard_continue
+import evola.composeapp.generated.resources.wizard_duplicate_message
+import evola.composeapp.generated.resources.wizard_duplicate_title
+import evola.composeapp.generated.resources.wizard_focus_grammar
+import evola.composeapp.generated.resources.wizard_focus_listening
+import evola.composeapp.generated.resources.wizard_focus_prompt
+import evola.composeapp.generated.resources.wizard_focus_reading
+import evola.composeapp.generated.resources.wizard_focus_speaking
+import evola.composeapp.generated.resources.wizard_focus_vocabulary
+import evola.composeapp.generated.resources.wizard_focus_writing
+import evola.composeapp.generated.resources.wizard_instructions_placeholder
+import evola.composeapp.generated.resources.wizard_instructions_prompt
+import evola.composeapp.generated.resources.wizard_organization_prompt
+import evola.composeapp.generated.resources.wizard_resource_info_prompt
+import evola.composeapp.generated.resources.wizard_start_analysis
+import evola.composeapp.generated.resources.wizard_starting
+import evola.composeapp.generated.resources.wizard_view_existing_material
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.ComingSoonChip
 import evola.composeapp.theme.components.SegmentedProgressBar
 import evola.composeapp.theme.components.SelectableChip
+import org.jetbrains.compose.resources.stringResource
 import pro.respawn.flowmvi.compose.dsl.subscribe
 
 @Composable
@@ -95,13 +118,17 @@ fun AiWizardScreen(
         AlertDialog(
             onDismissRequest = { viewModel.intent(WizardIntent.DismissDuplicatePrompt) },
             shape = MaterialTheme.shapes.large,
-            title = { Text("Already uploaded") },
-            text = { Text("You've already uploaded this content. Would you like to view it instead?") },
+            title = { Text(stringResource(Res.string.wizard_duplicate_title)) },
+            text = { Text(stringResource(Res.string.wizard_duplicate_message)) },
             confirmButton = {
-                TextButton(onClick = { onAnalysisStarted(duplicate.existingMaterialId) }) { Text("View existing material") }
+                TextButton(onClick = { onAnalysisStarted(duplicate.existingMaterialId) }) {
+                    Text(stringResource(Res.string.wizard_view_existing_material))
+                }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.intent(WizardIntent.DismissDuplicatePrompt) }) { Text("Cancel") }
+                TextButton(onClick = { viewModel.intent(WizardIntent.DismissDuplicatePrompt) }) {
+                    Text(stringResource(Res.string.wizard_cancel))
+                }
             },
         )
     }
@@ -115,7 +142,7 @@ fun AiWizardScreen(
                 title = { Text(state.stagedTitle) },
                 navigationIcon = {
                     IconButton(onClick = exitOrBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.wizard_back))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -142,10 +169,14 @@ fun AiWizardScreen(
                         if (isSubmitting) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
                                 ChaseLoadingDots(size = 16.dp, color = LocalContentColor.current)
-                                Text("Starting...")
+                                Text(stringResource(Res.string.wizard_starting))
                             }
                         } else {
-                            Text(if (step == WizardStep.INSTRUCTIONS) "Start Analysis" else "Continue")
+                            Text(
+                                stringResource(
+                                    if (step == WizardStep.INSTRUCTIONS) Res.string.wizard_start_analysis else Res.string.wizard_continue,
+                                ),
+                            )
                         }
                     }
                 }
@@ -189,7 +220,7 @@ fun AiWizardScreen(
 
 @Composable
 private fun ResourceInfoStep(selected: ResourceInfoType, onSelect: (ResourceInfoType) -> Unit) {
-    Text("What kind of resource is this?", style = MaterialTheme.typography.titleMedium)
+    Text(stringResource(Res.string.wizard_resource_info_prompt), style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(EvolaSpacing.md))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm), verticalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
         val icons = mapOf(
@@ -212,7 +243,7 @@ private fun ResourceInfoStep(selected: ResourceInfoType, onSelect: (ResourceInfo
 
 @Composable
 private fun OrganizationStep(selected: OrganizationMode, onSelect: (OrganizationMode) -> Unit) {
-    Text("How should we organize this?", style = MaterialTheme.typography.titleMedium)
+    Text(stringResource(Res.string.wizard_organization_prompt), style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(EvolaSpacing.md))
     Column(verticalArrangement = Arrangement.spacedBy(EvolaSpacing.md)) {
         OrganizationCard(OrganizationMode.ENTIRE, selected, enabled = true, onSelect = onSelect)
@@ -251,11 +282,11 @@ private fun OrganizationCard(
             }
             if (mode == OrganizationMode.MANUAL) {
                 Spacer(Modifier.height(EvolaSpacing.sm))
-                Text("Coming soon", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
+                Text(stringResource(Res.string.wizard_coming_soon), style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
                 Spacer(Modifier.height(EvolaSpacing.sm))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
                     Icon(Icons.Filled.Add, contentDescription = null, tint = EvolaColors.Text3, modifier = Modifier.size(16.dp))
-                    Text("Add lesson range", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
+                    Text(stringResource(Res.string.wizard_add_lesson_range), style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
                 }
             }
         }
@@ -264,15 +295,20 @@ private fun OrganizationCard(
 
 @Composable
 private fun FocusStep() {
-    Text("What do you want to learn?", style = MaterialTheme.typography.titleMedium)
+    Text(stringResource(Res.string.wizard_focus_prompt), style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(EvolaSpacing.md))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm), verticalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-        SelectableChip(label = "Vocabulary", selected = true, onClick = {}, icon = Icons.AutoMirrored.Filled.MenuBook)
-        ComingSoonChip(label = "Grammar", icon = Icons.AutoMirrored.Filled.Rule)
-        ComingSoonChip(label = "Reading", icon = Icons.AutoMirrored.Filled.Article)
-        ComingSoonChip(label = "Writing", icon = Icons.Filled.Edit)
-        ComingSoonChip(label = "Speaking", icon = Icons.Filled.RecordVoiceOver)
-        ComingSoonChip(label = "Listening", icon = Icons.Filled.Headphones)
+        SelectableChip(
+            label = stringResource(Res.string.wizard_focus_vocabulary),
+            selected = true,
+            onClick = {},
+            icon = Icons.AutoMirrored.Filled.MenuBook,
+        )
+        ComingSoonChip(label = stringResource(Res.string.wizard_focus_grammar), icon = Icons.AutoMirrored.Filled.Rule)
+        ComingSoonChip(label = stringResource(Res.string.wizard_focus_reading), icon = Icons.AutoMirrored.Filled.Article)
+        ComingSoonChip(label = stringResource(Res.string.wizard_focus_writing), icon = Icons.Filled.Edit)
+        ComingSoonChip(label = stringResource(Res.string.wizard_focus_speaking), icon = Icons.Filled.RecordVoiceOver)
+        ComingSoonChip(label = stringResource(Res.string.wizard_focus_listening), icon = Icons.Filled.Headphones)
     }
 }
 
@@ -283,13 +319,13 @@ private fun InstructionsStep(
     suggestions: List<String>,
     onSuggestion: (String) -> Unit,
 ) {
-    Text("Anything specific you'd like the AI to focus on?", style = MaterialTheme.typography.titleMedium)
+    Text(stringResource(Res.string.wizard_instructions_prompt), style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(EvolaSpacing.md))
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
         modifier = Modifier.fillMaxWidth().height(140.dp),
-        placeholder = { Text("Optional - e.g. \"Focus on food vocabulary\"") },
+        placeholder = { Text(stringResource(Res.string.wizard_instructions_placeholder)) },
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
     )
     Spacer(Modifier.height(EvolaSpacing.md))

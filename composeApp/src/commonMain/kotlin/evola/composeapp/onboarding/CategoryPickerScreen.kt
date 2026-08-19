@@ -42,6 +42,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.onboarding_category_add_and_continue
+import evola.composeapp.generated.resources.onboarding_category_all_selected
+import evola.composeapp.generated.resources.onboarding_category_collapse
+import evola.composeapp.generated.resources.onboarding_category_continue
+import evola.composeapp.generated.resources.onboarding_category_description
+import evola.composeapp.generated.resources.onboarding_category_expand
+import evola.composeapp.generated.resources.onboarding_category_lessons_selected
+import evola.composeapp.generated.resources.onboarding_category_prompt
+import evola.composeapp.generated.resources.onboarding_category_skip
+import evola.composeapp.generated.resources.onboarding_category_some_selected
+import evola.composeapp.generated.resources.onboarding_category_subtitle_words
+import evola.composeapp.generated.resources.onboarding_category_words_count
+import evola.composeapp.generated.resources.onboarding_level_lesson_title
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.shared.vocabulary.StarterLesson
@@ -49,6 +62,7 @@ import evola.shared.vocabulary.StarterLevel
 import evola.shared.vocabulary.VocabularyRepository
 import evola.shared.vocabulary.decodeStarterLevels
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 /** Reword's onboarding level/lesson picker - see [evola.shared.vocabulary.StarterLevel]'s own doc
@@ -89,13 +103,24 @@ fun CategoryPickerScreen(goalId: String, onContinue: () -> Unit) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             return@Surface
         }
+        // Pre-resolved here (composable context) since it's needed inside the non-composable
+        // onClick/launch below - stringResource can't be called from there directly.
+        val levelLessonTitles = buildMap {
+            currentLevels.forEach { level ->
+                if (level.lessons.size > 1) {
+                    level.lessons.forEach { lesson ->
+                        put(lesson.id, stringResource(Res.string.onboarding_level_lesson_title, level.title, lesson.title))
+                    }
+                }
+            }
+        }
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(EvolaSpacing.xl),
         ) {
-            Text("Want a running start?", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(Res.string.onboarding_category_prompt), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(EvolaSpacing.sm))
             Text(
-                "Pick a level to add as a starter lesson - or skip and build your own from your own materials.",
+                stringResource(Res.string.onboarding_category_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = EvolaColors.Text2,
             )
@@ -132,7 +157,7 @@ fun CategoryPickerScreen(goalId: String, onContinue: () -> Unit) {
                                     // "A2" alone when the level has just one lesson; "A2 · Kapitel 1: ..."
                                     // once a level splits into several, so the created lesson's own
                                     // title still says which level it's from.
-                                    val title = if (level.lessons.size == 1) level.title else "${level.title} · ${lesson.title}"
+                                    val title = if (level.lessons.size == 1) level.title else levelLessonTitles.getValue(lesson.id)
                                     vocabularyRepository.createStarterLesson(goalId, title, lesson.words)
                                 }
                             }
@@ -144,11 +169,19 @@ fun CategoryPickerScreen(goalId: String, onContinue: () -> Unit) {
                 enabled = !isSubmitting,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (selected.isEmpty()) "Continue" else "Add ${selected.size} and continue")
+                Text(
+                    if (selected.isEmpty()) {
+                        stringResource(Res.string.onboarding_category_continue)
+                    } else {
+                        stringResource(Res.string.onboarding_category_add_and_continue, selected.size)
+                    },
+                )
             }
             if (selected.isNotEmpty()) {
                 Spacer(Modifier.height(EvolaSpacing.sm))
-                TextButton(onClick = onContinue, enabled = !isSubmitting, modifier = Modifier.fillMaxWidth()) { Text("Skip") }
+                TextButton(onClick = onContinue, enabled = !isSubmitting, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(Res.string.onboarding_category_skip))
+                }
             }
         }
     }
@@ -183,9 +216,9 @@ private fun LevelCard(
                     Text(level.title, style = MaterialTheme.typography.titleSmall)
                     Text(
                         if (isMultiLesson) {
-                            "${level.subtitle} · $selectedCount of ${level.lessons.size} lessons selected"
+                            stringResource(Res.string.onboarding_category_lessons_selected, level.subtitle, selectedCount, level.lessons.size)
                         } else {
-                            "${level.subtitle} · ${level.lessons.first().words.size} words"
+                            stringResource(Res.string.onboarding_category_subtitle_words, level.subtitle, level.lessons.first().words.size)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = if (selectedCount > 0) EvolaColors.Accent else EvolaColors.Text3,
@@ -194,7 +227,11 @@ private fun LevelCard(
                 if (isMultiLesson) {
                     Icon(
                         Icons.Filled.ExpandMore,
-                        contentDescription = if (expanded) "Collapse" else "Expand",
+                        contentDescription = if (expanded) {
+                            stringResource(Res.string.onboarding_category_collapse)
+                        } else {
+                            stringResource(Res.string.onboarding_category_expand)
+                        },
                         tint = EvolaColors.Text3,
                         modifier = Modifier.size(20.dp),
                     )
@@ -218,7 +255,11 @@ private fun LevelCard(
                         Spacer(Modifier.width(EvolaSpacing.sm))
                         Column {
                             Text(lesson.title, style = MaterialTheme.typography.bodyMedium)
-                            Text("${lesson.words.size} words", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
+                            Text(
+                                stringResource(Res.string.onboarding_category_words_count, lesson.words.size),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = EvolaColors.Text3,
+                            )
                         }
                     }
                 }
@@ -250,8 +291,18 @@ private fun TriStateSquare(selectedCount: Int, total: Int, onClick: () -> Unit) 
         contentAlignment = Alignment.Center,
     ) {
         when {
-            isOn -> Icon(Icons.Filled.Check, contentDescription = "All selected", tint = Color.White, modifier = Modifier.size(16.dp))
-            isIndeterminate -> Icon(Icons.Filled.Remove, contentDescription = "Some selected", tint = Color.White, modifier = Modifier.size(16.dp))
+            isOn -> Icon(
+                Icons.Filled.Check,
+                contentDescription = stringResource(Res.string.onboarding_category_all_selected),
+                tint = Color.White,
+                modifier = Modifier.size(16.dp),
+            )
+            isIndeterminate -> Icon(
+                Icons.Filled.Remove,
+                contentDescription = stringResource(Res.string.onboarding_category_some_selected),
+                tint = Color.White,
+                modifier = Modifier.size(16.dp),
+            )
         }
     }
 }

@@ -16,6 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.misc_continue
+import evola.composeapp.generated.resources.misc_welcome_body
+import evola.composeapp.generated.resources.misc_welcome_subtitle
+import evola.composeapp.generated.resources.misc_welcome_title
+import org.jetbrains.compose.resources.stringResource
 
 /** Onboarding Welcome per 01_PRODUCT_SPEC.md §1.3 - exactly one static screen, no quiz/wizard. */
 @Composable
@@ -26,23 +32,22 @@ fun WelcomeScreen(onContinue: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text("Welcome to Evola", style = MaterialTheme.typography.displayMedium, textAlign = TextAlign.Center)
+            Text(stringResource(Res.string.misc_welcome_title), style = MaterialTheme.typography.displayMedium, textAlign = TextAlign.Center)
             Spacer(Modifier.height(16.dp))
             Text(
-                "Upload a book or study material, and Evola turns it into bite-sized lessons - " +
-                    "vocabulary and grammar practice built from what you're actually reading.",
+                stringResource(Res.string.misc_welcome_body),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "First, tell us what you're working toward.",
+                stringResource(Res.string.misc_welcome_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(32.dp))
             Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) {
-                Text("Continue")
+                Text(stringResource(Res.string.misc_continue))
             }
         }
     }

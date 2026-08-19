@@ -90,13 +90,57 @@ import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.shared.vocabulary.VocabularyAnswerResult
 import evola.shared.vocabulary.VocabularyCard
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.lessons_action_already_know
+import evola.composeapp.generated.resources.lessons_action_done
+import evola.composeapp.generated.resources.lessons_action_got_it
+import evola.composeapp.generated.resources.lessons_action_keep_showing
+import evola.composeapp.generated.resources.lessons_action_memorized
+import evola.composeapp.generated.resources.lessons_action_missed_it
+import evola.composeapp.generated.resources.lessons_action_play_pronunciation
+import evola.composeapp.generated.resources.lessons_action_retry
+import evola.composeapp.generated.resources.lessons_action_start_learning
+import evola.composeapp.generated.resources.lessons_ai_explain
+import evola.composeapp.generated.resources.lessons_check
+import evola.composeapp.generated.resources.lessons_content_desc_bookmark
+import evola.composeapp.generated.resources.lessons_content_desc_more
+import evola.composeapp.generated.resources.lessons_continue
+import evola.composeapp.generated.resources.lessons_exercise_choose_options
+import evola.composeapp.generated.resources.lessons_exercise_reveal_answer
+import evola.composeapp.generated.resources.lessons_exercise_type_answer
+import evola.composeapp.generated.resources.lessons_feedback_correct
+import evola.composeapp.generated.resources.lessons_feedback_incorrect
+import evola.composeapp.generated.resources.lessons_finish_session
+import evola.composeapp.generated.resources.lessons_marked_difficult
+import evola.composeapp.generated.resources.lessons_mark_difficult
+import evola.composeapp.generated.resources.lessons_menu_bookmark
+import evola.composeapp.generated.resources.lessons_menu_remove_bookmark
+import evola.composeapp.generated.resources.lessons_menu_unmark_difficult
+import evola.composeapp.generated.resources.lessons_nav_close
+import evola.composeapp.generated.resources.lessons_new_word_label
+import evola.composeapp.generated.resources.lessons_study_empty
+import evola.composeapp.generated.resources.lessons_tutorial_know_it
+import evola.composeapp.generated.resources.lessons_tutorial_missed_it
+import evola.composeapp.generated.resources.lessons_tutorial_start_learning
+import evola.composeapp.generated.resources.lessons_tutorial_swipe_hint
+import evola.composeapp.generated.resources.lessons_tutorial_tap_hint
+import evola.composeapp.generated.resources.lessons_undo_last_answer
+import evola.composeapp.generated.resources.lessons_vocab_status_learning
+import evola.composeapp.generated.resources.lessons_vocab_status_new
+import evola.composeapp.generated.resources.lessons_vocab_status_review
+import evola.composeapp.generated.resources.lessons_vocab_title
+import evola.composeapp.generated.resources.lessons_whats_the_word_for
+import evola.composeapp.generated.resources.lessons_word_mastered
+import evola.composeapp.generated.resources.lessons_word_progress
+import org.jetbrains.compose.resources.stringResource
 
 /** A due review's swipe labels differ from a still-learning word's - both are stored as
  * [VocabularyCard.Practice], distinguished by [evola.shared.vocabulary.VocabularySessionState.origin]. */
+@Composable
 private fun statusPillLabel(origin: String, card: VocabularyCard): String = when {
-    card is VocabularyCard.New -> "New"
-    origin == "due_review" -> "Review"
-    else -> "Learning"
+    card is VocabularyCard.New -> stringResource(Res.string.lessons_vocab_status_new)
+    origin == "due_review" -> stringResource(Res.string.lessons_vocab_status_review)
+    else -> stringResource(Res.string.lessons_vocab_status_learning)
 }
 
 /** Vocabulary session screen: a persisted, priority-ordered SRS queue rendered as swipeable cards,
@@ -116,8 +160,9 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
     val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
     val justMasteredItemId = (state as? VocabularySessionUiState.InProgress)
         ?.takeIf { it.answered?.justMastered == true }?.session?.card?.itemId
+    val wordMasteredMsg = stringResource(Res.string.lessons_word_mastered)
     LaunchedEffect(justMasteredItemId) {
-        if (justMasteredItemId != null) snackbarHostState.showSnackbar("Word mastered!")
+        if (justMasteredItemId != null) snackbarHostState.showSnackbar(wordMasteredMsg)
     }
 
     Scaffold(
@@ -126,17 +171,17 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text("Vocabulary") },
+                    title = { Text(stringResource(Res.string.lessons_vocab_title)) },
                     navigationIcon = {
                         IconButton(onClick = onDone) {
-                            Icon(Icons.Filled.Close, contentDescription = "Close")
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.lessons_nav_close))
                         }
                     },
                     actions = {
                         (state as? VocabularySessionUiState.InProgress)?.let { inProgress ->
                             if (inProgress.canUndo) {
                                 IconButton(onClick = { viewModel.intent(VocabularySessionIntent.UndoLastGrade(inProgress.session.sessionId)) }) {
-                                    Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo last answer", tint = EvolaColors.Accent)
+                                    Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(Res.string.lessons_undo_last_answer), tint = EvolaColors.Accent)
                                 }
                             }
                             Text(
@@ -152,7 +197,7 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
                 (state as? VocabularySessionUiState.InProgress)?.let { inProgress ->
                     val session = inProgress.session
                     Text(
-                        "Word ${session.wordIndex} of ${session.totalWords}",
+                        stringResource(Res.string.lessons_word_progress, session.wordIndex, session.totalWords),
                         style = MaterialTheme.typography.labelSmall,
                         color = EvolaColors.Text3,
                         modifier = Modifier.padding(horizontal = EvolaSpacing.lg),
@@ -174,17 +219,17 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
                 is VocabularySessionUiState.Error -> CenteredMessage {
                     Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { viewModel.intent(VocabularySessionIntent.Retry) }) { Text("Retry") }
+                    Button(onClick = { viewModel.intent(VocabularySessionIntent.Retry) }) { Text(stringResource(Res.string.lessons_action_retry)) }
                 }
 
                 is VocabularySessionUiState.Empty -> CenteredMessage {
                     Text(
-                        "Nothing to study right now. Check back later or move on to the next lesson.",
+                        stringResource(Res.string.lessons_study_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = onDone) { Text("Done") }
+                    Button(onClick = onDone) { Text(stringResource(Res.string.lessons_action_done)) }
                 }
 
                 is VocabularySessionUiState.InProgress -> CardBody(current, viewModel, settings, speechService)
@@ -214,8 +259,11 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
  * [evola.shared.local.LocalSettingsRepository.setHasSeenSwipeTutorial] so it never shows again. */
 @Composable
 private fun SwipeTutorialOverlay(invertSwipe: Boolean, onDismiss: () -> Unit) {
-    val knowItLabel = if (invertSwipe) "Missed it / not yet" else "I know it"
-    val learnItLabel = if (invertSwipe) "I know it" else "Start learning"
+    val missedItNotYetLabel = stringResource(Res.string.lessons_tutorial_missed_it)
+    val iKnowItLabel = stringResource(Res.string.lessons_tutorial_know_it)
+    val startLearningShortLabel = stringResource(Res.string.lessons_tutorial_start_learning)
+    val knowItLabel = if (invertSwipe) missedItNotYetLabel else iKnowItLabel
+    val learnItLabel = if (invertSwipe) iKnowItLabel else startLearningShortLabel
     Box(
         modifier = Modifier.fillMaxSize()
             .background(Color(0xCC1C1E27))
@@ -240,14 +288,14 @@ private fun SwipeTutorialOverlay(invertSwipe: Boolean, onDismiss: () -> Unit) {
             Text(knowItLabel, style = MaterialTheme.typography.titleMedium, color = Color.White)
             Spacer(Modifier.height(EvolaSpacing.xl))
             Text(
-                "Swipe a card left or right",
+                stringResource(Res.string.lessons_tutorial_swipe_hint),
                 style = MaterialTheme.typography.headlineSmall,
                 color = Color.White,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(EvolaSpacing.xs))
             Text(
-                "Tap anywhere to get started",
+                stringResource(Res.string.lessons_tutorial_tap_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White.copy(alpha = 0.7f),
             )
@@ -506,8 +554,8 @@ private fun NewCard(
     onPlayPronunciation: () -> Unit,
 ) {
     SwipeGradeCard(
-        leftLabel = "I already know this",
-        rightLabel = "Start learning this word",
+        leftLabel = stringResource(Res.string.lessons_action_already_know),
+        rightLabel = stringResource(Res.string.lessons_action_start_learning),
         onSwipeLeft = onAlreadyKnown,
         onSwipeRight = onStartLearning,
         invertSwipe = invertSwipe,
@@ -516,7 +564,7 @@ private fun NewCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(EvolaSpacing.xs))
-                Text("New word", style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text2)
+                Text(stringResource(Res.string.lessons_new_word_label), style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text2)
             }
             Spacer(Modifier.height(EvolaSpacing.md))
 
@@ -539,7 +587,7 @@ private fun NewCard(
                 IconButton(onClick = onToggleBookmark) {
                     Icon(
                         if (card.isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                        contentDescription = "Bookmark",
+                        contentDescription = stringResource(Res.string.lessons_content_desc_bookmark),
                         tint = if (card.isBookmarked) EvolaColors.Gold else EvolaColors.Text3,
                     )
                 }
@@ -556,7 +604,7 @@ private fun NewCard(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onPlayPronunciation, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = "Play pronunciation", tint = EvolaColors.Accent)
+                    Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = stringResource(Res.string.lessons_action_play_pronunciation), tint = EvolaColors.Accent)
                 }
                 if (showTranscription) {
                     card.ipaPronunciation?.let {
@@ -629,7 +677,7 @@ private fun NewCard(
                         Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                     }
-                    Text("AI explain")
+                    Text(stringResource(Res.string.lessons_ai_explain))
                 }
             } else {
                 Surface(color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.small, modifier = Modifier.fillMaxWidth()) {
@@ -650,7 +698,7 @@ private fun NewCard(
                     modifier = Modifier.size(16.dp),
                 )
                 Spacer(Modifier.width(4.dp))
-                Text(if (card.markedDifficult) "Marked as difficult" else "Mark as difficult")
+                Text(if (card.markedDifficult) stringResource(Res.string.lessons_marked_difficult) else stringResource(Res.string.lessons_mark_difficult))
             }
         }
     }
@@ -679,27 +727,27 @@ private fun PracticeCard(
 ) {
     var mode by remember(card.itemId) { mutableStateOf<ExerciseMode?>(null) }
     var overflowExpanded by remember(card.itemId) { mutableStateOf(false) }
-    val leftLabel = if (dueReview) "Got it" else "I've memorized it"
-    val rightLabel = if (dueReview) "Missed it" else "Keep showing this word"
+    val leftLabel = if (dueReview) stringResource(Res.string.lessons_action_got_it) else stringResource(Res.string.lessons_action_memorized)
+    val rightLabel = if (dueReview) stringResource(Res.string.lessons_action_missed_it) else stringResource(Res.string.lessons_action_keep_showing)
 
     Row(verticalAlignment = Alignment.Top) {
         Column(modifier = Modifier.weight(1f)) {
-            Text("What's the word for...", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
+            Text(stringResource(Res.string.lessons_whats_the_word_for), style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
             Spacer(Modifier.height(EvolaSpacing.xs))
             RtlText(card.meaning, style = MaterialTheme.typography.headlineMedium)
         }
         Box {
             IconButton(onClick = { overflowExpanded = true }) {
-                Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = EvolaColors.Text3)
+                Icon(Icons.Filled.MoreVert, contentDescription = stringResource(Res.string.lessons_content_desc_more), tint = EvolaColors.Text3)
             }
             androidx.compose.material3.DropdownMenu(expanded = overflowExpanded, onDismissRequest = { overflowExpanded = false }) {
                 androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(if (card.isBookmarked) "Remove bookmark" else "Bookmark") },
+                    text = { Text(if (card.isBookmarked) stringResource(Res.string.lessons_menu_remove_bookmark) else stringResource(Res.string.lessons_menu_bookmark)) },
                     onClick = { overflowExpanded = false; onToggleBookmark() },
                     leadingIcon = { Icon(if (card.isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder, contentDescription = null) },
                 )
                 androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(if (card.markedDifficult) "Unmark as difficult" else "Mark as difficult") },
+                    text = { Text(if (card.markedDifficult) stringResource(Res.string.lessons_menu_unmark_difficult) else stringResource(Res.string.lessons_mark_difficult)) },
                     onClick = { overflowExpanded = false; onToggleDifficult() },
                     leadingIcon = { Icon(Icons.Filled.Warning, contentDescription = null) },
                 )
@@ -725,15 +773,15 @@ private fun PracticeCard(
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.md)) {
                         if (keyboardExerciseEnabled) {
-                            ExerciseIconButton(Icons.Filled.Keyboard, "Type the answer") { mode = ExerciseMode.TYPED }
+                            ExerciseIconButton(Icons.Filled.Keyboard, stringResource(Res.string.lessons_exercise_type_answer)) { mode = ExerciseMode.TYPED }
                         }
                         // Reword's "peek" icon - revealing the answer always grades this attempt as
                         // a miss (not knowing it well enough to answer is exactly what asking to see
                         // it first means), reusing the same graded self-grade path a swipe-right on a
                         // due review already uses, rather than a separate ungraded reveal.
-                        ExerciseIconButton(Icons.Filled.Visibility, "Reveal the answer") { onSelfGrade(false) }
+                        ExerciseIconButton(Icons.Filled.Visibility, stringResource(Res.string.lessons_exercise_reveal_answer)) { onSelfGrade(false) }
                         if (multipleChoiceExerciseEnabled) {
-                            ExerciseIconButton(Icons.Filled.GridView, "Choose from options") { mode = ExerciseMode.CHOICE }
+                            ExerciseIconButton(Icons.Filled.GridView, stringResource(Res.string.lessons_exercise_choose_options)) { mode = ExerciseMode.CHOICE }
                         }
                     }
                 }
@@ -789,7 +837,7 @@ private fun TypedCheck(
 
     if (answered == null) {
         Button(onClick = { onCheck(typedAnswer) }, modifier = Modifier.fillMaxWidth(), enabled = typedAnswer.isNotBlank()) {
-            Text("Check")
+            Text(stringResource(Res.string.lessons_check))
         }
     } else {
         FeedbackNote(answered)
@@ -849,7 +897,7 @@ private fun AdvanceButton(answered: VocabularyAnswerResult?, onContinue: () -> U
     if (answered == null) return
     Spacer(Modifier.height(EvolaSpacing.lg))
     Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) {
-        Text(if (answered.next == null) "Finish session" else "Continue")
+        Text(if (answered.next == null) stringResource(Res.string.lessons_finish_session) else stringResource(Res.string.lessons_continue))
     }
 }
 
@@ -857,9 +905,9 @@ private fun AdvanceButton(answered: VocabularyAnswerResult?, onContinue: () -> U
 private fun FeedbackNote(answered: VocabularyAnswerResult) {
     val correct = answered.correct ?: return
     val (bg, text) = if (correct) {
-        EvolaColors.GoldSoft to "Correct!"
+        EvolaColors.GoldSoft to stringResource(Res.string.lessons_feedback_correct)
     } else {
-        EvolaColors.RustSoft to "Not quite — the answer was \"${answered.correctAnswer}\". This word will come back around again."
+        EvolaColors.RustSoft to stringResource(Res.string.lessons_feedback_incorrect, answered.correctAnswer ?: "")
     }
     Surface(color = bg, shape = MaterialTheme.shapes.small, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(EvolaSpacing.md)) {

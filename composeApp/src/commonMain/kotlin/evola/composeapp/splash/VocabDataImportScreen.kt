@@ -22,9 +22,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.misc_vocab_import_license
+import evola.composeapp.generated.resources.misc_vocab_import_percent
+import evola.composeapp.generated.resources.misc_vocab_import_progress
+import evola.composeapp.generated.resources.misc_vocab_import_subtitle
+import evola.composeapp.generated.resources.misc_vocab_import_title
 import evola.composeapp.theme.EvolaSpacing
 import evola.shared.vocabulary.GermanNounImportState
 import evola.shared.vocabulary.GermanNounImporter
+import org.jetbrains.compose.resources.stringResource
 
 /** Shown only during the one-time German-noun-dataset import ([GermanNounImporter]) - every app
  * launch after the first sees [GermanNounImportState.Done] almost immediately (a single row-count
@@ -51,13 +58,13 @@ fun VocabDataImportScreen(state: GermanNounImportState) {
             }
             Spacer(Modifier.height(EvolaSpacing.xl))
             Text(
-                "Setting up German vocabulary data",
+                stringResource(Res.string.misc_vocab_import_title),
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(EvolaSpacing.xs))
             Text(
-                "This runs once, so lookups stay fast every time you open the app.",
+                stringResource(Res.string.misc_vocab_import_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -67,15 +74,15 @@ fun VocabDataImportScreen(state: GermanNounImportState) {
             Spacer(Modifier.height(EvolaSpacing.sm))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    "${imported.formatThousands()} / ${total.formatThousands()} words",
+                    stringResource(Res.string.misc_vocab_import_progress, imported.formatThousands(), total.formatThousands()),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(Res.string.misc_vocab_import_percent, (progress * 100).toInt()), style = MaterialTheme.typography.labelSmall)
             }
             Spacer(Modifier.height(EvolaSpacing.xxl))
             Text(
-                "Data from Wiktionary, licensed under CC BY-SA 4.0.",
+                stringResource(Res.string.misc_vocab_import_license),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

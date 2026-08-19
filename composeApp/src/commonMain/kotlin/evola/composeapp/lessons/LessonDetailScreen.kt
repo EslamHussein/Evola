@@ -58,6 +58,13 @@ import evola.composeapp.theme.components.IconTile
 import evola.composeapp.theme.components.LockedRow
 import evola.shared.lessons.LessonDetail
 import evola.shared.lessons.LessonSection
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.lessons_detail_loading
+import evola.composeapp.generated.resources.lessons_detail_numbered_title
+import evola.composeapp.generated.resources.lessons_detail_title
+import evola.composeapp.generated.resources.lessons_detail_view_list
+import evola.composeapp.generated.resources.lessons_nav_back
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun LessonDetailScreen(
@@ -73,10 +80,10 @@ fun LessonDetailScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text("Lesson") },
+                title = { Text(stringResource(Res.string.lessons_detail_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.lessons_nav_back))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -85,7 +92,7 @@ fun LessonDetailScreen(
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
-                is LessonDetailState.Loading -> ProgressMessage("Loading...")
+                is LessonDetailState.Loading -> ProgressMessage(stringResource(Res.string.lessons_detail_loading))
                 is LessonDetailState.Error -> CenteredMessage(current.message)
                 is LessonDetailState.Loaded -> LessonDetailBody(
                     detail = current.detail,
@@ -126,7 +133,7 @@ private fun LessonDetailBody(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(detail.breadcrumb, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
-                    Text("${detail.number}. ${detail.title}", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(Res.string.lessons_detail_numbered_title, detail.number, detail.title), style = MaterialTheme.typography.titleMedium)
                 }
                 Spacer(Modifier.width(EvolaSpacing.md))
                 CircularProgressRing(percent = detail.progressPercent, size = 40.dp)
@@ -181,7 +188,7 @@ private fun SectionRow(section: LessonSection, onClick: () -> Unit, onViewList: 
             // primary destination reached by the row tap itself, not a secondary link.
             if (section.key == "vocabulary") {
                 TextButton(onClick = onViewList, contentPadding = PaddingValues(0.dp)) {
-                    Text("View list", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(Res.string.lessons_detail_view_list), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

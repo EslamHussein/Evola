@@ -56,10 +56,28 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.materials_add_add_photo_desc
+import evola.composeapp.generated.resources.materials_add_cancel
+import evola.composeapp.generated.resources.materials_add_choose_different_file
+import evola.composeapp.generated.resources.materials_add_choose_from_gallery
+import evola.composeapp.generated.resources.materials_add_continue
+import evola.composeapp.generated.resources.materials_add_file_hint
+import evola.composeapp.generated.resources.materials_add_image_hint
+import evola.composeapp.generated.resources.materials_add_photo_sheet_title
+import evola.composeapp.generated.resources.materials_add_remove_photo_desc
+import evola.composeapp.generated.resources.materials_add_tap_to_choose_file
+import evola.composeapp.generated.resources.materials_add_take_photo
+import evola.composeapp.generated.resources.materials_add_text_placeholder
+import evola.composeapp.generated.resources.materials_add_title
+import evola.composeapp.generated.resources.materials_add_type_image
+import evola.composeapp.generated.resources.materials_add_type_pdf
+import evola.composeapp.generated.resources.materials_add_type_text
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.SelectableChip
 import evola.shared.materials.MIN_EXTRACTABLE_TEXT_LENGTH
+import org.jetbrains.compose.resources.stringResource
 import pro.respawn.flowmvi.compose.dsl.subscribe
 
 @Composable
@@ -97,7 +115,7 @@ fun AddMaterialScreen(
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = { TopAppBar(title = { Text("Add material") }, scrollBehavior = scrollBehavior) },
+        topBar = { TopAppBar(title = { Text(stringResource(Res.string.materials_add_title)) }, scrollBehavior = scrollBehavior) },
         bottomBar = {
             Surface(shadowElevation = 4.dp) {
                 Column(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg)) {
@@ -115,11 +133,11 @@ fun AddMaterialScreen(
                         enabled = canContinue,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text("Continue")
+                        Text(stringResource(Res.string.materials_add_continue))
                     }
                     Spacer(Modifier.height(EvolaSpacing.sm))
                     TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
-                        Text("Cancel")
+                        Text(stringResource(Res.string.materials_add_cancel))
                     }
                 }
             }
@@ -140,21 +158,21 @@ fun AddMaterialScreen(
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.md)) {
                     SelectableChip(
-                        label = "PDF",
+                        label = stringResource(Res.string.materials_add_type_pdf),
                         selected = selectedType == ResourceType.PDF,
                         onClick = { viewModel.intent(AddMaterialIntent.SelectType(ResourceType.PDF)) },
                         icon = Icons.Filled.PictureAsPdf,
                         modifier = Modifier.weight(1f),
                     )
                     SelectableChip(
-                        label = "Text",
+                        label = stringResource(Res.string.materials_add_type_text),
                         selected = selectedType == ResourceType.TEXT,
                         onClick = { viewModel.intent(AddMaterialIntent.SelectType(ResourceType.TEXT)) },
                         icon = Icons.Filled.Description,
                         modifier = Modifier.weight(1f),
                     )
                     SelectableChip(
-                        label = "Image",
+                        label = stringResource(Res.string.materials_add_type_image),
                         selected = selectedType == ResourceType.IMAGE,
                         onClick = { viewModel.intent(AddMaterialIntent.SelectType(ResourceType.IMAGE)) },
                         icon = Icons.Filled.Image,
@@ -178,10 +196,10 @@ fun AddMaterialScreen(
                                     modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.xxl),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
-                                    Text("Tap to choose a file", style = MaterialTheme.typography.titleSmall)
+                                    Text(stringResource(Res.string.materials_add_tap_to_choose_file), style = MaterialTheme.typography.titleSmall)
                                     Spacer(Modifier.height(EvolaSpacing.xs))
                                     Text(
-                                        "PDF or Word document, up to 25MB",
+                                        stringResource(Res.string.materials_add_file_hint),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = EvolaColors.Text2,
                                     )
@@ -193,7 +211,7 @@ fun AddMaterialScreen(
                                     Text(current.fileName, style = MaterialTheme.typography.titleMedium)
                                     Spacer(Modifier.height(EvolaSpacing.sm))
                                     TextButton(onClick = launchPicker) {
-                                        Text("Choose a different file")
+                                        Text(stringResource(Res.string.materials_add_choose_different_file))
                                     }
                                 }
                             }
@@ -205,14 +223,14 @@ fun AddMaterialScreen(
                             value = pastedText,
                             onValueChange = { pastedText = it },
                             modifier = Modifier.fillMaxWidth().height(220.dp),
-                            placeholder = { Text("Paste or type your text here...") },
+                            placeholder = { Text(stringResource(Res.string.materials_add_text_placeholder)) },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                         )
                     }
 
                     ResourceType.IMAGE -> {
                         Text(
-                            "Photograph pages of your book or notes - we'll read the text for you.",
+                            stringResource(Res.string.materials_add_image_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = EvolaColors.Text2,
                         )
@@ -248,10 +266,10 @@ private fun ImageSourceSheet(onCamera: () -> Unit, onGallery: () -> Unit, onDism
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = EvolaSpacing.lg, vertical = EvolaSpacing.sm),
         ) {
-            Text("Add a photo", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(Res.string.materials_add_photo_sheet_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(EvolaSpacing.md))
-            ImageSourceOption(icon = Icons.Filled.CameraAlt, label = "Take photo", onClick = { dismissThen(onCamera) })
-            ImageSourceOption(icon = Icons.Filled.PhotoLibrary, label = "Choose from gallery", onClick = { dismissThen(onGallery) })
+            ImageSourceOption(icon = Icons.Filled.CameraAlt, label = stringResource(Res.string.materials_add_take_photo), onClick = { dismissThen(onCamera) })
+            ImageSourceOption(icon = Icons.Filled.PhotoLibrary, label = stringResource(Res.string.materials_add_choose_from_gallery), onClick = { dismissThen(onGallery) })
             Spacer(Modifier.height(EvolaSpacing.md))
         }
     }
@@ -301,7 +319,7 @@ private fun ImagePickerGrid(images: List<PickedFile>, onAdd: () -> Unit, onRemov
                 ) {
                     Icon(
                         Icons.Filled.Close,
-                        contentDescription = "Remove photo",
+                        contentDescription = stringResource(Res.string.materials_add_remove_photo_desc),
                         tint = EvolaColors.Text,
                         modifier = Modifier.size(16.dp),
                     )
@@ -317,7 +335,7 @@ private fun ImagePickerGrid(images: List<PickedFile>, onAdd: () -> Unit, onRemov
             border = BorderStroke(1.dp, EvolaColors.Border),
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.Add, contentDescription = "Add photo", tint = EvolaColors.Text2)
+                Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.materials_add_add_photo_desc), tint = EvolaColors.Text2)
             }
         }
     }

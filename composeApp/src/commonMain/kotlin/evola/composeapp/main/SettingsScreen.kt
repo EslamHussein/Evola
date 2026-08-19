@@ -48,6 +48,48 @@ import evola.composeapp.theme.components.SelectableChip
 import evola.shared.local.AppTheme
 import kotlin.math.roundToInt
 import pro.respawn.flowmvi.compose.dsl.subscribe
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.main_settings_auto_pronounce_subtitle
+import evola.composeapp.generated.resources.main_settings_auto_pronounce_title
+import evola.composeapp.generated.resources.main_settings_back_cd
+import evola.composeapp.generated.resources.main_settings_daily_word_goal_subtitle
+import evola.composeapp.generated.resources.main_settings_daily_word_goal_title
+import evola.composeapp.generated.resources.main_settings_decrease_cd
+import evola.composeapp.generated.resources.main_settings_frequency_limit_subtitle
+import evola.composeapp.generated.resources.main_settings_frequency_limit_title
+import evola.composeapp.generated.resources.main_settings_increase_cd
+import evola.composeapp.generated.resources.main_settings_invert_swipe_subtitle
+import evola.composeapp.generated.resources.main_settings_invert_swipe_title
+import evola.composeapp.generated.resources.main_settings_mc_exercise_subtitle
+import evola.composeapp.generated.resources.main_settings_mc_exercise_title
+import evola.composeapp.generated.resources.main_settings_reduce_motion_subtitle
+import evola.composeapp.generated.resources.main_settings_reduce_motion_title
+import evola.composeapp.generated.resources.main_settings_reminder_time_title
+import evola.composeapp.generated.resources.main_settings_reminder_time_value
+import evola.composeapp.generated.resources.main_settings_review_reminders_subtitle
+import evola.composeapp.generated.resources.main_settings_review_reminders_title
+import evola.composeapp.generated.resources.main_settings_section_appearance
+import evola.composeapp.generated.resources.main_settings_section_general
+import evola.composeapp.generated.resources.main_settings_section_notifications
+import evola.composeapp.generated.resources.main_settings_section_pronunciation
+import evola.composeapp.generated.resources.main_settings_show_transcription_subtitle
+import evola.composeapp.generated.resources.main_settings_show_transcription_title
+import evola.composeapp.generated.resources.main_settings_silent_end_subtitle
+import evola.composeapp.generated.resources.main_settings_silent_end_title
+import evola.composeapp.generated.resources.main_settings_silent_start_subtitle
+import evola.composeapp.generated.resources.main_settings_silent_start_title
+import evola.composeapp.generated.resources.main_settings_speech_rate_title
+import evola.composeapp.generated.resources.main_settings_speech_rate_value
+import evola.composeapp.generated.resources.main_settings_theme_label
+import evola.composeapp.generated.resources.main_settings_title
+import evola.composeapp.generated.resources.main_settings_tts_enabled_subtitle
+import evola.composeapp.generated.resources.main_settings_tts_enabled_title
+import evola.composeapp.generated.resources.main_settings_typed_exercise_subtitle
+import evola.composeapp.generated.resources.main_settings_typed_exercise_title
+import evola.composeapp.generated.resources.main_settings_voice_default
+import evola.composeapp.generated.resources.main_settings_voice_picker_subtitle
+import evola.composeapp.generated.resources.main_settings_voice_picker_title
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Every user-tunable knob Evola has, grouped the way Reword's own Settings screen does (General /
@@ -71,10 +113,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(Res.string.main_settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.main_settings_back_cd))
                     }
                 },
             )
@@ -84,10 +126,10 @@ fun SettingsScreen(
             Column(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(EvolaSpacing.xl),
             ) {
-                SectionLabel("Appearance")
+                SectionLabel(stringResource(Res.string.main_settings_section_appearance))
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
-                        Text("Theme", style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(Res.string.main_settings_theme_label), style = MaterialTheme.typography.titleSmall)
                         Spacer(Modifier.height(EvolaSpacing.xs))
                         Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
                             AppTheme.entries.forEach { theme ->
@@ -101,20 +143,20 @@ fun SettingsScreen(
                     }
                     DividerRow()
                     ToggleRow(
-                        title = "Reduce motion",
-                        subtitle = "Fewer/instant transitions during a session",
+                        title = stringResource(Res.string.main_settings_reduce_motion_title),
+                        subtitle = stringResource(Res.string.main_settings_reduce_motion_subtitle),
                         checked = settings.reducedMotion,
                         onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetReducedMotion(value)) },
                     )
                 }
 
                 Spacer(Modifier.height(EvolaSpacing.xxl))
-                SectionLabel("General")
+                SectionLabel(stringResource(Res.string.main_settings_section_general))
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column {
                         StepperRow(
-                            title = "Daily new-word goal",
-                            subtitle = "New words introduced per session",
+                            title = stringResource(Res.string.main_settings_daily_word_goal_title),
+                            subtitle = stringResource(Res.string.main_settings_daily_word_goal_subtitle),
                             value = settings.dailyNewWordGoal,
                             range = 3..40,
                             step = 1,
@@ -122,22 +164,22 @@ fun SettingsScreen(
                         )
                         DividerRow()
                         ToggleRow(
-                            title = "Typed-answer exercise",
-                            subtitle = "Type the word from its meaning",
+                            title = stringResource(Res.string.main_settings_typed_exercise_title),
+                            subtitle = stringResource(Res.string.main_settings_typed_exercise_subtitle),
                             checked = settings.keyboardExerciseEnabled,
                             onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetKeyboardExerciseEnabled(value)) },
                         )
                         DividerRow()
                         ToggleRow(
-                            title = "Multiple-choice exercise",
-                            subtitle = "Pick the word from four options",
+                            title = stringResource(Res.string.main_settings_mc_exercise_title),
+                            subtitle = stringResource(Res.string.main_settings_mc_exercise_subtitle),
                             checked = settings.multipleChoiceExerciseEnabled,
                             onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetMultipleChoiceExerciseEnabled(value)) },
                         )
                         DividerRow()
                         ToggleRow(
-                            title = "Invert swipe direction",
-                            subtitle = "Swap which side means \"I know it\"",
+                            title = stringResource(Res.string.main_settings_invert_swipe_title),
+                            subtitle = stringResource(Res.string.main_settings_invert_swipe_subtitle),
                             checked = settings.invertSwipe,
                             onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetInvertSwipe(value)) },
                         )
@@ -145,20 +187,20 @@ fun SettingsScreen(
                 }
 
                 Spacer(Modifier.height(EvolaSpacing.xxl))
-                SectionLabel("Pronunciation")
+                SectionLabel(stringResource(Res.string.main_settings_section_pronunciation))
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column {
                         ToggleRow(
-                            title = "Speak words aloud",
-                            subtitle = "Tap the audio icon during a session",
+                            title = stringResource(Res.string.main_settings_tts_enabled_title),
+                            subtitle = stringResource(Res.string.main_settings_tts_enabled_subtitle),
                             checked = settings.ttsEnabled,
                             onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetTtsEnabled(value)) },
                         )
                         if (settings.ttsEnabled) {
                             DividerRow()
                             ToggleRow(
-                                title = "Automatically pronounce",
-                                subtitle = "Speak the word as soon as a card appears",
+                                title = stringResource(Res.string.main_settings_auto_pronounce_title),
+                                subtitle = stringResource(Res.string.main_settings_auto_pronounce_subtitle),
                                 checked = settings.autoPronounce,
                                 onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetAutoPronounce(value)) },
                             )
@@ -173,8 +215,8 @@ fun SettingsScreen(
                         }
                         DividerRow()
                         ToggleRow(
-                            title = "Show transcription",
-                            subtitle = "IPA pronunciation guide, e.g. /haʊs/",
+                            title = stringResource(Res.string.main_settings_show_transcription_title),
+                            subtitle = stringResource(Res.string.main_settings_show_transcription_subtitle),
                             checked = settings.showTranscription,
                             onCheckedChange = { value -> viewModel.intent(SettingsIntent.SetShowTranscription(value)) },
                         )
@@ -182,12 +224,12 @@ fun SettingsScreen(
                 }
 
                 Spacer(Modifier.height(EvolaSpacing.xxl))
-                SectionLabel("Notifications")
+                SectionLabel(stringResource(Res.string.main_settings_section_notifications))
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column {
                         ToggleRow(
-                            title = "Review reminders",
-                            subtitle = "A daily nudge when words are due",
+                            title = stringResource(Res.string.main_settings_review_reminders_title),
+                            subtitle = stringResource(Res.string.main_settings_review_reminders_subtitle),
                             checked = settings.notificationsEnabled,
                             onCheckedChange = { enabled ->
                                 viewModel.intent(SettingsIntent.SetNotificationsEnabled(enabled))
@@ -197,8 +239,8 @@ fun SettingsScreen(
                         if (settings.notificationsEnabled) {
                             DividerRow()
                             StepperRow(
-                                title = "Reminder time",
-                                subtitle = "${settings.reminderHour}:00",
+                                title = stringResource(Res.string.main_settings_reminder_time_title),
+                                subtitle = stringResource(Res.string.main_settings_reminder_time_value, settings.reminderHour),
                                 value = settings.reminderHour,
                                 range = 0..23,
                                 step = 1,
@@ -206,8 +248,8 @@ fun SettingsScreen(
                             )
                             DividerRow()
                             StepperRow(
-                                title = "Silent hours start",
-                                subtitle = "No reminders from this hour…",
+                                title = stringResource(Res.string.main_settings_silent_start_title),
+                                subtitle = stringResource(Res.string.main_settings_silent_start_subtitle),
                                 value = settings.silentHoursStart,
                                 range = 0..23,
                                 step = 1,
@@ -215,8 +257,8 @@ fun SettingsScreen(
                             )
                             DividerRow()
                             StepperRow(
-                                title = "Silent hours end",
-                                subtitle = "…until this hour",
+                                title = stringResource(Res.string.main_settings_silent_end_title),
+                                subtitle = stringResource(Res.string.main_settings_silent_end_subtitle),
                                 value = settings.silentHoursEnd,
                                 range = 0..23,
                                 step = 1,
@@ -224,8 +266,8 @@ fun SettingsScreen(
                             )
                             DividerRow()
                             StepperRow(
-                                title = "Frequency limit",
-                                subtitle = "Minimum hours between reminders",
+                                title = stringResource(Res.string.main_settings_frequency_limit_title),
+                                subtitle = stringResource(Res.string.main_settings_frequency_limit_subtitle),
                                 value = settings.notificationFrequencyLimitHours,
                                 range = 1..24,
                                 step = 1,
@@ -281,11 +323,11 @@ private fun StepperRow(title: String, subtitle: String, value: Int, range: IntRa
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
         }
         IconButton(onClick = { onChange((value - step).coerceIn(range)) }, enabled = value > range.first) {
-            Icon(Icons.Filled.Remove, contentDescription = "Decrease")
+            Icon(Icons.Filled.Remove, contentDescription = stringResource(Res.string.main_settings_decrease_cd))
         }
         Text("$value", style = MaterialTheme.typography.titleMedium, modifier = Modifier.width(28.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         IconButton(onClick = { onChange((value + step).coerceIn(range)) }, enabled = value < range.last) {
-            Icon(Icons.Filled.Add, contentDescription = "Increase")
+            Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.main_settings_increase_cd))
         }
     }
 }
@@ -303,10 +345,11 @@ private fun VoicePickerRow(speechService: SpeechService, selected: String?, onSe
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text("Robot voice", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(Res.string.main_settings_voice_picker_title), style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.height(2.dp))
-            Text("Which installed voice speaks German words", style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
+            Text(stringResource(Res.string.main_settings_voice_picker_subtitle), style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
         }
+        val defaultVoiceLabel = stringResource(Res.string.main_settings_voice_default)
         Box {
             Surface(
                 onClick = { expanded = true },
@@ -314,13 +357,13 @@ private fun VoicePickerRow(speechService: SpeechService, selected: String?, onSe
                 color = EvolaColors.SurfaceAlt,
             ) {
                 Text(
-                    selected ?: "Default",
+                    selected ?: defaultVoiceLabel,
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.padding(horizontal = EvolaSpacing.md, vertical = EvolaSpacing.sm),
                 )
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                DropdownMenuItem(text = { Text("Default") }, onClick = { onSelect(null); expanded = false })
+                DropdownMenuItem(text = { Text(defaultVoiceLabel) }, onClick = { onSelect(null); expanded = false })
                 voices.forEach { voice ->
                     DropdownMenuItem(text = { Text(voice) }, onClick = { onSelect(voice); expanded = false })
                 }
@@ -333,8 +376,8 @@ private fun VoicePickerRow(speechService: SpeechService, selected: String?, onSe
 private fun SpeechRateRow(rate: Float, onChange: (Float) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Speech rate", style = MaterialTheme.typography.titleSmall)
-            Text("${((rate * 100).roundToInt())}%", style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
+            Text(stringResource(Res.string.main_settings_speech_rate_title), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(Res.string.main_settings_speech_rate_value, (rate * 100).roundToInt()), style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
         }
         Slider(value = rate, onValueChange = onChange, valueRange = 0.5f..2f)
     }

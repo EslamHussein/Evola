@@ -53,6 +53,11 @@ import evola.composeapp.wizard.ProcessingScreen
 import evola.composeapp.wizard.ProcessingViewModel
 import evola.shared.goals.Goal
 import evola.shared.vocabulary.WordCategory
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.main_nav_home
+import evola.composeapp.generated.resources.main_nav_materials
+import evola.composeapp.generated.resources.main_nav_profile
+import org.jetbrains.compose.resources.stringResource
 
 private enum class MainTab { HOME, MATERIALS, PROFILE }
 
@@ -143,11 +148,14 @@ fun MainScreen(
         bottomBar = {
             if (showTabBar) {
                 GlassNavigationBar(hazeState = hazeState) {
+                    val homeLabel = stringResource(Res.string.main_nav_home)
+                    val materialsLabel = stringResource(Res.string.main_nav_materials)
+                    val profileLabel = stringResource(Res.string.main_nav_profile)
                     NavigationBarItem(
                         selected = selectedTab == MainTab.HOME,
                         onClick = { selectedTab = MainTab.HOME },
-                        icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-                        label = { Text("Home") },
+                        icon = { Icon(Icons.Filled.Home, contentDescription = homeLabel) },
+                        label = { Text(homeLabel) },
                         colors = glassItemColors,
                     )
                     NavigationBarItem(
@@ -156,8 +164,8 @@ fun MainScreen(
                             selectedTab = MainTab.MATERIALS
                             materialsSubScreen = MaterialsSubScreen.List
                         },
-                        icon = { Icon(Icons.Filled.Folder, contentDescription = "Materials") },
-                        label = { Text("Materials") },
+                        icon = { Icon(Icons.Filled.Folder, contentDescription = materialsLabel) },
+                        label = { Text(materialsLabel) },
                         colors = glassItemColors,
                     )
                     NavigationBarItem(
@@ -166,8 +174,8 @@ fun MainScreen(
                             selectedTab = MainTab.PROFILE
                             profileSubScreen = ProfileSubScreen.Main
                         },
-                        icon = { Icon(Icons.Filled.Person, contentDescription = "Profile") },
-                        label = { Text("Profile") },
+                        icon = { Icon(Icons.Filled.Person, contentDescription = profileLabel) },
+                        label = { Text(profileLabel) },
                         colors = glassItemColors,
                     )
                 }

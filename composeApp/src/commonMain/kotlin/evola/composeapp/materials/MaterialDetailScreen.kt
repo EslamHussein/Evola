@@ -48,6 +48,33 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import pro.respawn.flowmvi.compose.dsl.subscribe
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.materials_detail_back_desc
+import evola.composeapp.generated.resources.materials_detail_delete_lesson_desc
+import evola.composeapp.generated.resources.materials_detail_exercises_label
+import evola.composeapp.generated.resources.materials_detail_grammar_label
+import evola.composeapp.generated.resources.materials_detail_lesson_count_plural
+import evola.composeapp.generated.resources.materials_detail_lesson_count_singular
+import evola.composeapp.generated.resources.materials_detail_lesson_number_title
+import evola.composeapp.generated.resources.materials_detail_lesson_words
+import evola.composeapp.generated.resources.materials_detail_loading
+import evola.composeapp.generated.resources.materials_detail_partial_success
+import evola.composeapp.generated.resources.materials_detail_process_failed
+import evola.composeapp.generated.resources.materials_detail_reading_label
+import evola.composeapp.generated.resources.materials_detail_ready_of_total
+import evola.composeapp.generated.resources.materials_detail_retry
+import evola.composeapp.generated.resources.materials_detail_retry_rest
+import evola.composeapp.generated.resources.materials_detail_splitting
+import evola.composeapp.generated.resources.materials_detail_status_done
+import evola.composeapp.generated.resources.materials_detail_status_extracting
+import evola.composeapp.generated.resources.materials_detail_status_failed
+import evola.composeapp.generated.resources.materials_detail_status_in_progress
+import evola.composeapp.generated.resources.materials_detail_status_not_started
+import evola.composeapp.generated.resources.materials_detail_status_waiting
+import evola.composeapp.generated.resources.materials_detail_title
+import evola.composeapp.generated.resources.materials_detail_tokens_used
+import evola.composeapp.generated.resources.materials_detail_unsupported
+import evola.composeapp.generated.resources.materials_detail_vocabulary_label
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.CircularProgressRing
@@ -56,6 +83,7 @@ import evola.composeapp.theme.components.StatusTagStyle
 import evola.shared.materials.Lesson
 import evola.shared.materials.MaterialDetail
 import evola.shared.materials.MaterialStatus
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit, onOpenLesson: (String) -> Unit) {
@@ -66,10 +94,10 @@ fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text("Material") },
+                title = { Text(stringResource(Res.string.materials_detail_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.materials_detail_back_desc))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -78,7 +106,7 @@ fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit,
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val current = state) {
-                is MaterialDetailState.Loading -> ProgressMessage("Loading...")
+                is MaterialDetailState.Loading -> ProgressMessage(stringResource(Res.string.materials_detail_loading))
                 is MaterialDetailState.Error -> CenteredMessage(current.message)
                 is MaterialDetailState.Loaded -> LoadedBody(
                     current.detail,
@@ -116,7 +144,7 @@ private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit, onOpenLesson
     when (detail.material.status) {
         MaterialStatus.UPLOADED, MaterialStatus.PROCESSING ->
             if (detail.lessons.isEmpty()) {
-                ProgressMessage("Splitting \"${detail.material.filename}\" into lessons...")
+                ProgressMessage(stringResource(Res.string.materials_detail_splitting, detail.material.filename))
             } else {
                 InProgressBody(detail, onOpenLesson, onDeleteLesson)
             }
@@ -126,11 +154,11 @@ private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit, onOpenLesson
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            "We couldn't process \"${detail.material.filename}\".",
+                            stringResource(Res.string.materials_detail_process_failed, detail.material.filename),
                             style = MaterialTheme.typography.bodyLarge,
                         )
                         Spacer(Modifier.height(16.dp))
-                        Button(onClick = onRetry) { Text("Retry") }
+                        Button(onClick = onRetry) { Text(stringResource(Res.string.materials_detail_retry)) }
                     }
                 }
             } else {
@@ -138,7 +166,7 @@ private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit, onOpenLesson
             }
 
         MaterialStatus.UNSUPPORTED_CONTENT ->
-            CenteredMessage("\"${detail.material.filename}\" doesn't look like readable text we can use. Try a different file.")
+            CenteredMessage(stringResource(Res.string.materials_detail_unsupported, detail.material.filename))
 
         MaterialStatus.READY -> ResourceDetailBody(detail, onOpenLesson, onDeleteLesson)
     }
@@ -182,7 +210,7 @@ private fun InProgressBody(detail: MaterialDetail, onOpenLesson: (String) -> Uni
             Text(detail.material.filename, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(4.dp))
             Text(
-                "$readyCount of ${lessons.size} lessons ready",
+                stringResource(Res.string.materials_detail_ready_of_total, readyCount, lessons.size),
                 style = MaterialTheme.typography.bodyMedium,
                 color = EvolaColors.Text2,
             )
@@ -214,7 +242,7 @@ private fun BookHeaderRow(detail: MaterialDetail, overallProgress: Int) {
             val totalTokens = detail.material.inputTokens + detail.material.outputTokens
             if (totalTokens > 0) {
                 Text(
-                    "${formatTokenCount(totalTokens)} tokens used",
+                    stringResource(Res.string.materials_detail_tokens_used, formatTokenCount(totalTokens)),
                     style = MaterialTheme.typography.labelSmall,
                     color = EvolaColors.Text3,
                 )
@@ -236,10 +264,10 @@ private fun formatTokenCount(count: Long): String = when {
 @Composable
 private fun MetaStatRow(vocab: Int, grammar: Int, reading: Int, exercises: Int) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        MetaStat(Icons.AutoMirrored.Filled.MenuBook, "$vocab", "Vocabulary")
-        MetaStat(Icons.AutoMirrored.Filled.Rule, "$grammar", "Grammar")
-        MetaStat(Icons.Filled.Edit, "$reading", "Reading")
-        MetaStat(Icons.Filled.Quiz, "$exercises", "Exercises")
+        MetaStat(Icons.AutoMirrored.Filled.MenuBook, "$vocab", stringResource(Res.string.materials_detail_vocabulary_label))
+        MetaStat(Icons.AutoMirrored.Filled.Rule, "$grammar", stringResource(Res.string.materials_detail_grammar_label))
+        MetaStat(Icons.Filled.Edit, "$reading", stringResource(Res.string.materials_detail_reading_label))
+        MetaStat(Icons.Filled.Quiz, "$exercises", stringResource(Res.string.materials_detail_exercises_label))
     }
 }
 
@@ -258,12 +286,15 @@ private fun PartialSuccessBody(detail: MaterialDetail, onRetry: () -> Unit, onOp
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         item {
             Text(
-                "We generated ${lessonCountLabel(detail.lessons.size)} from \"${detail.material.filename}\", " +
-                    "but some of it couldn't be processed.",
+                stringResource(
+                    Res.string.materials_detail_partial_success,
+                    lessonCountLabel(detail.lessons.size),
+                    detail.material.filename,
+                ),
                 style = MaterialTheme.typography.bodyLarge,
             )
             Spacer(Modifier.height(12.dp))
-            Button(onClick = onRetry) { Text("Retry the rest") }
+            Button(onClick = onRetry) { Text(stringResource(Res.string.materials_detail_retry_rest)) }
             Spacer(Modifier.height(16.dp))
         }
         items(detail.lessons, key = { it.id }) { lesson ->
@@ -275,12 +306,12 @@ private fun PartialSuccessBody(detail: MaterialDetail, onRetry: () -> Unit, onOp
 @Composable
 private fun LessonRow(lesson: Lesson, onClick: () -> Unit, onDelete: () -> Unit) {
     val (tagLabel, tagStyle) = when {
-        lesson.status == "ready" && lesson.completionPct >= 1f -> "Done" to StatusTagStyle.FILLED
-        lesson.status == "ready" && lesson.completionPct > 0f -> "In progress" to StatusTagStyle.OUTLINE
-        lesson.status == "ready" -> "Not started" to StatusTagStyle.NEUTRAL
-        lesson.status == "extracting" -> "Extracting..." to StatusTagStyle.OUTLINE
-        lesson.status == "failed" -> "Failed" to StatusTagStyle.OUTLINE
-        else -> "Waiting" to StatusTagStyle.NEUTRAL // "pending"
+        lesson.status == "ready" && lesson.completionPct >= 1f -> stringResource(Res.string.materials_detail_status_done) to StatusTagStyle.FILLED
+        lesson.status == "ready" && lesson.completionPct > 0f -> stringResource(Res.string.materials_detail_status_in_progress) to StatusTagStyle.OUTLINE
+        lesson.status == "ready" -> stringResource(Res.string.materials_detail_status_not_started) to StatusTagStyle.NEUTRAL
+        lesson.status == "extracting" -> stringResource(Res.string.materials_detail_status_extracting) to StatusTagStyle.OUTLINE
+        lesson.status == "failed" -> stringResource(Res.string.materials_detail_status_failed) to StatusTagStyle.OUTLINE
+        else -> stringResource(Res.string.materials_detail_status_waiting) to StatusTagStyle.NEUTRAL // "pending"
     }
     val dismissState = rememberSwipeToDismissBoxState(confirmValueChange = { it != SwipeToDismissBoxValue.StartToEnd })
     SwipeToDismissBox(
@@ -292,7 +323,7 @@ private fun LessonRow(lesson: Lesson, onClick: () -> Unit, onDelete: () -> Unit)
                 contentAlignment = Alignment.CenterEnd,
             ) {
                 IconButton(onClick = onDelete, modifier = Modifier.padding(horizontal = EvolaSpacing.lg)) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete lesson", tint = Color.White)
+                    Icon(Icons.Filled.Delete, contentDescription = stringResource(Res.string.materials_detail_delete_lesson_desc), tint = Color.White)
                 }
             }
         },
@@ -310,10 +341,13 @@ private fun LessonRow(lesson: Lesson, onClick: () -> Unit, onDelete: () -> Unit)
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("${lesson.number}. ${lesson.title}", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        stringResource(Res.string.materials_detail_lesson_number_title, lesson.number, lesson.title),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
                     Spacer(Modifier.height(EvolaSpacing.xs))
                     Text(
-                        "${lesson.vocabCount} words",
+                        stringResource(Res.string.materials_detail_lesson_words, lesson.vocabCount),
                         style = MaterialTheme.typography.labelSmall,
                         color = EvolaColors.Text3,
                     )
@@ -324,4 +358,10 @@ private fun LessonRow(lesson: Lesson, onClick: () -> Unit, onDelete: () -> Unit)
     }
 }
 
-private fun lessonCountLabel(count: Int): String = if (count == 1) "1 lesson" else "$count lessons"
+@Composable
+private fun lessonCountLabel(count: Int): String =
+    if (count == 1) {
+        stringResource(Res.string.materials_detail_lesson_count_singular)
+    } else {
+        stringResource(Res.string.materials_detail_lesson_count_plural, count)
+    }

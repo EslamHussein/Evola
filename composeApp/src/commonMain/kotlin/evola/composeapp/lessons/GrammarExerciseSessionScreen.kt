@@ -50,6 +50,18 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import pro.respawn.flowmvi.compose.dsl.subscribe
 import evola.composeapp.BackHandler
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.lessons_action_done
+import evola.composeapp.generated.resources.lessons_action_retry
+import evola.composeapp.generated.resources.lessons_grammar_answered_count
+import evola.composeapp.generated.resources.lessons_grammar_complete
+import evola.composeapp.generated.resources.lessons_grammar_empty
+import evola.composeapp.generated.resources.lessons_grammar_practice_title
+import evola.composeapp.generated.resources.lessons_grammar_submit
+import evola.composeapp.generated.resources.lessons_grammar_summary
+import evola.composeapp.generated.resources.lessons_grammar_type_missing_word
+import evola.composeapp.generated.resources.lessons_nav_back
+import org.jetbrains.compose.resources.stringResource
 import evola.shared.grammar.GrammarExercise
 
 /** Grammar's exercise session (01_PRODUCT_SPEC.md §1.9): a flat multiple-choice/fill-in-blank
@@ -66,10 +78,10 @@ fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onD
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text("Grammar practice") },
+                title = { Text(stringResource(Res.string.lessons_grammar_practice_title)) },
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.lessons_nav_back))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -83,17 +95,17 @@ fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onD
                 is GrammarExerciseSessionState.Error -> CenteredMessage {
                     Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { viewModel.intent(GrammarExerciseSessionIntent.Retry) }) { Text("Retry") }
+                    Button(onClick = { viewModel.intent(GrammarExerciseSessionIntent.Retry) }) { Text(stringResource(Res.string.lessons_action_retry)) }
                 }
 
                 is GrammarExerciseSessionState.Empty -> CenteredMessage {
                     Text(
-                        "No exercises for this topic yet - check its explanation on the topic list.",
+                        stringResource(Res.string.lessons_grammar_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = onDone) { Text("Done") }
+                    Button(onClick = onDone) { Text(stringResource(Res.string.lessons_action_done)) }
                 }
 
                 is GrammarExerciseSessionState.InProgress -> ExerciseBody(
@@ -105,14 +117,14 @@ fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onD
                 )
 
                 is GrammarExerciseSessionState.Summary -> CenteredMessage {
-                    Text("Practice complete!", style = MaterialTheme.typography.headlineSmall)
+                    Text(stringResource(Res.string.lessons_grammar_complete), style = MaterialTheme.typography.headlineSmall)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "${current.exercisesCompleted} exercises - ${current.accuracy.toInt()}% correct",
+                        stringResource(Res.string.lessons_grammar_summary, current.exercisesCompleted, current.accuracy.toInt()),
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = onDone) { Text("Done") }
+                    Button(onClick = onDone) { Text(stringResource(Res.string.lessons_action_done)) }
                 }
             }
         }
@@ -139,7 +151,7 @@ private fun ExerciseBody(exercise: GrammarExercise, answeredCount: Int, onSubmit
             .imePadding()
             .padding(24.dp),
     ) {
-        Text("Answered: $answeredCount", style = MaterialTheme.typography.labelMedium)
+        Text(stringResource(Res.string.lessons_grammar_answered_count, answeredCount), style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(24.dp))
 
         if (exercise.isMultipleChoice) {
@@ -177,7 +189,7 @@ private fun FillInBlankDrill(exercise: GrammarExercise, onSubmit: (String, Boole
     OutlinedTextField(
         value = typedAnswer,
         onValueChange = { typedAnswer = it },
-        label = { Text("Type the missing word") },
+        label = { Text(stringResource(Res.string.lessons_grammar_type_missing_word)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
@@ -188,7 +200,7 @@ private fun FillInBlankDrill(exercise: GrammarExercise, onSubmit: (String, Boole
         onClick = { onSubmit(typedAnswer, exercise.grade(typedAnswer)) },
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text("Submit")
+        Text(stringResource(Res.string.lessons_grammar_submit))
     }
 }
 

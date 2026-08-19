@@ -40,11 +40,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import pro.respawn.flowmvi.compose.dsl.subscribe
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.materials_list_add_material_desc
+import evola.composeapp.generated.resources.materials_list_delete_desc
+import evola.composeapp.generated.resources.materials_list_empty
+import evola.composeapp.generated.resources.materials_list_lessons_count
+import evola.composeapp.generated.resources.materials_list_loading
+import evola.composeapp.generated.resources.materials_list_one_lesson
+import evola.composeapp.generated.resources.materials_list_processing
+import evola.composeapp.generated.resources.materials_list_processing_with_count
+import evola.composeapp.generated.resources.materials_list_retry
+import evola.composeapp.generated.resources.materials_list_title
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.RootTopBarTitle
 import evola.shared.materials.Material
 import evola.shared.materials.MaterialStatus
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun MaterialsListScreen(
@@ -57,10 +69,10 @@ fun MaterialsListScreen(
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = { TopAppBar(title = { RootTopBarTitle("Materials") }, scrollBehavior = scrollBehavior) },
+        topBar = { TopAppBar(title = { RootTopBarTitle(stringResource(Res.string.materials_list_title)) }, scrollBehavior = scrollBehavior) },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddMaterial) {
-                Icon(Icons.Filled.Add, contentDescription = "Add material")
+                Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.materials_list_add_material_desc))
             }
         },
     ) { padding ->
@@ -84,7 +96,7 @@ private fun LoadingBody() {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             ChaseLoadingIndicator()
             Spacer(Modifier.height(16.dp))
-            Text("Loading...")
+            Text(stringResource(Res.string.materials_list_loading))
         }
     }
 }
@@ -98,7 +110,7 @@ private fun ErrorBody(message: String, onRetry: () -> Unit) {
     ) {
         Text(message, style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onRetry) { Text("Retry") }
+        Button(onClick = onRetry) { Text(stringResource(Res.string.materials_list_retry)) }
     }
 }
 
@@ -111,7 +123,7 @@ private fun MaterialsListBody(
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         if (materials.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No materials yet. Add one to get started.", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(Res.string.materials_list_empty), style = MaterialTheme.typography.bodyLarge)
             }
         } else {
             LazyColumn(
@@ -152,10 +164,20 @@ private fun MaterialRow(material: Material, onClick: () -> Unit, onDelete: () ->
     }
 }
 
+@Composable
 private fun materialStatusLabel(material: Material): String = when (material.status) {
     MaterialStatus.PROCESSING ->
-        if (material.lessonsTotal > 0) "Processing — ${material.lessonsReady}/${material.lessonsTotal} lessons" else "Processing..."
-    MaterialStatus.READY -> if (material.lessonsTotal == 1) "1 lesson" else "${material.lessonsTotal} lessons"
+        if (material.lessonsTotal > 0) {
+            stringResource(Res.string.materials_list_processing_with_count, material.lessonsReady, material.lessonsTotal)
+        } else {
+            stringResource(Res.string.materials_list_processing)
+        }
+    MaterialStatus.READY ->
+        if (material.lessonsTotal == 1) {
+            stringResource(Res.string.materials_list_one_lesson)
+        } else {
+            stringResource(Res.string.materials_list_lessons_count, material.lessonsTotal)
+        }
     else -> material.status.name
 }
 
@@ -170,7 +192,7 @@ private fun DeleteSwipeBackground(onDelete: () -> Unit) {
         contentAlignment = Alignment.CenterEnd,
     ) {
         IconButton(onClick = onDelete, modifier = Modifier.padding(horizontal = EvolaSpacing.lg)) {
-            Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.White)
+            Icon(Icons.Filled.Delete, contentDescription = stringResource(Res.string.materials_list_delete_desc), tint = Color.White)
         }
     }
 }

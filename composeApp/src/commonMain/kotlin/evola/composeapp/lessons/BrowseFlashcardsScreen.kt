@@ -45,6 +45,16 @@ import evola.composeapp.loading.ChaseLoadingIndicator
 import evola.composeapp.rtl.RtlText
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.lessons_browse_ipa
+import evola.composeapp.generated.resources.lessons_browse_next_word
+import evola.composeapp.generated.resources.lessons_browse_previous_word
+import evola.composeapp.generated.resources.lessons_browse_tap_to_reveal
+import evola.composeapp.generated.resources.lessons_browse_title
+import evola.composeapp.generated.resources.lessons_empty_vocabulary
+import evola.composeapp.generated.resources.lessons_nav_close
+import evola.composeapp.generated.resources.lessons_word_progress
+import org.jetbrains.compose.resources.stringResource
 import evola.shared.vocabulary.VocabularyItem
 
 /** Reword's "Extra modes (do not affect stats)" - flip through every word in the lesson, tap the
@@ -59,8 +69,8 @@ fun BrowseFlashcardsScreen(viewModel: BrowseFlashcardsViewModel, onDone: () -> U
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Browse flashcards") },
-                navigationIcon = { IconButton(onClick = onDone) { Icon(Icons.Filled.Close, contentDescription = "Close") } },
+                title = { Text(stringResource(Res.string.lessons_browse_title)) },
+                navigationIcon = { IconButton(onClick = onDone) { Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.lessons_nav_close)) } },
             )
         },
     ) { padding ->
@@ -71,7 +81,7 @@ fun BrowseFlashcardsScreen(viewModel: BrowseFlashcardsViewModel, onDone: () -> U
                     Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 }
                 is BrowseFlashcardsState.Empty -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                    Text("No vocabulary yet for this lesson.", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                    Text(stringResource(Res.string.lessons_empty_vocabulary), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 }
                 is BrowseFlashcardsState.Browsing -> BrowsingBody(
                     current,
@@ -87,7 +97,11 @@ fun BrowseFlashcardsScreen(viewModel: BrowseFlashcardsViewModel, onDone: () -> U
 private fun BrowsingBody(state: BrowseFlashcardsState.Browsing, onNext: () -> Unit, onPrevious: () -> Unit) {
     val item = state.items[state.index]
     Column(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {
-        Text("Word ${state.index + 1} of ${state.items.size}", style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text3)
+        Text(
+            stringResource(Res.string.lessons_word_progress, state.index + 1, state.items.size),
+            style = MaterialTheme.typography.labelSmall,
+            color = EvolaColors.Text3,
+        )
         Spacer(Modifier.height(EvolaSpacing.xs))
         LinearProgressIndicator(
             progress = { (state.index + 1) / state.items.size.toFloat() },
@@ -101,10 +115,10 @@ private fun BrowsingBody(state: BrowseFlashcardsState.Browsing, onNext: () -> Un
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             IconButton(onClick = onPrevious, enabled = state.index > 0) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous word")
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(Res.string.lessons_browse_previous_word))
             }
             IconButton(onClick = onNext, enabled = state.index < state.items.lastIndex) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next word")
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(Res.string.lessons_browse_next_word))
             }
         }
     }
@@ -134,10 +148,10 @@ private fun FlipCard(item: VocabularyItem) {
                         )
                         item.ipaPronunciation?.let {
                             Spacer(Modifier.height(EvolaSpacing.sm))
-                            Text("[$it]", style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
+                            Text(stringResource(Res.string.lessons_browse_ipa, it), style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
                         }
                         Spacer(Modifier.height(EvolaSpacing.xl))
-                        Text("Tap to reveal", style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text3)
+                        Text(stringResource(Res.string.lessons_browse_tap_to_reveal), style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text3)
                     } else {
                         RtlText(item.nativeMeaning ?: item.meaning, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.fillMaxWidth())
                         item.exampleSentence?.let {

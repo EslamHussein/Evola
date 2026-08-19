@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+    <string name="misc_continue">Continue</string>
+
+    <!-- SessionSummaryScreen -->
+    <string name="misc_session_complete">Session complete!</string>
+    <string name="misc_session_subtitle">Great work - keep it up!</string>
+    <string name="misc_stat_words">Words</string>
+    <string name="misc_stat_accuracy">Accuracy</string>
+    <string name="misc_stat_time">Time</string>
+    <string name="misc_back_to_lesson">Back to Lesson</string>
+    <string name="misc_duration_min_sec">%1$dm %2$ds</string>
+    <string name="misc_duration_sec">%1$ds</string>
+
+    <!-- NativeLanguageScreen -->
+    <string name="misc_native_language_title">What\'s your native language?</string>
+    <string name="misc_native_language_subtitle">We\'ll translate new words into this language for you.</string>
+
+    <!-- WelcomeScreen -->
+    <string name="misc_welcome_title">Welcome to Evola</string>
+    <string name="misc_welcome_body">Upload a book or study material, and Evola turns it into bite-sized lessons - vocabulary and grammar practice built from what you\'re actually reading.</string>
+    <string name="misc_welcome_subtitle">First, tell us what you\'re working toward.</string>
+
+    <!-- SplashScreen -->
+    <string name="misc_app_name">Evola</string>
+    <string name="misc_splash_tagline">Let\'s get things done.</string>
+
+    <!-- VocabDataImportScreen -->
+    <string name="misc_vocab_import_title">Setting up German vocabulary data</string>
+    <string name="misc_vocab_import_subtitle">This runs once, so lookups stay fast every time you open the app.</string>
+    <string name="misc_vocab_import_progress">%1$s / %2$s words</string>
+    <string name="misc_vocab_import_percent">%1$d%%</string>
+    <string name="misc_vocab_import_license">Data from Wiktionary, licensed under CC BY-SA 4.0.</string>
+</resources>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+    <!-- AddMaterialScreen -->
+    <string name="materials_add_title">Add material</string>
+    <string name="materials_add_continue">Continue</string>
+    <string name="materials_add_cancel">Cancel</string>
+    <string name="materials_add_type_pdf">PDF</string>
+    <string name="materials_add_type_text">Text</string>
+    <string name="materials_add_type_image">Image</string>
+    <string name="materials_add_tap_to_choose_file">Tap to choose a file</string>
+    <string name="materials_add_file_hint">PDF or Word document, up to 25MB</string>
+    <string name="materials_add_choose_different_file">Choose a different file</string>
+    <string name="materials_add_text_placeholder">Paste or type your text here...</string>
+    <string name="materials_add_image_hint">Photograph pages of your book or notes - we\'ll read the text for you.</string>
+    <string name="materials_add_photo_sheet_title">Add a photo</string>
+    <string name="materials_add_take_photo">Take photo</string>
+    <string name="materials_add_choose_from_gallery">Choose from gallery</string>
+    <string name="materials_add_remove_photo_desc">Remove photo</string>
+    <string name="materials_add_add_photo_desc">Add photo</string>
+
+    <!-- MaterialDetailScreen -->
+    <string name="materials_detail_title">Material</string>
+    <string name="materials_detail_back_desc">Back</string>
+    <string name="materials_detail_loading">Loading...</string>
+    <string name="materials_detail_splitting">Splitting \"%1$s\" into lessons...</string>
+    <string name="materials_detail_process_failed">We couldn\'t process \"%1$s\".</string>
+    <string name="materials_detail_retry">Retry</string>
+    <string name="materials_detail_unsupported">\"%1$s\" doesn\'t look like readable text we can use. Try a different file.</string>
+    <string name="materials_detail_lesson_count_singular">1 lesson</string>
+    <string name="materials_detail_lesson_count_plural">%1$d lessons</string>
+    <string name="materials_detail_vocabulary_label">Vocabulary</string>
+    <string name="materials_detail_grammar_label">Grammar</string>
+    <string name="materials_detail_reading_label">Reading</string>
+    <string name="materials_detail_exercises_label">Exercises</string>
+    <string name="materials_detail_tokens_used">%1$s tokens used</string>
+    <string name="materials_detail_ready_of_total">%1$d of %2$d lessons ready</string>
+    <string name="materials_detail_partial_success">We generated %1$s from \"%2$s\", but some of it couldn\'t be processed.</string>
+    <string name="materials_detail_retry_rest">Retry the rest</string>
+    <string name="materials_detail_status_done">Done</string>
+    <string name="materials_detail_status_in_progress">In progress</string>
+    <string name="materials_detail_status_not_started">Not started</string>
+    <string name="materials_detail_status_extracting">Extracting...</string>
+    <string name="materials_detail_status_failed">Failed</string>
+    <string name="materials_detail_status_waiting">Waiting</string>
+    <string name="materials_detail_delete_lesson_desc">Delete lesson</string>
+    <string name="materials_detail_lesson_number_title">%1$d. %2$s</string>
+    <string name="materials_detail_lesson_words">%1$d words</string>
+
+    <!-- MaterialsListScreen -->
+    <string name="materials_list_title">Materials</string>
+    <string name="materials_list_add_material_desc">Add material</string>
+    <string name="materials_list_loading">Loading...</string>
+    <string name="materials_list_retry">Retry</string>
+    <string name="materials_list_empty">No materials yet. Add one to get started.</string>
+    <string name="materials_list_processing_with_count">Processing — %1$d/%2$d lessons</string>
+    <string name="materials_list_processing">Processing...</string>
+    <string name="materials_list_one_lesson">1 lesson</string>
+    <string name="materials_list_lessons_count">%1$d lessons</string>
+    <string name="materials_list_delete_desc">Delete</string>
+</resources>

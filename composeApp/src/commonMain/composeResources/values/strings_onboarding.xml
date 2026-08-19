@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+    <string name="onboarding_goal_prompt">What are you working toward?</string>
+    <string name="onboarding_goal_description">Describe your goal in your own words - we\'ll build lessons around it.</string>
+    <string name="onboarding_goal_label">Your goal</string>
+    <string name="onboarding_goal_placeholder">e.g. Pass the German B1 exam</string>
+    <string name="onboarding_goal_char_cap">Goal text is capped at %1$d characters - trimmed to fit.</string>
+    <string name="onboarding_goal_title_label">Name your journey (optional)</string>
+    <string name="onboarding_goal_title_placeholder">Leave blank to auto-generate</string>
+    <string name="onboarding_goal_saving">Saving...</string>
+    <string name="onboarding_goal_start_learning">Start learning</string>
+
+    <string name="onboarding_category_prompt">Want a running start?</string>
+    <string name="onboarding_category_description">Pick a level to add as a starter lesson - or skip and build your own from your own materials.</string>
+    <string name="onboarding_category_continue">Continue</string>
+    <string name="onboarding_category_add_and_continue">Add %1$d and continue</string>
+    <string name="onboarding_category_skip">Skip</string>
+    <string name="onboarding_category_collapse">Collapse</string>
+    <string name="onboarding_category_expand">Expand</string>
+    <string name="onboarding_category_lessons_selected">%1$s · %2$d of %3$d lessons selected</string>
+    <string name="onboarding_category_subtitle_words">%1$s · %2$d words</string>
+    <string name="onboarding_category_words_count">%1$d words</string>
+    <string name="onboarding_category_all_selected">All selected</string>
+    <string name="onboarding_category_some_selected">Some selected</string>
+    <string name="onboarding_level_lesson_title">%1$s · %2$s</string>
+
+    <string name="onboarding_daily_goal_prompt">How many new words a day?</string>
+    <string name="onboarding_daily_goal_description">You can change this any time in Settings.</string>
+    <string name="onboarding_daily_goal_continue">Continue</string>
+</resources>

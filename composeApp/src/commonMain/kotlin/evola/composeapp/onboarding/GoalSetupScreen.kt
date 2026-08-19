@@ -31,9 +31,20 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.LaunchedEffect
+import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.onboarding_goal_char_cap
+import evola.composeapp.generated.resources.onboarding_goal_description
+import evola.composeapp.generated.resources.onboarding_goal_label
+import evola.composeapp.generated.resources.onboarding_goal_placeholder
+import evola.composeapp.generated.resources.onboarding_goal_prompt
+import evola.composeapp.generated.resources.onboarding_goal_saving
+import evola.composeapp.generated.resources.onboarding_goal_start_learning
+import evola.composeapp.generated.resources.onboarding_goal_title_label
+import evola.composeapp.generated.resources.onboarding_goal_title_placeholder
 import evola.composeapp.theme.EvolaSpacing
 import evola.shared.goals.Goal
 import evola.shared.language.NativeLanguage
+import org.jetbrains.compose.resources.stringResource
 import pro.respawn.flowmvi.compose.dsl.subscribe
 
 private const val GOAL_TEXT_SOFT_CAP = 200
@@ -68,10 +79,10 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguag
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text("What are you working toward?", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(Res.string.onboarding_goal_prompt), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(EvolaSpacing.sm))
             Text(
-                "Describe your goal in your own words - we'll build lessons around it.",
+                stringResource(Res.string.onboarding_goal_description),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(EvolaSpacing.xl))
@@ -86,8 +97,8 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguag
                         wasTruncated = false
                     }
                 },
-                label = { Text("Your goal") },
-                placeholder = { Text("e.g. Pass the German B1 exam") },
+                label = { Text(stringResource(Res.string.onboarding_goal_label)) },
+                placeholder = { Text(stringResource(Res.string.onboarding_goal_placeholder)) },
                 enabled = !isSubmitting,
                 minLines = 3,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
@@ -97,7 +108,7 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguag
             if (wasTruncated) {
                 Spacer(Modifier.height(EvolaSpacing.xs))
                 Text(
-                    "Goal text is capped at $GOAL_TEXT_SOFT_CAP characters - trimmed to fit.",
+                    stringResource(Res.string.onboarding_goal_char_cap, GOAL_TEXT_SOFT_CAP),
                     color = MaterialTheme.colorScheme.tertiary,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -106,8 +117,8 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguag
             OutlinedTextField(
                 value = title,
                 onValueChange = { if (it.length <= 60) title = it },
-                label = { Text("Name your journey (optional)") },
-                placeholder = { Text("Leave blank to auto-generate") },
+                label = { Text(stringResource(Res.string.onboarding_goal_title_label)) },
+                placeholder = { Text(stringResource(Res.string.onboarding_goal_title_placeholder)) },
                 enabled = !isSubmitting,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
@@ -123,7 +134,7 @@ fun GoalSetupScreen(viewModel: GoalSetupViewModel, nativeLanguage: NativeLanguag
                 enabled = !isSubmitting && goalText.trim().length >= 3,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (isSubmitting) "Saving..." else "Start learning")
+                Text(stringResource(if (isSubmitting) Res.string.onboarding_goal_saving else Res.string.onboarding_goal_start_learning))
             }
         }
     }
