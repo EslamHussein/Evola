@@ -1,8 +1,10 @@
 package evola.composeapp.main
 
+import evola.shared.core.EvolaLog
 import evola.shared.core.getOrNull
 import evola.shared.materials.MaterialStatus
 import evola.shared.materials.MaterialsRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import pro.respawn.flowmvi.api.Container
 import pro.respawn.flowmvi.dsl.store
@@ -26,8 +28,16 @@ class ProcessingStatusContainer(
         configure { name = "ProcessingStatusStore" }
         asyncInit {
             while (true) {
-                val materials = materialsRepository.list().getOrNull().orEmpty()
-                updateState { ProcessingStatusState(materials.filter { it.status == MaterialStatus.PROCESSING }) }
+                try {
+                    val materials = materialsRepository.list().getOrNull().orEmpty()
+                    updateState { ProcessingStatusState(materials.filter { it.status == MaterialStatus.PROCESSING }) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // A crashed poll tick must not kill this app-wide loop for the rest of the
+                    // process lifetime - log and retry on the next tick instead.
+                    EvolaLog.d("processing-status", "poll tick failed: $e")
+                }
                 delay(POLL_INTERVAL_MS)
             }
         }

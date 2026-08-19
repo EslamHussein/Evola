@@ -1,6 +1,7 @@
 package evola.composeapp.lessons
 
 import evola.composeapp.core.toUserMessage
+import evola.shared.core.EvolaLog
 import evola.shared.core.fold
 import evola.shared.vocabulary.VocabularyItem
 import evola.shared.vocabulary.VocabularyRepository
@@ -100,7 +101,10 @@ class VocabularyListContainer(
                         onSuccess = {
                             repository.listVocabulary(lessonId).fold(
                                 onSuccess = { items -> updateState { copy(content = VocabularyListContent.Loaded(items)) } },
-                                onFailure = {},
+                                // The reset itself succeeded server-side - only the follow-up
+                                // re-fetch failed, so the visible list is now stale until the next
+                                // successful load. Logged since that mismatch is otherwise silent.
+                                onFailure = { EvolaLog.d("vocab-list", "post-reset re-fetch failed for lesson=$lessonId: $it") },
                             )
                             updateState { copy(event = VocabularyListEvent.ProgressReset(true)) }
                         },
@@ -113,7 +117,7 @@ class VocabularyListContainer(
                         onSuccess = { count ->
                             repository.listVocabulary(lessonId).fold(
                                 onSuccess = { items -> updateState { copy(content = VocabularyListContent.Loaded(items)) } },
-                                onFailure = {},
+                                onFailure = { EvolaLog.d("vocab-list", "post-import re-fetch failed for lesson=$lessonId: $it") },
                             )
                             updateState { copy(event = VocabularyListEvent.WordsImported(count)) }
                         },

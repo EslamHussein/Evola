@@ -2,6 +2,7 @@ package evola.composeapp.materials
 
 import evola.composeapp.core.toUserMessage
 import evola.shared.core.ApiResult
+import evola.shared.core.EvolaLog
 import evola.shared.materials.MaterialStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -53,12 +54,16 @@ class MaterialDetailContainer(
         reduce { intent ->
             when (intent) {
                 MaterialDetailIntent.Retry -> {
-                    // A reprocess failure is surfaced on the next poll tick if the material is still FAILED.
-                    repository.reprocess(materialId)
+                    // A reprocess failure (e.g. the material isn't actually FAILED anymore) leaves
+                    // status unchanged, so the next poll tick shows the same state as before the
+                    // tap - logged here since that's otherwise invisible.
+                    val result = repository.reprocess(materialId)
+                    if (result is ApiResult.Failure) EvolaLog.d("material-detail", "reprocess failed: ${result.error}")
                     pollUntilTerminal()
                 }
                 is MaterialDetailIntent.DeleteLesson -> {
-                    repository.deleteLesson(intent.lessonId)
+                    val result = repository.deleteLesson(intent.lessonId)
+                    if (result is ApiResult.Failure) EvolaLog.d("material-detail", "deleteLesson failed: ${result.error}")
                     pollUntilTerminal()
                 }
             }

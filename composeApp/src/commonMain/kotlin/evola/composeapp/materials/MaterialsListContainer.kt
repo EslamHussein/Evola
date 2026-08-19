@@ -2,6 +2,7 @@ package evola.composeapp.materials
 
 import evola.composeapp.core.toUserMessage
 import evola.shared.core.ApiResult
+import evola.shared.core.EvolaLog
 import evola.shared.core.getOrNull
 import evola.shared.materials.MaterialStatus
 import evola.shared.materials.MaterialsRepository
@@ -62,7 +63,8 @@ class MaterialsListContainer(
             when (intent) {
                 MaterialsListIntent.Refresh -> refresh()
                 is MaterialsListIntent.Delete -> {
-                    materialsRepository.deleteMaterial(intent.materialId)
+                    val result = materialsRepository.deleteMaterial(intent.materialId)
+                    if (result is ApiResult.Failure) EvolaLog.d("materials-list", "deleteMaterial failed: ${result.error}")
                     refresh()
                 }
             }

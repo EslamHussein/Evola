@@ -127,7 +127,7 @@ fun evolaModule(
     viewModel { (source: VocabSessionSource) -> VocabularySessionViewModel(source, get(), get()) }
     viewModel { (goalId: String) -> HomeViewModel(goalId, get()) }
     viewModel { ProcessingStatusViewModel(get()) }
-    viewModel { ProfileViewModel(get(), get()) }
+    viewModel { (goalId: String) -> ProfileViewModel(goalId, get(), get(), get()) }
     viewModel { SettingsViewModel(get()) }
     viewModel { (materialId: String) -> MaterialDetailViewModel(materialId, get()) }
     viewModel { MaterialsListViewModel(get()) }

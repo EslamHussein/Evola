@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -71,6 +72,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -272,17 +274,19 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                             )
                         }
                     } else {
-                        val filtered = current.items.filter { item ->
-                            query.isBlank() ||
-                                item.term.contains(query, ignoreCase = true) ||
-                                item.meaning.contains(query, ignoreCase = true) ||
-                                item.nativeMeaning?.contains(query, ignoreCase = true) == true
-                        }.let { list ->
-                            when (sortMode) {
-                                VocabularySortMode.DEFAULT -> list
-                                VocabularySortMode.ALPHABETICAL -> list.sortedBy { it.term.lowercase() }
-                                VocabularySortMode.PROGRESS -> list.sortedByDescending {
-                                    evola.shared.vocabulary.VocabularySrs.STATUSES.indexOf(it.status)
+                        val filtered = remember(current.items, query, sortMode) {
+                            current.items.filter { item ->
+                                query.isBlank() ||
+                                    item.term.contains(query, ignoreCase = true) ||
+                                    item.meaning.contains(query, ignoreCase = true) ||
+                                    item.nativeMeaning?.contains(query, ignoreCase = true) == true
+                            }.let { list ->
+                                when (sortMode) {
+                                    VocabularySortMode.DEFAULT -> list
+                                    VocabularySortMode.ALPHABETICAL -> list.sortedBy { it.term.lowercase() }
+                                    VocabularySortMode.PROGRESS -> list.sortedByDescending {
+                                        evola.shared.vocabulary.VocabularySrs.STATUSES.indexOf(it.status)
+                                    }
                                 }
                             }
                         }
@@ -310,27 +314,19 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
                                 }
                             } else {
                                 LazyColumn(
-                                    modifier = Modifier.fillMaxSize().padding(horizontal = EvolaSpacing.lg),
+                                    modifier = Modifier.fillMaxSize().padding(horizontal = EvolaSpacing.lg)
+                                        .clip(MaterialTheme.shapes.large)
+                                        .background(EvolaColors.Surface),
                                     contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 88.dp),
                                 ) {
-                                    item {
-                                        Surface(
-                                            shape = MaterialTheme.shapes.large,
-                                            color = EvolaColors.Surface,
-                                            modifier = Modifier.fillMaxWidth(),
-                                        ) {
-                                            Column {
-                                                filtered.forEachIndexed { index, item ->
-                                                    VocabularyRow(
-                                                        item = item,
-                                                        onClick = { viewingItem = item },
-                                                        onPlay = { speechService.speak(item.term) },
-                                                    )
-                                                    if (index != filtered.lastIndex) {
-                                                        HorizontalDivider(color = EvolaColors.Border, thickness = 1.dp, modifier = Modifier.padding(start = EvolaSpacing.lg))
-                                                    }
-                                                }
-                                            }
+                                    items(filtered, key = { it.itemId }) { item ->
+                                        VocabularyRow(
+                                            item = item,
+                                            onClick = { viewingItem = item },
+                                            onPlay = { speechService.speak(item.term) },
+                                        )
+                                        if (item.itemId != filtered.last().itemId) {
+                                            HorizontalDivider(color = EvolaColors.Border, thickness = 1.dp, modifier = Modifier.padding(start = EvolaSpacing.lg))
                                         }
                                     }
                                 }

@@ -2,6 +2,11 @@ package evola.shared.materials
 
 import evola.shared.core.ApiResult
 
+/** The shortest text [MaterialsRepository.uploadText] will accept - also the UI's own "Continue"
+ * gate for pasted text, so the button's enabled state can never drift from what upload will
+ * actually accept. */
+const val MIN_EXTRACTABLE_TEXT_LENGTH = 20
+
 sealed interface UploadResult {
     data class Success(val materialId: String, val status: MaterialStatus) : UploadResult
     data object GoalNotFound : UploadResult

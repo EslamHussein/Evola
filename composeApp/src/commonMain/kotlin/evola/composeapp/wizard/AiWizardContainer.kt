@@ -1,6 +1,7 @@
 package evola.composeapp.wizard
 
 import evola.composeapp.materials.StagedResource
+import evola.shared.core.EvolaLog
 import evola.shared.materials.ImageInput
 import evola.shared.materials.MaterialsRepository
 import evola.shared.materials.UploadResult
@@ -92,7 +93,8 @@ class AiWizardContainer(
                         } catch (e: CancellationException) {
                             throw e
                         } catch (e: Exception) {
-                            updateState { copy(submitState = WizardSubmitState.Error(e.message ?: "Upload failed. Please try again.")) }
+                            EvolaLog.d("ai-wizard", "StartAnalysis failed: $e")
+                            updateState { copy(submitState = WizardSubmitState.Error("Upload failed. Please try again.")) }
                         }
                     }
                 }

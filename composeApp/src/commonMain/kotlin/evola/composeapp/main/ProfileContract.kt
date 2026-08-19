@@ -1,6 +1,7 @@
 package evola.composeapp.main
 
 import evola.shared.goals.Goal
+import evola.shared.goals.GoalProgress
 import evola.shared.language.NativeLanguage
 import kotlin.random.Random
 import pro.respawn.flowmvi.api.MVIIntent
@@ -21,6 +22,8 @@ data class ProfileState(
     val errorMessage: String? = null,
     val goalUpdated: GoalUpdateEvent? = null,
     val progressReset: ProgressResetEvent? = null,
+    val unlockedBadgeIds: Set<String> = emptySet(),
+    val progress: GoalProgress? = null,
 ) : MVIState
 
 sealed interface ProfileIntent : MVIIntent {

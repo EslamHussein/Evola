@@ -99,16 +99,6 @@ fun ProfileScreen(
     onOpenSettings: () -> Unit,
 ) {
     val backupRepository = org.koin.compose.koinInject<evola.shared.local.BackupRepository>()
-    val achievementsRepository = org.koin.compose.koinInject<evola.shared.achievements.AchievementsRepository>()
-    val goalsRepository = org.koin.compose.koinInject<evola.shared.goals.GoalsRepository>()
-    var unlockedBadgeIds by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var latestProgress by remember { mutableStateOf<evola.shared.goals.GoalProgress?>(null) }
-    LaunchedEffect(Unit) {
-        unlockedBadgeIds = (achievementsRepository.unlockedBadgeIds() as? evola.shared.core.ApiResult.Success)?.data.orEmpty()
-    }
-    LaunchedEffect(goal.id) {
-        latestProgress = (goalsRepository.getProgress(goal.id, evola.shared.todayLocalDate()) as? evola.shared.core.ApiResult.Success)?.data
-    }
     var isEditingGoal by remember { mutableStateOf(false) }
     var goalText by remember(goal.id) { mutableStateOf(goal.goalText) }
     var title by remember(goal.id) { mutableStateOf(goal.title ?: "") }
@@ -247,13 +237,13 @@ fun ProfileScreen(
                 }
 
                 Spacer(Modifier.height(EvolaSpacing.xxl))
-                AchievementsSection(unlockedBadgeIds)
+                AchievementsSection(state.unlockedBadgeIds)
 
                 Spacer(Modifier.height(EvolaSpacing.xxl))
                 AnthropicKeySection(snackbarHostState, coroutineScope)
 
                 Spacer(Modifier.height(EvolaSpacing.xxl))
-                AppSection(onOpenSettings, backupRepository, latestProgress, goal, snackbarHostState, coroutineScope)
+                AppSection(onOpenSettings, backupRepository, state.progress, goal, snackbarHostState, coroutineScope)
 
                 Spacer(Modifier.height(EvolaSpacing.xxl))
                 DangerZoneSection(onResetAllProgress = { showResetAllConfirm = true })

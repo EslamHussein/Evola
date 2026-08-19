@@ -16,12 +16,10 @@ class GoalSetupContainer(private val goalsRepository: GoalsRepository) : Contain
         reduce { intent ->
             when (intent) {
                 is GoalSetupIntent.CreateGoal -> {
+                    // Length validation lives solely in GoalsRepository.createGoal (returns
+                    // CreateGoalResult.ValidationError) - a duplicate check here previously
+                    // disagreed with the repository's real 3-200 bound and message.
                     val trimmedText = intent.goalText.trim()
-                    if (trimmedText.length < 3) {
-                        updateState { copy(errorMessage = "Tell us a bit more about your goal (at least 3 characters).") }
-                        return@reduce
-                    }
-
                     updateState { copy(isSubmitting = true, errorMessage = null) }
                     try {
                         when (

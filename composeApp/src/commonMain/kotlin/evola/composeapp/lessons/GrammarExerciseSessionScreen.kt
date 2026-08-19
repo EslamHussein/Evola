@@ -51,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import pro.respawn.flowmvi.compose.dsl.subscribe
 import evola.composeapp.BackHandler
 import evola.shared.grammar.GrammarExercise
-import evola.shared.vocabulary.isTolerantMatch
 
 /** Grammar's exercise session (01_PRODUCT_SPEC.md §1.9): a flat multiple-choice/fill-in-blank
  * list, unlike Vocabulary's pack/7-stage model. Exiting mid-drill is always safe - the session
@@ -159,7 +158,7 @@ private fun MultipleChoiceDrill(exercise: GrammarExercise, onSubmit: (String, Bo
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         exercise.choices.forEach { choice ->
             OutlinedButton(
-                onClick = { onSubmit(choice, choice == exercise.answerKey) },
+                onClick = { onSubmit(choice, exercise.grade(choice)) },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(choice)
@@ -186,7 +185,7 @@ private fun FillInBlankDrill(exercise: GrammarExercise, onSubmit: (String, Boole
     )
     Spacer(Modifier.height(16.dp))
     Button(
-        onClick = { onSubmit(typedAnswer, isTolerantMatch(exercise.answerKey, typedAnswer)) },
+        onClick = { onSubmit(typedAnswer, exercise.grade(typedAnswer)) },
         modifier = Modifier.fillMaxWidth(),
     ) {
         Text("Submit")

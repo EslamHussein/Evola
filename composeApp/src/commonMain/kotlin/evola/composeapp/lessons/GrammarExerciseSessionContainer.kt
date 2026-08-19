@@ -2,6 +2,7 @@ package evola.composeapp.lessons
 
 import evola.composeapp.core.toUserMessage
 import evola.shared.core.ApiResult
+import evola.shared.core.EvolaLog
 import evola.shared.grammar.GrammarRepository
 import evola.shared.todayLocalDate
 import pro.respawn.flowmvi.api.Container
@@ -55,6 +56,7 @@ class GrammarExerciseSessionContainer(
             // Completion is a bookkeeping call; if it fails, still show a summary from what we
             // counted locally rather than blocking the user on a finished session.
             is ApiResult.Failure -> {
+                EvolaLog.d("grammar-session", "complete($sid) failed, falling back to local tally: ${result.error}")
                 val fallbackAccuracy = if (answeredCount > 0) (correctCount.toDouble() / answeredCount) * 100.0 else 0.0
                 GrammarExerciseSessionState.Summary(answeredCount, fallbackAccuracy)
             }

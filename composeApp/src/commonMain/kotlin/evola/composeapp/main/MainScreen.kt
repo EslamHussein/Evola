@@ -374,7 +374,7 @@ fun MainScreen(
 
                 MainTab.PROFILE -> when (profileSubScreen) {
                     ProfileSubScreen.Main -> {
-                        val profileViewModel = koinViewModel<ProfileViewModel>()
+                        val profileViewModel = koinViewModel<ProfileViewModel>(key = goal.id) { parametersOf(goal.id) }
                         ProfileScreen(
                             goal = goal,
                             viewModel = profileViewModel,

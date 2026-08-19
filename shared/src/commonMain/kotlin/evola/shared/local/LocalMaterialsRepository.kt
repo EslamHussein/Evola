@@ -18,6 +18,7 @@ import evola.shared.materials.Material
 import evola.shared.materials.MaterialDetail
 import evola.shared.materials.MaterialStatus
 import evola.shared.materials.MaterialsRepository
+import evola.shared.materials.MIN_EXTRACTABLE_TEXT_LENGTH
 import evola.shared.materials.UploadResult
 import evola.shared.segmentation.PageSegmenter
 import evola.shared.segmentation.RawSegment
@@ -25,7 +26,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 private const val MAX_FILE_SIZE_BYTES = 25L * 1024 * 1024
-private const val MIN_EXTRACTABLE_LENGTH = 20
 private const val MAX_PASTED_TEXT_LENGTH = 200_000
 
 /**
@@ -120,7 +120,7 @@ class LocalMaterialsRepository(
         if (db.goalsQueries.selectById(goalId).executeAsOneOrNull() == null) return UploadResult.GoalNotFound
 
         val normalized = normalize(rawText)
-        if (normalized.length < MIN_EXTRACTABLE_LENGTH) return UploadResult.NoExtractableText
+        if (normalized.length < MIN_EXTRACTABLE_TEXT_LENGTH) return UploadResult.NoExtractableText
 
         val contentHash = contentHash(normalized)
         db.materialsQueries.selectByContentHash(LOCAL_USER, contentHash).executeAsOneOrNull()?.let {

@@ -59,9 +59,8 @@ import androidx.compose.ui.unit.dp
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.SelectableChip
+import evola.shared.materials.MIN_EXTRACTABLE_TEXT_LENGTH
 import pro.respawn.flowmvi.compose.dsl.subscribe
-
-private const val MIN_PASTED_TEXT_LENGTH = 20
 
 @Composable
 fun AddMaterialScreen(
@@ -90,7 +89,7 @@ fun AddMaterialScreen(
 
     val canContinue = when (selectedType) {
         ResourceType.PDF -> pickedFile != null
-        ResourceType.TEXT -> pastedText.trim().length >= MIN_PASTED_TEXT_LENGTH
+        ResourceType.TEXT -> pastedText.trim().length >= MIN_EXTRACTABLE_TEXT_LENGTH
         ResourceType.IMAGE -> pickedImages.isNotEmpty()
     }
 

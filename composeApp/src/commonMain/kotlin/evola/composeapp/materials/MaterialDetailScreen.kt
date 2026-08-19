@@ -275,9 +275,9 @@ private fun PartialSuccessBody(detail: MaterialDetail, onRetry: () -> Unit, onOp
 @Composable
 private fun LessonRow(lesson: Lesson, onClick: () -> Unit, onDelete: () -> Unit) {
     val (tagLabel, tagStyle) = when {
-        lesson.status == "ready" && lesson.completionPct >= 1f -> "Fertig" to StatusTagStyle.FILLED
-        lesson.status == "ready" && lesson.completionPct > 0f -> "Läuft" to StatusTagStyle.OUTLINE
-        lesson.status == "ready" -> "Offen" to StatusTagStyle.NEUTRAL
+        lesson.status == "ready" && lesson.completionPct >= 1f -> "Done" to StatusTagStyle.FILLED
+        lesson.status == "ready" && lesson.completionPct > 0f -> "In progress" to StatusTagStyle.OUTLINE
+        lesson.status == "ready" -> "Not started" to StatusTagStyle.NEUTRAL
         lesson.status == "extracting" -> "Extracting..." to StatusTagStyle.OUTLINE
         lesson.status == "failed" -> "Failed" to StatusTagStyle.OUTLINE
         else -> "Waiting" to StatusTagStyle.NEUTRAL // "pending"

@@ -1,6 +1,7 @@
 package evola.shared.grammar
 
 import evola.shared.core.ApiResult
+import evola.shared.vocabulary.isTolerantMatch
 
 /** A lesson's own grammar topic plus this user's current mastery state (01_PRODUCT_SPEC.md §1.9). */
 data class GrammarTopic(
@@ -23,6 +24,13 @@ data class GrammarExercise(
 ) {
     val isMultipleChoice: Boolean get() = type == "multiple_choice"
     val isFillInBlank: Boolean get() = type == "fill_in_blank"
+
+    /** Grades [response] against [answerKey] - exact match for multiple choice (the choice text
+     * itself is the answer), tolerant match for fill-in-blank (typos/case/whitespace forgiven),
+     * matching [isTolerantMatch]'s use for Vocabulary's own self-graded answers. The single place
+     * both drill types should grade through, so multiple choice and fill-in-blank can't drift into
+     * inconsistent grading rules. */
+    fun grade(response: String): Boolean = if (isMultipleChoice) response == answerKey else isTolerantMatch(answerKey, response)
 }
 
 data class GrammarSession(
