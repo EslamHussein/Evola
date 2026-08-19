@@ -10,8 +10,9 @@ out/
 local.properties
 uploads/
 
-# Claude Code local config
-.claude/
+# Claude Code local config (skills are tracked, everything else is per-machine)
+.claude/*
+!.claude/skills/
 
 # Xcode per-user state
 iosApp/**/xcuserdata/
