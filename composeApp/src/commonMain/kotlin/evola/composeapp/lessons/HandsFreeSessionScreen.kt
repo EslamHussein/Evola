@@ -30,7 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.BackHandler
 import evola.composeapp.loading.ChaseLoadingIndicator
 import evola.composeapp.rtl.RtlText
@@ -66,7 +66,7 @@ import evola.shared.vocabulary.VocabularyCard
  */
 @Composable
 fun HandsFreeSessionScreen(viewModel: VocabularySessionViewModel, speechService: SpeechService, onDone: () -> Unit) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     BackHandler(onBack = onDone)
 
@@ -94,7 +94,7 @@ fun HandsFreeSessionScreen(viewModel: VocabularySessionViewModel, speechService:
 
                 is VocabularySessionUiState.Summary -> SessionSummaryScreen(
                     summary = current.summary,
-                    onContinueToNextSession = { viewModel.intent(VocabularySessionIntent.StartNextSession) },
+                    onContinueToNextSession = { viewModel.startNextSession() },
                     onDone = onDone,
                 )
 
@@ -105,16 +105,16 @@ fun HandsFreeSessionScreen(viewModel: VocabularySessionViewModel, speechService:
                     ttsRate = settings.ttsRate,
                     ttsVoiceName = settings.ttsVoiceName,
                     onAlreadyKnown = {
-                        viewModel.intent(VocabularySessionIntent.SubmitAlreadyKnown(current.session.sessionId, current.session.card.itemId))
+                        viewModel.submitAlreadyKnown(current.session.sessionId, current.session.card.itemId)
                     },
                     onStartLearning = {
-                        viewModel.intent(VocabularySessionIntent.SubmitStartLearning(current.session.sessionId, current.session.card.itemId))
+                        viewModel.submitStartLearning(current.session.sessionId, current.session.card.itemId)
                     },
                     onSelfGrade = { correct ->
-                        viewModel.intent(VocabularySessionIntent.SubmitSelfGrade(current.session.sessionId, current.session.card.itemId, correct))
+                        viewModel.submitSelfGrade(current.session.sessionId, current.session.card.itemId, correct)
                     },
                     onKeepShowing = {
-                        viewModel.intent(VocabularySessionIntent.SubmitKeepShowing(current.session.sessionId, current.session.card.itemId))
+                        viewModel.submitKeepShowing(current.session.sessionId, current.session.card.itemId)
                     },
                 )
             }

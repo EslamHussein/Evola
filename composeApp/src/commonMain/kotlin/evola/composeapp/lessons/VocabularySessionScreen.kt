@@ -83,7 +83,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import pro.respawn.flowmvi.compose.dsl.subscribe
+import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.BackHandler
 import evola.composeapp.rtl.RtlText
 import evola.composeapp.theme.EvolaColors
@@ -152,7 +152,7 @@ private fun statusPillLabel(origin: String, card: VocabularyCard): String = when
  * sessions already have. */
 @Composable
 fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () -> Unit) {
-    val state by viewModel.subscribe()
+    val state by viewModel.collectAsState()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val speechService = evola.composeapp.speech.rememberSpeechService()
     BackHandler(onBack = onDone)
@@ -180,7 +180,7 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
                     actions = {
                         (state as? VocabularySessionUiState.InProgress)?.let { inProgress ->
                             if (inProgress.canUndo) {
-                                IconButton(onClick = { viewModel.intent(VocabularySessionIntent.UndoLastGrade(inProgress.session.sessionId)) }) {
+                                IconButton(onClick = { viewModel.undoLastGrade(inProgress.session.sessionId) }) {
                                     Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(Res.string.lessons_undo_last_answer), tint = EvolaColors.Accent)
                                 }
                             }
@@ -219,7 +219,7 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
                 is VocabularySessionUiState.Error -> CenteredMessage {
                     Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { viewModel.intent(VocabularySessionIntent.Retry) }) { Text(stringResource(Res.string.lessons_action_retry)) }
+                    Button(onClick = { viewModel.retry() }) { Text(stringResource(Res.string.lessons_action_retry)) }
                 }
 
                 is VocabularySessionUiState.Empty -> CenteredMessage {
@@ -239,7 +239,7 @@ fun VocabularySessionScreen(viewModel: VocabularySessionViewModel, onDone: () ->
                     LaunchedEffect(current.summary) { refreshWidget() }
                     SessionSummaryScreen(
                         summary = current.summary,
-                        onContinueToNextSession = { viewModel.intent(VocabularySessionIntent.StartNextSession) },
+                        onContinueToNextSession = { viewModel.startNextSession() },
                         onDone = onDone,
                     )
                 }
@@ -391,11 +391,11 @@ private fun CardBody(
                         explainLoading = state.explainLoading,
                         invertSwipe = settings.invertSwipe,
                         showTranscription = settings.showTranscription,
-                        onAlreadyKnown = { viewModel.intent(VocabularySessionIntent.SubmitAlreadyKnown(state.session.sessionId, card.itemId)) },
-                        onStartLearning = { viewModel.intent(VocabularySessionIntent.SubmitStartLearning(state.session.sessionId, card.itemId)) },
-                        onToggleBookmark = { viewModel.intent(VocabularySessionIntent.ToggleBookmark(card.itemId, !card.isBookmarked)) },
-                        onToggleDifficult = { viewModel.intent(VocabularySessionIntent.ToggleDifficult(card.itemId, !card.markedDifficult)) },
-                        onExplain = { viewModel.intent(VocabularySessionIntent.ExplainWord(card.itemId)) },
+                        onAlreadyKnown = { viewModel.submitAlreadyKnown(state.session.sessionId, card.itemId) },
+                        onStartLearning = { viewModel.submitStartLearning(state.session.sessionId, card.itemId) },
+                        onToggleBookmark = { viewModel.toggleBookmark(card.itemId, !card.isBookmarked) },
+                        onToggleDifficult = { viewModel.toggleDifficult(card.itemId, !card.markedDifficult) },
+                        onExplain = { viewModel.explainWord(card.itemId) },
                         // A manual tap-to-hear is always available regardless of the "Speak words aloud"
                         // setting - that setting governs auto-play (hands-free mode's narration), not this
                         // explicit user action.
@@ -409,18 +409,18 @@ private fun CardBody(
                         keyboardExerciseEnabled = settings.keyboardExerciseEnabled,
                         multipleChoiceExerciseEnabled = settings.multipleChoiceExerciseEnabled,
                         onSelfGrade = { correct ->
-                            viewModel.intent(VocabularySessionIntent.SubmitSelfGrade(state.session.sessionId, card.itemId, correct))
+                            viewModel.submitSelfGrade(state.session.sessionId, card.itemId, correct)
                         },
-                        onKeepShowing = { viewModel.intent(VocabularySessionIntent.SubmitKeepShowing(state.session.sessionId, card.itemId)) },
+                        onKeepShowing = { viewModel.submitKeepShowing(state.session.sessionId, card.itemId) },
                         onSelectChoice = { choice ->
-                            viewModel.intent(VocabularySessionIntent.SubmitChoice(state.session.sessionId, card.itemId, choice))
+                            viewModel.submitChoice(state.session.sessionId, card.itemId, choice)
                         },
                         onCheckTyped = { response ->
-                            viewModel.intent(VocabularySessionIntent.SubmitTyped(state.session.sessionId, card.itemId, response))
+                            viewModel.submitTyped(state.session.sessionId, card.itemId, response)
                         },
-                        onContinue = { viewModel.intent(VocabularySessionIntent.ContinueToNext(state.session.sessionId, state.answered?.next)) },
-                        onToggleBookmark = { viewModel.intent(VocabularySessionIntent.ToggleBookmark(card.itemId, !card.isBookmarked)) },
-                        onToggleDifficult = { viewModel.intent(VocabularySessionIntent.ToggleDifficult(card.itemId, !card.markedDifficult)) },
+                        onContinue = { viewModel.continueToNext(state.session.sessionId, state.answered?.next) },
+                        onToggleBookmark = { viewModel.toggleBookmark(card.itemId, !card.isBookmarked) },
+                        onToggleDifficult = { viewModel.toggleDifficult(card.itemId, !card.markedDifficult) },
                     )
                 }
             }
