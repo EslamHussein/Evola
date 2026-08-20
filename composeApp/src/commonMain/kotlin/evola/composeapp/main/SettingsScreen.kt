@@ -40,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import evola.composeapp.BackHandler
 import evola.composeapp.speech.SpeechService
 import evola.composeapp.speech.rememberSpeechService
 import evola.composeapp.theme.EvolaColors
@@ -111,8 +110,10 @@ fun SettingsScreen(
     onNotificationsToggled: (Boolean) -> Unit,
 ) {
     val state by viewModel.collectAsState()
-    BackHandler(onBack = onBack)
 
+    // No BackHandler here - this screen is only ever reached via ProfileRoute.Settings, whose
+    // NavDisplay already handles the system back gesture (predictive-back animation included) by
+    // popping the back stack, which is exactly what onBack below already does.
     SettingsContent(
         settings = state.settings,
         speechService = speechService,

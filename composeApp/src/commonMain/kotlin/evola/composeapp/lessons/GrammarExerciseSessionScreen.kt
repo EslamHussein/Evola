@@ -48,7 +48,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import org.orbitmvi.orbit.compose.collectAsState
-import evola.composeapp.BackHandler
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.generated.resources.Res
@@ -68,12 +67,13 @@ import evola.shared.grammar.GrammarExercise
 
 /** Grammar's exercise session (01_PRODUCT_SPEC.md §1.9): a flat multiple-choice/fill-in-blank
  * list, unlike Vocabulary's pack/7-stage model. Exiting mid-drill is always safe - the session
- * resumes exactly where it left off (server-tracked via `grammar_session_answers`), so both the
- * back arrow and the system back gesture are wired to [onDone] in every state. */
+ * resumes exactly where it left off (server-tracked via `grammar_session_answers`), so the back
+ * arrow is wired to [onDone] in every state. No BackHandler for the system back gesture - this
+ * screen is only ever reached via MaterialsRoute.GrammarSession, whose NavDisplay already handles
+ * it (predictive-back animation included) by popping the back stack, exactly what [onDone] does. */
 @Composable
 fun GrammarExerciseSessionScreen(viewModel: GrammarExerciseSessionViewModel, onDone: () -> Unit) {
     val state by viewModel.collectAsState()
-    BackHandler(onBack = onDone)
     GrammarExerciseSessionContent(
         state = state,
         onDone = onDone,
