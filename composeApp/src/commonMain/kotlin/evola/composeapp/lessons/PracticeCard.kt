@@ -1,7 +1,6 @@
 package evola.composeapp.lessons
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,13 +10,10 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,13 +28,11 @@ import evola.composeapp.generated.resources.lessons_action_got_it
 import evola.composeapp.generated.resources.lessons_action_keep_showing
 import evola.composeapp.generated.resources.lessons_action_memorized
 import evola.composeapp.generated.resources.lessons_action_missed_it
-import evola.composeapp.generated.resources.lessons_content_desc_more
+import evola.composeapp.generated.resources.lessons_content_desc_bookmark
 import evola.composeapp.generated.resources.lessons_exercise_choose_options
 import evola.composeapp.generated.resources.lessons_exercise_reveal_answer
 import evola.composeapp.generated.resources.lessons_exercise_type_answer
-import evola.composeapp.generated.resources.lessons_menu_bookmark
-import evola.composeapp.generated.resources.lessons_menu_remove_bookmark
-import evola.composeapp.generated.resources.lessons_menu_unmark_difficult
+import evola.composeapp.generated.resources.lessons_marked_difficult
 import evola.composeapp.generated.resources.lessons_mark_difficult
 import evola.composeapp.generated.resources.lessons_whats_the_word_for
 import evola.composeapp.rtl.RtlText
@@ -72,32 +66,32 @@ internal fun PracticeCard(
     onToggleDifficult: () -> Unit,
 ) {
     var mode by remember(card.itemId) { mutableStateOf<ExerciseMode?>(null) }
-    var overflowExpanded by remember(card.itemId) { mutableStateOf(false) }
     val leftLabel = if (dueReview) stringResource(Res.string.lessons_action_got_it) else stringResource(Res.string.lessons_action_memorized)
     val rightLabel = if (dueReview) stringResource(Res.string.lessons_action_missed_it) else stringResource(Res.string.lessons_action_keep_showing)
 
+    // Bookmark/mark-difficult as visible icon-only toggles, not a "..." overflow menu - matches
+    // NewCard's action row, so the same two actions look and behave the same across both card
+    // types on this screen instead of one hiding them a tap deeper than the other.
     Row(verticalAlignment = Alignment.Top) {
         Column(modifier = Modifier.weight(1f)) {
             Text(stringResource(Res.string.lessons_whats_the_word_for), style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
             Spacer(Modifier.height(EvolaSpacing.xs))
             RtlText(card.meaning, style = MaterialTheme.typography.headlineMedium)
         }
-        Box {
-            IconButton(onClick = { overflowExpanded = true }) {
-                Icon(Icons.Filled.MoreVert, contentDescription = stringResource(Res.string.lessons_content_desc_more), tint = EvolaColors.Text3)
-            }
-            DropdownMenu(expanded = overflowExpanded, onDismissRequest = { overflowExpanded = false }) {
-                DropdownMenuItem(
-                    text = { Text(if (card.isBookmarked) stringResource(Res.string.lessons_menu_remove_bookmark) else stringResource(Res.string.lessons_menu_bookmark)) },
-                    onClick = { overflowExpanded = false; onToggleBookmark() },
-                    leadingIcon = { Icon(if (card.isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder, contentDescription = null) },
-                )
-                DropdownMenuItem(
-                    text = { Text(if (card.markedDifficult) stringResource(Res.string.lessons_menu_unmark_difficult) else stringResource(Res.string.lessons_mark_difficult)) },
-                    onClick = { overflowExpanded = false; onToggleDifficult() },
-                    leadingIcon = { Icon(Icons.Filled.Warning, contentDescription = null) },
-                )
-            }
+        val markDifficultDesc = if (card.markedDifficult) stringResource(Res.string.lessons_marked_difficult) else stringResource(Res.string.lessons_mark_difficult)
+        FilledTonalIconToggleButton(checked = card.markedDifficult, onCheckedChange = { onToggleDifficult() }) {
+            Icon(
+                Icons.Filled.Warning,
+                contentDescription = markDifficultDesc,
+                tint = if (card.markedDifficult) EvolaColors.Rust else EvolaColors.Text3,
+            )
+        }
+        FilledTonalIconToggleButton(checked = card.isBookmarked, onCheckedChange = { onToggleBookmark() }) {
+            Icon(
+                if (card.isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                contentDescription = stringResource(Res.string.lessons_content_desc_bookmark),
+                tint = if (card.isBookmarked) EvolaColors.Gold else EvolaColors.Text3,
+            )
         }
     }
     Spacer(Modifier.height(EvolaSpacing.sm))
