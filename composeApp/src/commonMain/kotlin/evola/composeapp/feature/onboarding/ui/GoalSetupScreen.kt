@@ -1,4 +1,4 @@
-package evola.composeapp.onboarding
+package evola.composeapp.feature.onboarding.ui
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +42,10 @@ import evola.composeapp.generated.resources.onboarding_goal_title_label
 import evola.composeapp.generated.resources.onboarding_goal_title_placeholder
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
-import evola.shared.goals.Goal
+import evola.composeapp.feature.onboarding.vm.GoalSetupSideEffect
+import evola.composeapp.feature.onboarding.vm.GoalSetupState
+import evola.composeapp.feature.onboarding.vm.GoalSetupViewModel
+import evola.shared.feature.onboarding.domain.Goal
 import evola.shared.language.NativeLanguage
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

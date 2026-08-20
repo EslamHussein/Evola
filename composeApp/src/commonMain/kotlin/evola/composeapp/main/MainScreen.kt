@@ -35,7 +35,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.navigation3.koinEntryProvider
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import evola.shared.goals.Goal
+import evola.shared.feature.onboarding.domain.Goal
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_nav_home
 import evola.composeapp.generated.resources.main_nav_materials

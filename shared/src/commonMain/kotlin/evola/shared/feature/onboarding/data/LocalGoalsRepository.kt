@@ -1,4 +1,4 @@
-package evola.shared.local
+package evola.shared.feature.onboarding.data
 
 import evola.shared.achievements.AchievementsRepository
 import evola.shared.core.common.ApiResult
@@ -10,16 +10,17 @@ import evola.shared.core.common.lessonVocabProgress
 import evola.shared.core.common.newId
 import evola.shared.core.common.nowMillis
 import evola.shared.db.EvolaDatabase
-import evola.shared.goals.CreateGoalResult
-import evola.shared.goals.DayActivity
-import evola.shared.goals.Goal
-import evola.shared.goals.GoalProgress
-import evola.shared.goals.GoalsRepository
-import evola.shared.goals.Lesson
-import evola.shared.goals.NudgeWord
-import evola.shared.goals.UpdateGoalResult
-import evola.shared.goals.VocabularyBreakdown
+import evola.shared.feature.onboarding.domain.CreateGoalResult
+import evola.shared.feature.onboarding.domain.DayActivity
+import evola.shared.feature.onboarding.domain.Goal
+import evola.shared.feature.onboarding.domain.GoalProgress
+import evola.shared.feature.onboarding.domain.GoalsRepository
+import evola.shared.feature.onboarding.domain.Lesson
+import evola.shared.feature.onboarding.domain.NudgeWord
+import evola.shared.feature.onboarding.domain.UpdateGoalResult
+import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import evola.shared.language.NativeLanguage
+import evola.shared.local.SettingsRepository
 import evola.shared.core.common.srs.computeBestStreak
 import evola.shared.core.common.srs.computeStreak
 import evola.shared.feature.vocabulary.domain.VocabularySrs

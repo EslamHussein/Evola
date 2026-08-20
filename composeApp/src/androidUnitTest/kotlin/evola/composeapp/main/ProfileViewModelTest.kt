@@ -3,10 +3,10 @@ package evola.composeapp.main
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.shared.core.network.AnthropicClient
 import evola.shared.db.EvolaDatabase
-import evola.shared.goals.CreateGoalResult
+import evola.shared.feature.onboarding.domain.CreateGoalResult
 import evola.shared.language.NativeLanguage
 import evola.shared.local.LocalAchievementsRepository
-import evola.shared.local.LocalGoalsRepository
+import evola.shared.feature.onboarding.data.LocalGoalsRepository
 import evola.shared.local.LocalSettingsRepository
 import evola.shared.feature.vocabulary.data.LocalVocabularyRepository
 import io.ktor.client.engine.mock.MockEngine

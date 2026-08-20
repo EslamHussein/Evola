@@ -1,4 +1,4 @@
-package evola.composeapp.splash
+package evola.composeapp.feature.onboarding.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

@@ -44,10 +44,10 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.RootTopBarTitle
-import evola.shared.goals.Goal
-import evola.shared.goals.GoalProgress
-import evola.shared.goals.Lesson
-import evola.shared.goals.VocabularyBreakdown
+import evola.shared.feature.onboarding.domain.Goal
+import evola.shared.feature.onboarding.domain.GoalProgress
+import evola.shared.feature.onboarding.domain.Lesson
+import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import evola.shared.language.NativeLanguage
 import evola.shared.feature.vocabulary.domain.SessionMode
 import evola.shared.feature.vocabulary.domain.WordCategory

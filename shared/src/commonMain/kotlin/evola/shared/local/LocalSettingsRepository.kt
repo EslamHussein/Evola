@@ -79,7 +79,7 @@ data class AppSettings(
     /** Reword's "Reduce motion" - session card transitions/animations become instant when true. */
     val reducedMotion: Boolean = false,
     val appTheme: AppTheme = AppTheme.SYSTEM,
-    /** Reword's "Streak freeze" bank - see [evola.shared.local.LocalGoalsRepository]'s use of
+    /** Reword's "Streak freeze" bank - see [evola.shared.feature.onboarding.data.LocalGoalsRepository]'s use of
      * [evola.shared.db.EvolaDatabase.streak_freeze_datesQueries] for how a freeze gets spent. */
     val streakFreezesAvailable: Int = DEFAULT_STREAK_FREEZES_AVAILABLE,
 )

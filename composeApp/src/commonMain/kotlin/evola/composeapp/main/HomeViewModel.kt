@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import evola.composeapp.core.common.toUserMessage
 import evola.shared.core.common.ApiResult
 import evola.shared.core.common.getOrNull
-import evola.shared.goals.GoalsRepository
+import evola.shared.feature.onboarding.domain.GoalsRepository
 import evola.shared.todayLocalDate
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax

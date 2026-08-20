@@ -42,9 +42,9 @@ import evola.composeapp.generated.resources.main_home_streak_freeze_available_si
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
-import evola.shared.goals.DayActivity
-import evola.shared.goals.GoalProgress
-import evola.shared.goals.VocabularyBreakdown
+import evola.shared.feature.onboarding.domain.DayActivity
+import evola.shared.feature.onboarding.domain.GoalProgress
+import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
@@ -133,7 +133,7 @@ private fun StreakTile(label: String, days: Int, modifier: Modifier = Modifier) 
 
 /** Seven circles, oldest day first, today last - filled + a day-of-week initial when that day had
  * any completed session, outlined otherwise. Same "which days did I show up" signal as Reword's own
- * weekly strip, built from [evola.shared.local.LocalGoalsRepository]'s per-day [DayActivity] list
+ * weekly strip, built from [evola.shared.feature.onboarding.data.LocalGoalsRepository]'s per-day [DayActivity] list
  * rather than a separate calendar widget. */
 @Composable
 private fun WeeklyStreakStrip(days: List<DayActivity>) {

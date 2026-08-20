@@ -33,9 +33,9 @@ import evola.composeapp.generated.resources.main_home_no_activity
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
-import evola.shared.goals.DayActivity
-import evola.shared.goals.GoalProgress
-import evola.shared.goals.VocabularyBreakdown
+import evola.shared.feature.onboarding.domain.DayActivity
+import evola.shared.feature.onboarding.domain.GoalProgress
+import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 

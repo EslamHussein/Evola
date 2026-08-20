@@ -27,7 +27,7 @@ import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.BottomSheetDemoScreen
 import evola.shared.core.analytics.EvolaLog
 import evola.shared.core.common.getOrNull
-import evola.shared.goals.GoalsRepository
+import evola.shared.feature.onboarding.domain.GoalsRepository
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 import org.koin.compose.navigation3.koinEntryProvider

@@ -66,9 +66,9 @@ import evola.composeapp.core.designsystem.components.IconTile
 import evola.composeapp.core.designsystem.components.RootTopBarTitle
 import evola.composeapp.core.designsystem.components.SelectableChip
 import evola.shared.core.common.ApiResult
-import evola.shared.goals.Goal
-import evola.shared.goals.GoalProgress
-import evola.shared.goals.VocabularyBreakdown
+import evola.shared.feature.onboarding.domain.Goal
+import evola.shared.feature.onboarding.domain.GoalProgress
+import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import evola.shared.language.NativeLanguage
 import evola.shared.local.BackupRepository
 import evola.composeapp.generated.resources.Res

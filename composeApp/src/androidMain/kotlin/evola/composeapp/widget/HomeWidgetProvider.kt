@@ -23,7 +23,7 @@ import kotlinx.datetime.LocalDate
  * reminders.ReviewReminderWorker] - opens its own short-lived database connection rather than
  * sharing the composition root's Koin-managed instance, since the widget's process may not have
  * the app running at all. Deliberately reads streak/due-count directly (not via
- * [evola.shared.goals.GoalsRepository.getProgress]) to avoid also triggering that call's
+ * [evola.shared.feature.onboarding.domain.GoalsRepository.getProgress]) to avoid also triggering that call's
  * achievement-unlock side effect from a background widget refresh. iOS has no equivalent - Compose
  * Multiplatform/Kotlin can't back a WidgetKit extension, which is a separate Swift target Xcode-side
  * (see docs/ROADMAP.md for this disclosed platform asymmetry). */

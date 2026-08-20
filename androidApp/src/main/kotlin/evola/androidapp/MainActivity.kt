@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installCrashLogging()
         // Must be called before super.onCreate() - hands off from the OS-level splash (themed to
-        // match evola.composeapp.splash.SplashScreen's opening frame) the instant this activity's
+        // match evola.composeapp.feature.onboarding.ui.SplashScreen's opening frame) the instant this activity's
         // first frame is ready, then our own Compose splash takes over from there.
         installSplashScreen()
         super.onCreate(savedInstanceState)

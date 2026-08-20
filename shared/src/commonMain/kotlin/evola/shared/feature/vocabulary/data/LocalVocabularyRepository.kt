@@ -85,7 +85,7 @@ class LocalVocabularyRepository(
             ?: fail(409, "Session already complete", "sessionId=$sessionId")
     }
 
-    /** Same red/yellow/green split as [evola.shared.local.LocalGoalsRepository.vocabularyBreakdown]
+    /** Same red/yellow/green split as [evola.shared.feature.onboarding.data.LocalGoalsRepository.vocabularyBreakdown]
      * (struggling = incorrect_streak > 0; mastered = "mastered" status, which - per
      * [VocabularySrs.onIncorrect] - implies incorrect_streak is always 0; learning = touched at
      * least once but neither struggling nor mastered - "unseen" words are excluded since the user

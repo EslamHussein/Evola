@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import evola.shared.achievements.AchievementsRepository
 import evola.shared.core.common.fold
 import evola.shared.core.common.getOrNull
-import evola.shared.goals.GoalsRepository
-import evola.shared.goals.UpdateGoalResult
+import evola.shared.feature.onboarding.domain.GoalsRepository
+import evola.shared.feature.onboarding.domain.UpdateGoalResult
 import evola.shared.language.NativeLanguage
 import evola.shared.todayLocalDate
 import evola.shared.feature.vocabulary.domain.VocabularyRepository

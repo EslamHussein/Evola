@@ -9,21 +9,19 @@ import evola.shared.core.network.AnthropicClient
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.FileTextExtractor
 import evola.shared.achievements.AchievementsRepository
-import evola.shared.goals.GoalsRepository
 import evola.shared.local.BackupRepository
 import evola.shared.local.LocalAchievementsRepository
 import evola.shared.local.LocalBackupRepository
-import evola.shared.local.LocalGoalsRepository
 import evola.shared.local.LocalSettingsRepository
 import evola.shared.local.SettingsRepository
 import evola.composeapp.feature.learning.vm.learningModule
 import evola.composeapp.feature.materials.vm.materialsModule
+import evola.composeapp.feature.onboarding.vm.onboardingModule
 import evola.composeapp.feature.vocabulary.vm.vocabularyModule
 import evola.composeapp.main.HomeViewModel
 import evola.composeapp.main.ProcessingStatusViewModel
 import evola.composeapp.main.ProfileViewModel
 import evola.composeapp.main.SettingsViewModel
-import evola.composeapp.onboarding.GoalSetupViewModel
 import evola.shared.feature.vocabulary.domain.GermanNounImportState
 import evola.shared.feature.vocabulary.domain.GermanNounImporter
 import kotlinx.coroutines.CoroutineScope
@@ -69,7 +67,7 @@ fun evolaModule(
     secureStore: SecureStore,
     fileTextExtractor: FileTextExtractor,
 ): Module = module {
-    includes(vocabularyModule, learningModule, materialsModule(fileTextExtractor))
+    includes(vocabularyModule, learningModule, materialsModule(fileTextExtractor), onboardingModule)
 
     single { EvolaDatabase(driverFactory.create()) }
     single { platformHttpEngine() }
@@ -84,11 +82,9 @@ fun evolaModule(
     single<SettingsRepository> { LocalSettingsRepository(get()) }
     single<BackupRepository> { LocalBackupRepository(get()) }
     single<AchievementsRepository> { LocalAchievementsRepository(get()) }
-    single<GoalsRepository> { LocalGoalsRepository(get(), get<SettingsRepository>(), get<AchievementsRepository>()) }
 
     viewModel { (goalId: String) -> HomeViewModel(goalId, get()) }
     viewModel { ProcessingStatusViewModel(get()) }
     viewModel { (goalId: String) -> ProfileViewModel(goalId, get(), get(), get()) }
     viewModel { SettingsViewModel(get()) }
-    viewModel { GoalSetupViewModel(get()) }
 }

@@ -1,4 +1,4 @@
-package evola.composeapp.splash
+package evola.composeapp.feature.onboarding.ui
 
 import androidx.compose.animation.core.Easing
 import androidx.compose.foundation.background

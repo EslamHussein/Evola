@@ -2,7 +2,7 @@ package evola.composeapp.core.navigation
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import evola.shared.goals.Goal
+import evola.shared.feature.onboarding.domain.Goal
 
 /** Koin-scoped context for the app-level onboarding/main flow - same rationale as
  * [evola.composeapp.main.MaterialsNavContext].

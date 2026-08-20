@@ -1,7 +1,7 @@
 package evola.composeapp.main
 
-import evola.shared.goals.Goal
-import evola.shared.goals.GoalProgress
+import evola.shared.feature.onboarding.domain.Goal
+import evola.shared.feature.onboarding.domain.GoalProgress
 
 data class ProfileState(
     val isSubmitting: Boolean = false,

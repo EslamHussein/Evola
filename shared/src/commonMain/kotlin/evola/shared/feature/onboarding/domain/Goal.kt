@@ -1,4 +1,4 @@
-package evola.shared.goals
+package evola.shared.feature.onboarding.domain
 
 import evola.shared.core.common.ApiResult
 import evola.shared.language.NativeLanguage
@@ -65,7 +65,7 @@ data class GoalProgress(
     /** Longest all-time consecutive-day run, alongside [streakDays]'s "current" run - Reword's
      * "Best streak" stat. */
     val bestStreakDays: Int = 0,
-    /** Reword's "Streak freeze" bank remaining - see [evola.shared.local.LocalGoalsRepository]. */
+    /** Reword's "Streak freeze" bank remaining - see [evola.shared.feature.onboarding.data.LocalGoalsRepository]. */
     val streakFreezesAvailable: Int = 0,
     /** Badges unlocked by *this* [getProgress] call, for a one-shot celebration toast - not the full
      * unlocked set (Profile reads that separately via [evola.shared.achievements.AchievementsRepository.

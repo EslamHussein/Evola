@@ -1,7 +1,7 @@
 package evola.composeapp.main
 
-import evola.shared.goals.GoalProgress
-import evola.shared.goals.Lesson
+import evola.shared.feature.onboarding.domain.GoalProgress
+import evola.shared.feature.onboarding.domain.Lesson
 
 sealed interface HomeState {
     data object Loading : HomeState

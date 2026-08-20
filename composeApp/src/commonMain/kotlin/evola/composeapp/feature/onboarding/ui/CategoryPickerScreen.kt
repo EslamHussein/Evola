@@ -1,4 +1,4 @@
-package evola.composeapp.onboarding
+package evola.composeapp.feature.onboarding.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

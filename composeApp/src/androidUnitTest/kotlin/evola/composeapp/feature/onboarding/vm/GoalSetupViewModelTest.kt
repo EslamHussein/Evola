@@ -1,10 +1,10 @@
-package evola.composeapp.onboarding
+package evola.composeapp.feature.onboarding.vm
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.shared.db.EvolaDatabase
 import evola.shared.language.NativeLanguage
 import evola.shared.local.LocalAchievementsRepository
-import evola.shared.local.LocalGoalsRepository
+import evola.shared.feature.onboarding.data.LocalGoalsRepository
 import evola.shared.local.LocalSettingsRepository
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState

@@ -1,9 +1,9 @@
-package evola.composeapp.onboarding
+package evola.composeapp.feature.onboarding.vm
 
 import androidx.lifecycle.ViewModel
 import evola.shared.core.common.getOrNull
-import evola.shared.goals.CreateGoalResult
-import evola.shared.goals.GoalsRepository
+import evola.shared.feature.onboarding.domain.CreateGoalResult
+import evola.shared.feature.onboarding.domain.GoalsRepository
 import evola.shared.language.NativeLanguage
 import kotlinx.coroutines.CancellationException
 import org.orbitmvi.orbit.OrbitContainerHost

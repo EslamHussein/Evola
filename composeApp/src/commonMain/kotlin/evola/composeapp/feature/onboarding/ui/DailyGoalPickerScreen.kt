@@ -1,4 +1,4 @@
-package evola.composeapp.onboarding
+package evola.composeapp.feature.onboarding.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

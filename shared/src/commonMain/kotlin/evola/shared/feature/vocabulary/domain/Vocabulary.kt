@@ -131,7 +131,7 @@ data class VocabularySessionSummary(
     val reviewWordsCount: Int,
 )
 
-/** Home's red/yellow/green word-breakdown buckets (see [evola.shared.goals.VocabularyBreakdown]),
+/** Home's red/yellow/green word-breakdown buckets (see [evola.shared.feature.onboarding.domain.VocabularyBreakdown]),
  * reused here to pick which words a "practice this category" session pulls in. */
 enum class WordCategory { STRUGGLING, LEARNING, MASTERED }
 

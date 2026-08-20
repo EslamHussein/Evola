@@ -54,9 +54,9 @@ import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.IconTile
 import evola.shared.core.common.ApiResult
-import evola.shared.goals.Goal
-import evola.shared.goals.GoalProgress
-import evola.shared.goals.VocabularyBreakdown
+import evola.shared.feature.onboarding.domain.Goal
+import evola.shared.feature.onboarding.domain.GoalProgress
+import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import evola.shared.language.NativeLanguage
 import evola.shared.local.BackupRepository
 import kotlinx.coroutines.CoroutineScope

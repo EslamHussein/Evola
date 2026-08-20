@@ -2,7 +2,7 @@ package evola.composeapp.core.navigation
 
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import evola.composeapp.main.ProfileRoute
-import evola.shared.goals.Goal
+import evola.shared.feature.onboarding.domain.Goal
 
 /** Koin-scoped context for the Profile tab's navigation - same rationale as [MaterialsNavContext].
  * [goal] and [onGoalUpdated] are kept in sync with [MainScreen]'s own `goal` state directly (not via
