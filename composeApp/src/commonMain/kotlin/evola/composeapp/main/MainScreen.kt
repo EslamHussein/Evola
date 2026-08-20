@@ -213,211 +213,237 @@ fun MainScreen(
                     )
                 }
 
-                MainTab.MATERIALS -> when (val sub = materialsSubScreen) {
-                    MaterialsSubScreen.List -> {
-                        val viewModel = koinViewModel<MaterialsListViewModel>()
-                        MaterialsListScreen(
-                            viewModel = viewModel,
-                            onAddMaterial = { materialsSubScreen = MaterialsSubScreen.Add },
-                            onOpenMaterial = { materialId -> materialsSubScreen = MaterialsSubScreen.Detail(materialId) },
-                        )
-                    }
+                MainTab.MATERIALS -> MaterialsTabHost(
+                    goal = goal,
+                    subScreen = materialsSubScreen,
+                    onSubScreenChange = { materialsSubScreen = it },
+                    onExitToHome = {
+                        selectedTab = MainTab.HOME
+                        materialsSubScreen = MaterialsSubScreen.List
+                    },
+                )
 
-                    MaterialsSubScreen.Add -> {
-                        BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.List })
-                        val viewModel = koinViewModel<AddMaterialViewModel>()
-                        AddMaterialScreen(
-                            viewModel = viewModel,
-                            onContinue = { staged -> materialsSubScreen = MaterialsSubScreen.Wizard(staged) },
-                            onCancel = { materialsSubScreen = MaterialsSubScreen.List },
-                        )
-                    }
-
-                    is MaterialsSubScreen.Wizard -> {
-                        BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.Add })
-                        val viewModel = koinViewModel<AiWizardViewModel>(key = sub.staged.toString()) {
-                            parametersOf(goal.id, sub.staged)
-                        }
-                        AiWizardScreen(
-                            viewModel = viewModel,
-                            onCancel = { materialsSubScreen = MaterialsSubScreen.Add },
-                            onAnalysisStarted = { materialId -> materialsSubScreen = MaterialsSubScreen.Processing(materialId) },
-                        )
-                    }
-
-                    is MaterialsSubScreen.Processing -> {
-                        val viewModel = koinViewModel<ProcessingViewModel>(key = sub.materialId) {
-                            parametersOf(sub.materialId)
-                        }
-                        ProcessingScreen(
-                            viewModel = viewModel,
-                            materialId = sub.materialId,
-                            onDone = { materialId -> materialsSubScreen = MaterialsSubScreen.Detail(materialId) },
-                        )
-                    }
-
-                    is MaterialsSubScreen.Detail -> {
-                        BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.List })
-                        val viewModel = koinViewModel<MaterialDetailViewModel>(key = sub.materialId) {
-                            parametersOf(sub.materialId)
-                        }
-                        MaterialDetailScreen(
-                            viewModel = viewModel,
-                            onBack = { materialsSubScreen = MaterialsSubScreen.List },
-                            onOpenLesson = { lessonId -> materialsSubScreen = MaterialsSubScreen.LessonDetail(lessonId, sub.materialId) },
-                        )
-                    }
-
-                    is MaterialsSubScreen.LessonDetail -> {
-                        BackHandler(onBack = { materialsSubScreen = sub.backTarget() })
-                        val viewModel = koinViewModel<LessonDetailViewModel>(key = sub.lessonId) {
-                            parametersOf(sub.lessonId)
-                        }
-                        LessonDetailScreen(
-                            viewModel = viewModel,
-                            onBack = { materialsSubScreen = sub.backTarget() },
-                            onOpenSection = { key ->
-                                when (key) {
-                                    "vocabulary" -> materialsSubScreen = MaterialsSubScreen.Session(sub.lessonId, sub.materialId)
-                                    "grammar" -> materialsSubScreen = MaterialsSubScreen.GrammarTopics(sub.lessonId, sub.materialId)
-                                }
-                            },
-                            onViewVocabularyList = { materialsSubScreen = MaterialsSubScreen.VocabularyList(sub.lessonId, sub.materialId) },
-                        )
-                    }
-
-                    is MaterialsSubScreen.Session -> {
-                        val viewModel = koinViewModel<VocabularySessionViewModel>(key = "session-${sub.lessonId}") {
-                            parametersOf(VocabSessionSource.Lesson(sub.lessonId))
-                        }
-                        VocabularySessionScreen(
-                            viewModel = viewModel,
-                            onDone = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) },
-                        )
-                    }
-
-                    is MaterialsSubScreen.HandsFreeSession -> {
-                        val viewModel = koinViewModel<VocabularySessionViewModel>(key = "handsfree-${sub.lessonId}") {
-                            parametersOf(VocabSessionSource.Lesson(sub.lessonId))
-                        }
-                        val speechService = evola.composeapp.speech.rememberSpeechService()
-                        evola.composeapp.lessons.HandsFreeSessionScreen(
-                            viewModel = viewModel,
-                            speechService = speechService,
-                            onDone = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) },
-                        )
-                    }
-
-                    is MaterialsSubScreen.BrowseFlashcards -> {
-                        val viewModel = koinViewModel<evola.composeapp.lessons.BrowseFlashcardsViewModel>(key = sub.lessonId) {
-                            parametersOf(sub.lessonId)
-                        }
-                        evola.composeapp.lessons.BrowseFlashcardsScreen(
-                            viewModel = viewModel,
-                            onDone = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) },
-                        )
-                    }
-
-                    is MaterialsSubScreen.CategorySession -> {
-                        val viewModel = koinViewModel<VocabularySessionViewModel>(key = "category-${sub.category}") {
-                            parametersOf(VocabSessionSource.Category(goal.id, sub.category))
-                        }
-                        VocabularySessionScreen(
-                            viewModel = viewModel,
-                            onDone = {
-                                selectedTab = MainTab.HOME
-                                materialsSubScreen = MaterialsSubScreen.List
-                            },
-                        )
-                    }
-
-                    is MaterialsSubScreen.ModeSession -> {
-                        val viewModel = koinViewModel<VocabularySessionViewModel>(key = "mode-${sub.mode}") {
-                            parametersOf(VocabSessionSource.Mode(goal.id, sub.mode))
-                        }
-                        VocabularySessionScreen(
-                            viewModel = viewModel,
-                            onDone = {
-                                selectedTab = MainTab.HOME
-                                materialsSubScreen = MaterialsSubScreen.List
-                            },
-                        )
-                    }
-
-                    is MaterialsSubScreen.VocabularyList -> {
-                        BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) })
-                        val viewModel = koinViewModel<VocabularyListViewModel>(key = sub.lessonId) {
-                            parametersOf(sub.lessonId, goal.id)
-                        }
-                        VocabularyListScreen(
-                            viewModel = viewModel,
-                            onBack = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) },
-                        )
-                    }
-
-                    is MaterialsSubScreen.GrammarTopics -> {
-                        BackHandler(onBack = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) })
-                        val viewModel = koinViewModel<GrammarTopicListViewModel>(key = sub.lessonId) {
-                            parametersOf(sub.lessonId)
-                        }
-                        GrammarTopicListScreen(
-                            viewModel = viewModel,
-                            onOpenTopic = { topicId ->
-                                materialsSubScreen = MaterialsSubScreen.GrammarSession(sub.lessonId, topicId, sub.materialId)
-                            },
-                            onBack = { materialsSubScreen = MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId) },
-                        )
-                    }
-
-                    is MaterialsSubScreen.GrammarSession -> {
-                        val viewModel = koinViewModel<GrammarExerciseSessionViewModel>(key = sub.topicId) {
-                            parametersOf(sub.topicId)
-                        }
-                        GrammarExerciseSessionScreen(
-                            viewModel = viewModel,
-                            onDone = { materialsSubScreen = MaterialsSubScreen.GrammarTopics(sub.lessonId, sub.materialId) },
-                        )
-                    }
-                }
-
-                MainTab.PROFILE -> when (profileSubScreen) {
-                    ProfileSubScreen.Main -> {
-                        val profileViewModel = koinViewModel<ProfileViewModel>(key = goal.id) { parametersOf(goal.id) }
-                        ProfileScreen(
-                            goal = goal,
-                            viewModel = profileViewModel,
-                            onGoalUpdated = { updated -> goal = updated },
-                            onOpenSettings = { profileSubScreen = ProfileSubScreen.Settings },
-                        )
-                    }
-
-                    ProfileSubScreen.Settings -> {
-                        val settingsViewModel = koinViewModel<SettingsViewModel>()
-                        val reminderScheduler = evola.composeapp.reminders.rememberReminderScheduler()
-                        val currentSettingsState by settingsViewModel.collectAsState()
-                        val requestNotificationPermission = evola.composeapp.reminders.rememberNotificationPermissionRequester { granted ->
-                            if (granted) {
-                                reminderScheduler.scheduleDaily(currentSettingsState.settings.reminderHour)
-                            } else {
-                                // Permission denied - the toggle stays visually on (matching the OS's own
-                                // "you can flip this in system settings later" convention) but nothing is
-                                // actually scheduled until the user grants it from system settings.
-                                settingsViewModel.setNotificationsEnabled(false)
-                            }
-                        }
-                        val speechService = evola.composeapp.speech.rememberSpeechService()
-                        SettingsScreen(
-                            viewModel = settingsViewModel,
-                            speechService = speechService,
-                            onBack = { profileSubScreen = ProfileSubScreen.Main },
-                            onNotificationsToggled = { enabled ->
-                                if (enabled) requestNotificationPermission() else reminderScheduler.cancel()
-                            },
-                        )
-                    }
-                }
+                MainTab.PROFILE -> ProfileTabHost(
+                    goal = goal,
+                    subScreen = profileSubScreen,
+                    onSubScreenChange = { profileSubScreen = it },
+                    onGoalUpdated = { updated -> goal = updated },
+                )
             }
         }
     }
+    }
+}
+
+/** Materials tab's own sub-navigation - one branch per [MaterialsSubScreen], each acquiring its own
+ * Koin-scoped ViewModel. Extracted out of [MainScreen] purely to keep that function's `when` from
+ * growing into a single 250-line block; state ownership (`subScreen`) stays hoisted in [MainScreen]
+ * since [MainScreen] also needs its current value to decide whether the tab bar is visible. */
+@Composable
+private fun MaterialsTabHost(
+    goal: Goal,
+    subScreen: MaterialsSubScreen,
+    onSubScreenChange: (MaterialsSubScreen) -> Unit,
+    onExitToHome: () -> Unit,
+) {
+    when (val sub = subScreen) {
+        MaterialsSubScreen.List -> {
+            val viewModel = koinViewModel<MaterialsListViewModel>()
+            MaterialsListScreen(
+                viewModel = viewModel,
+                onAddMaterial = { onSubScreenChange(MaterialsSubScreen.Add) },
+                onOpenMaterial = { materialId -> onSubScreenChange(MaterialsSubScreen.Detail(materialId)) },
+            )
+        }
+
+        MaterialsSubScreen.Add -> {
+            BackHandler(onBack = { onSubScreenChange(MaterialsSubScreen.List) })
+            val viewModel = koinViewModel<AddMaterialViewModel>()
+            AddMaterialScreen(
+                viewModel = viewModel,
+                onContinue = { staged -> onSubScreenChange(MaterialsSubScreen.Wizard(staged)) },
+                onCancel = { onSubScreenChange(MaterialsSubScreen.List) },
+            )
+        }
+
+        is MaterialsSubScreen.Wizard -> {
+            BackHandler(onBack = { onSubScreenChange(MaterialsSubScreen.Add) })
+            val viewModel = koinViewModel<AiWizardViewModel>(key = sub.staged.toString()) {
+                parametersOf(goal.id, sub.staged)
+            }
+            AiWizardScreen(
+                viewModel = viewModel,
+                onCancel = { onSubScreenChange(MaterialsSubScreen.Add) },
+                onAnalysisStarted = { materialId -> onSubScreenChange(MaterialsSubScreen.Processing(materialId)) },
+            )
+        }
+
+        is MaterialsSubScreen.Processing -> {
+            val viewModel = koinViewModel<ProcessingViewModel>(key = sub.materialId) {
+                parametersOf(sub.materialId)
+            }
+            ProcessingScreen(
+                viewModel = viewModel,
+                materialId = sub.materialId,
+                onDone = { materialId -> onSubScreenChange(MaterialsSubScreen.Detail(materialId)) },
+            )
+        }
+
+        is MaterialsSubScreen.Detail -> {
+            BackHandler(onBack = { onSubScreenChange(MaterialsSubScreen.List) })
+            val viewModel = koinViewModel<MaterialDetailViewModel>(key = sub.materialId) {
+                parametersOf(sub.materialId)
+            }
+            MaterialDetailScreen(
+                viewModel = viewModel,
+                onBack = { onSubScreenChange(MaterialsSubScreen.List) },
+                onOpenLesson = { lessonId -> onSubScreenChange(MaterialsSubScreen.LessonDetail(lessonId, sub.materialId)) },
+            )
+        }
+
+        is MaterialsSubScreen.LessonDetail -> {
+            BackHandler(onBack = { onSubScreenChange(sub.backTarget()) })
+            val viewModel = koinViewModel<LessonDetailViewModel>(key = sub.lessonId) {
+                parametersOf(sub.lessonId)
+            }
+            LessonDetailScreen(
+                viewModel = viewModel,
+                onBack = { onSubScreenChange(sub.backTarget()) },
+                onOpenSection = { key ->
+                    when (key) {
+                        "vocabulary" -> onSubScreenChange(MaterialsSubScreen.Session(sub.lessonId, sub.materialId))
+                        "grammar" -> onSubScreenChange(MaterialsSubScreen.GrammarTopics(sub.lessonId, sub.materialId))
+                    }
+                },
+                onViewVocabularyList = { onSubScreenChange(MaterialsSubScreen.VocabularyList(sub.lessonId, sub.materialId)) },
+            )
+        }
+
+        is MaterialsSubScreen.Session -> {
+            val viewModel = koinViewModel<VocabularySessionViewModel>(key = "session-${sub.lessonId}") {
+                parametersOf(VocabSessionSource.Lesson(sub.lessonId))
+            }
+            VocabularySessionScreen(
+                viewModel = viewModel,
+                onDone = { onSubScreenChange(MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId)) },
+            )
+        }
+
+        is MaterialsSubScreen.HandsFreeSession -> {
+            val viewModel = koinViewModel<VocabularySessionViewModel>(key = "handsfree-${sub.lessonId}") {
+                parametersOf(VocabSessionSource.Lesson(sub.lessonId))
+            }
+            val speechService = evola.composeapp.speech.rememberSpeechService()
+            evola.composeapp.lessons.HandsFreeSessionScreen(
+                viewModel = viewModel,
+                speechService = speechService,
+                onDone = { onSubScreenChange(MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId)) },
+            )
+        }
+
+        is MaterialsSubScreen.BrowseFlashcards -> {
+            val viewModel = koinViewModel<evola.composeapp.lessons.BrowseFlashcardsViewModel>(key = sub.lessonId) {
+                parametersOf(sub.lessonId)
+            }
+            evola.composeapp.lessons.BrowseFlashcardsScreen(
+                viewModel = viewModel,
+                onDone = { onSubScreenChange(MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId)) },
+            )
+        }
+
+        is MaterialsSubScreen.CategorySession -> {
+            val viewModel = koinViewModel<VocabularySessionViewModel>(key = "category-${sub.category}") {
+                parametersOf(VocabSessionSource.Category(goal.id, sub.category))
+            }
+            VocabularySessionScreen(viewModel = viewModel, onDone = onExitToHome)
+        }
+
+        is MaterialsSubScreen.ModeSession -> {
+            val viewModel = koinViewModel<VocabularySessionViewModel>(key = "mode-${sub.mode}") {
+                parametersOf(VocabSessionSource.Mode(goal.id, sub.mode))
+            }
+            VocabularySessionScreen(viewModel = viewModel, onDone = onExitToHome)
+        }
+
+        is MaterialsSubScreen.VocabularyList -> {
+            BackHandler(onBack = { onSubScreenChange(MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId)) })
+            val viewModel = koinViewModel<VocabularyListViewModel>(key = sub.lessonId) {
+                parametersOf(sub.lessonId, goal.id)
+            }
+            VocabularyListScreen(
+                viewModel = viewModel,
+                onBack = { onSubScreenChange(MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId)) },
+            )
+        }
+
+        is MaterialsSubScreen.GrammarTopics -> {
+            BackHandler(onBack = { onSubScreenChange(MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId)) })
+            val viewModel = koinViewModel<GrammarTopicListViewModel>(key = sub.lessonId) {
+                parametersOf(sub.lessonId)
+            }
+            GrammarTopicListScreen(
+                viewModel = viewModel,
+                onOpenTopic = { topicId ->
+                    onSubScreenChange(MaterialsSubScreen.GrammarSession(sub.lessonId, topicId, sub.materialId))
+                },
+                onBack = { onSubScreenChange(MaterialsSubScreen.LessonDetail(sub.lessonId, sub.materialId)) },
+            )
+        }
+
+        is MaterialsSubScreen.GrammarSession -> {
+            val viewModel = koinViewModel<GrammarExerciseSessionViewModel>(key = sub.topicId) {
+                parametersOf(sub.topicId)
+            }
+            GrammarExerciseSessionScreen(
+                viewModel = viewModel,
+                onDone = { onSubScreenChange(MaterialsSubScreen.GrammarTopics(sub.lessonId, sub.materialId)) },
+            )
+        }
+    }
+}
+
+/** Profile tab's own sub-navigation - same extraction rationale as [MaterialsTabHost]. */
+@Composable
+private fun ProfileTabHost(
+    goal: Goal,
+    subScreen: ProfileSubScreen,
+    onSubScreenChange: (ProfileSubScreen) -> Unit,
+    onGoalUpdated: (Goal) -> Unit,
+) {
+    when (subScreen) {
+        ProfileSubScreen.Main -> {
+            val profileViewModel = koinViewModel<ProfileViewModel>(key = goal.id) { parametersOf(goal.id) }
+            ProfileScreen(
+                goal = goal,
+                viewModel = profileViewModel,
+                onGoalUpdated = onGoalUpdated,
+                onOpenSettings = { onSubScreenChange(ProfileSubScreen.Settings) },
+            )
+        }
+
+        ProfileSubScreen.Settings -> {
+            val settingsViewModel = koinViewModel<SettingsViewModel>()
+            val reminderScheduler = evola.composeapp.reminders.rememberReminderScheduler()
+            val currentSettingsState by settingsViewModel.collectAsState()
+            val requestNotificationPermission = evola.composeapp.reminders.rememberNotificationPermissionRequester { granted ->
+                if (granted) {
+                    reminderScheduler.scheduleDaily(currentSettingsState.settings.reminderHour)
+                } else {
+                    // Permission denied - the toggle stays visually on (matching the OS's own
+                    // "you can flip this in system settings later" convention) but nothing is
+                    // actually scheduled until the user grants it from system settings.
+                    settingsViewModel.setNotificationsEnabled(false)
+                }
+            }
+            val speechService = evola.composeapp.speech.rememberSpeechService()
+            SettingsScreen(
+                viewModel = settingsViewModel,
+                speechService = speechService,
+                onBack = { onSubScreenChange(ProfileSubScreen.Main) },
+                onNotificationsToggled = { enabled ->
+                    if (enabled) requestNotificationPermission() else reminderScheduler.cancel()
+                },
+            )
+        }
     }
 }
