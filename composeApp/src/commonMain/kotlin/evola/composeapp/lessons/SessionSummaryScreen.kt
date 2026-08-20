@@ -34,8 +34,10 @@ import evola.composeapp.generated.resources.misc_stat_time
 import evola.composeapp.generated.resources.misc_stat_words
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.shared.vocabulary.VocabularySessionSummary
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Session completion screen for the Lingvist-style flat SRS queue: confetti icon, headline, 3 stat
  * cards, and a primary action to start the next session or head back to Lesson Details. */
@@ -94,5 +96,17 @@ private fun StatCard(value: String, label: String) {
             Text(value, style = MaterialTheme.typography.titleLarge)
             Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text3)
         }
+    }
+}
+
+private val fakeSessionSummary = VocabularySessionSummary(
+    sessionNumber = 1, wordsLearned = 8, accuracy = 87.5, timeSeconds = 154, newWordsCount = 5, reviewWordsCount = 3,
+)
+
+@Preview
+@Composable
+private fun SessionSummaryScreenPreview() {
+    EvolaTheme {
+        SessionSummaryScreen(summary = fakeSessionSummary, onContinueToNextSession = {}, onDone = {})
     }
 }

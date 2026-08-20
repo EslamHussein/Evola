@@ -42,8 +42,10 @@ import evola.composeapp.generated.resources.lessons_field_term
 import evola.composeapp.generated.resources.lessons_section_meaning
 import evola.composeapp.language.LocalNativeLanguage
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.shared.vocabulary.VocabularyItem
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Reword-style "add your own word" - same shape as [EditVocabularyScreen] but starting from blank
  * fields and landing in whichever lesson is currently open (Evola's content is lesson-scoped, so
@@ -196,5 +198,29 @@ internal fun EditVocabularyScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+private val fakeEditVocabularyItem = VocabularyItem(
+    itemId = "1",
+    term = "Haus",
+    meaning = "house",
+    nativeMeaning = "بيت",
+    status = "learning",
+)
+
+@Preview
+@Composable
+private fun AddVocabularyScreenPreview() {
+    EvolaTheme {
+        AddVocabularyScreen(onBack = {}, onSave = { _, _, _ -> })
+    }
+}
+
+@Preview
+@Composable
+private fun EditVocabularyScreenPreview() {
+    EvolaTheme {
+        EditVocabularyScreen(item = fakeEditVocabularyItem, onBack = {}, onSave = { _, _, _ -> })
     }
 }

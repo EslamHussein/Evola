@@ -81,8 +81,10 @@ import evola.composeapp.generated.resources.lessons_word_details_title
 import evola.composeapp.rtl.RtlText
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.shared.vocabulary.VocabularyItem
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Maps the raw SRS status (unseen/introduced/learning/review/mastered - see VocabularySrs.STATUSES)
  * onto the same color scale [evola.composeapp.main.HomeScreen]'s word-breakdown cards already use
@@ -280,5 +282,39 @@ private fun DetailSection(title: String, content: @Composable () -> Unit) {
         )
         Spacer(Modifier.height(EvolaSpacing.xs))
         content()
+    }
+}
+
+private val fakeWordDetailItem = VocabularyItem(
+    itemId = "1",
+    term = "Haus",
+    gender = "das",
+    meaning = "house",
+    nativeMeaning = "بيت",
+    status = "learning",
+    ipaPronunciation = "haʊs",
+    partOfSpeech = "noun",
+    plural = "Häuser",
+    exampleSentence = "Das Haus ist groß.",
+    exampleSentenceTranslation = "The house is big.",
+    grammarNote = "Neuter noun, takes 'das'.",
+    memoryTip = "Sounds like English 'house'.",
+    difficultyRating = "Easy",
+    frequencyRating = "Common",
+    relatedWords = listOf("Wohnung", "Gebäude"),
+)
+
+@Preview
+@Composable
+private fun VocabularyWordDetailScreenPreview() {
+    EvolaTheme {
+        VocabularyWordDetailScreen(
+            item = fakeWordDetailItem,
+            onBack = {},
+            onEdit = {},
+            onMarkAlreadyKnown = {},
+            onCopyToPersonalList = {},
+            onDelete = {},
+        )
     }
 }
