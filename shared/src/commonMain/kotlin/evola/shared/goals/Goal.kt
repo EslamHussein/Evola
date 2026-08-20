@@ -91,7 +91,7 @@ data class DayActivity(
 data class NudgeWord(val term: String, val reviewsRemaining: Int)
 
 /** Word counts across every lesson in the goal, bucketed from the 5-status vocabulary SRS ladder
- * (evola.shared.vocabulary.VocabularySrs.STATUSES): "unseen" -> [notStarted], "mastered" ->
+ * (evola.shared.feature.vocabulary.domain.VocabularySrs.STATUSES): "unseen" -> [notStarted], "mastered" ->
  * [mastered], anything in between (introduced/learning/review) -> [inProgress].
  *
  * [struggling] is a separate, overlapping-with-neither-bucket cut of the same words: those whose

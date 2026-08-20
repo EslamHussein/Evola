@@ -2,7 +2,7 @@ package evola.shared.core.common
 
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.srs.MasterySrs
-import evola.shared.vocabulary.VocabularySrs
+import evola.shared.feature.vocabulary.domain.VocabularySrs
 
 /** Per-lesson vocabulary progress: each item's current SRS status mapped to a 0..1 position on the
  * [VocabularySrs.STATUSES] ladder (unseen=0 .. mastered=1), averaged across every item in the

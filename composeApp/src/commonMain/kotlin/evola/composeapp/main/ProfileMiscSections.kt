@@ -42,7 +42,7 @@ internal fun DangerZoneSection(onResetAllProgress: () -> Unit) {
 
 /** Attribution for bundled third-party data, per its license terms - required regardless of
  * whether the German-noun-lookup feature built on top of it (see
- * [evola.shared.vocabulary.GermanNounLexicon]) is finished yet, since the dataset already ships
+ * [evola.shared.feature.vocabulary.domain.GermanNounLexicon]) is finished yet, since the dataset already ships
  * inside the app binary once bundled as a resource. */
 @Composable
 internal fun CreditsSection() {

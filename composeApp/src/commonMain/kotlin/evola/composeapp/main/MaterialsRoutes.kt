@@ -1,7 +1,7 @@
 package evola.composeapp.main
 
-import evola.shared.vocabulary.SessionMode
-import evola.shared.vocabulary.WordCategory
+import evola.shared.feature.vocabulary.domain.SessionMode
+import evola.shared.feature.vocabulary.domain.WordCategory
 import kotlinx.serialization.Serializable
 
 /** Navigation 3 route model for the Materials tab, mirroring the (now-removed) `MaterialsSubScreen`

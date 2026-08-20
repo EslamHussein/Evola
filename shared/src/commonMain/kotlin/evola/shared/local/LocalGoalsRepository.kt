@@ -22,7 +22,7 @@ import evola.shared.goals.VocabularyBreakdown
 import evola.shared.language.NativeLanguage
 import evola.shared.core.common.srs.computeBestStreak
 import evola.shared.core.common.srs.computeStreak
-import evola.shared.vocabulary.VocabularySrs
+import evola.shared.feature.vocabulary.domain.VocabularySrs
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus

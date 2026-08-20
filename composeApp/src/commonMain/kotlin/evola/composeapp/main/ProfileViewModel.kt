@@ -8,7 +8,7 @@ import evola.shared.goals.GoalsRepository
 import evola.shared.goals.UpdateGoalResult
 import evola.shared.language.NativeLanguage
 import evola.shared.todayLocalDate
-import evola.shared.vocabulary.VocabularyRepository
+import evola.shared.feature.vocabulary.domain.VocabularyRepository
 import kotlinx.coroutines.CancellationException
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax

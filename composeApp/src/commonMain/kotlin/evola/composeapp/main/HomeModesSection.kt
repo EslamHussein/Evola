@@ -48,12 +48,12 @@ import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.VocabularyBreakdown
-import evola.shared.vocabulary.SessionMode
+import evola.shared.feature.vocabulary.domain.SessionMode
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Reword's Home "Spaced repetition" section - three rows with real counts, each a plain multi-word
- * session across the whole goal (see [evola.shared.vocabulary.SessionMode]) rather than tied to any
+ * session across the whole goal (see [evola.shared.feature.vocabulary.domain.SessionMode]) rather than tied to any
  * one lesson. Mirrors Reword's structure - own wording, own icon language. A row with nothing
  * available (0 due, or 0 new against today's daily-goal remainder) is still shown, just non-tappable,
  * same "always visible, disabled when empty" convention [evola.composeapp.main.MasteryCard] already uses. */

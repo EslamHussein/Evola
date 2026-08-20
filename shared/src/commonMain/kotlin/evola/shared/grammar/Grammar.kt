@@ -1,7 +1,7 @@
 package evola.shared.grammar
 
 import evola.shared.core.common.ApiResult
-import evola.shared.vocabulary.isTolerantMatch
+import evola.shared.feature.vocabulary.domain.isTolerantMatch
 
 /** A lesson's own grammar topic plus this user's current mastery state (01_PRODUCT_SPEC.md §1.9). */
 data class GrammarTopic(

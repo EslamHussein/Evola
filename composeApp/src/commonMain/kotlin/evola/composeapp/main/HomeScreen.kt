@@ -49,8 +49,8 @@ import evola.shared.goals.GoalProgress
 import evola.shared.goals.Lesson
 import evola.shared.goals.VocabularyBreakdown
 import evola.shared.language.NativeLanguage
-import evola.shared.vocabulary.SessionMode
-import evola.shared.vocabulary.WordCategory
+import evola.shared.feature.vocabulary.domain.SessionMode
+import evola.shared.feature.vocabulary.domain.WordCategory
 import kotlin.math.roundToInt
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_home_achievement_unlocked

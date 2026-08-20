@@ -58,17 +58,17 @@ import evola.composeapp.generated.resources.onboarding_level_lesson_title
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
-import evola.shared.vocabulary.StarterLesson
-import evola.shared.vocabulary.StarterLevel
-import evola.shared.vocabulary.StarterWord
-import evola.shared.vocabulary.VocabularyRepository
-import evola.shared.vocabulary.decodeStarterLevels
+import evola.shared.feature.vocabulary.domain.StarterLesson
+import evola.shared.feature.vocabulary.domain.StarterLevel
+import evola.shared.feature.vocabulary.domain.StarterWord
+import evola.shared.feature.vocabulary.domain.VocabularyRepository
+import evola.shared.feature.vocabulary.domain.decodeStarterLevels
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 
-/** Reword's onboarding level/lesson picker - see [evola.shared.vocabulary.StarterLevel]'s own doc
+/** Reword's onboarding level/lesson picker - see [evola.shared.feature.vocabulary.domain.StarterLevel]'s own doc
  * comment. Levels are loaded once, lazily, from bundled JSON assets (the real "Das Leben" A1/A2
  * glossaries) rather than hardcoded Kotlin - large enough now (hundreds of words) that holding them
  * as literal data would be unwieldy, and this also means updating the bundled content later never
