@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.2.20"
+kotlin = "2.3.20"
 ktor = "3.0.1"
 exposed = "0.55.0"
 coroutines = "1.9.0"
@@ -11,7 +11,7 @@ junit = "5.11.3"
 anthropic = "2.34.0"
 pdfbox = "3.0.3"
 poi = "5.2.5"
-agp = "8.7.3"
+agp = "8.13.0"
 composeMultiplatform = "1.10.3"
 androidxActivity = "1.9.3"
 androidxSplashscreen = "1.0.1"
@@ -23,8 +23,9 @@ pdfboxAndroid = "2.0.27.0"
 haze = "1.6.5"
 kermit = "2.0.5"
 androidxWork = "2.10.0"
-koin = "4.0.4"
+koinBom = "4.2.2"
 orbit = "12.0.0"
+navigation3Ui = "1.1.1"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -97,9 +98,14 @@ orbit-viewmodel = { module = "org.orbit-mvi:orbit-viewmodel", version.ref = "orb
 orbit-compose = { module = "org.orbit-mvi:orbit-compose", version.ref = "orbit" }
 orbit-test = { module = "org.orbit-mvi:orbit-test", version.ref = "orbit" }
 
-koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
-koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
-koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
+koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koinBom" }
+koin-core = { module = "io.insert-koin:koin-core" }
+koin-compose = { module = "io.insert-koin:koin-compose" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
+koin-compose-navigation3 = { module = "io.insert-koin:koin-compose-navigation3" }
+
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
+navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3Ui" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

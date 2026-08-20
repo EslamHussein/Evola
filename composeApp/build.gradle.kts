@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.android.library)
 }
@@ -9,8 +10,11 @@ kotlin {
     jvmToolchain(21)
     androidTarget()
 
+    // iosX64 (Intel Mac simulator target) intentionally excluded - navigation3-ui doesn't publish
+    // for it yet. Real-device builds are unaffected (those always target iosArm64); this only
+    // matters for running the iOS Simulator on an Intel Mac dev machine, which Apple Silicon has
+    // made increasingly rare since 2020.
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64(),
     ).forEach { target ->
@@ -39,9 +43,13 @@ kotlin {
             implementation(libs.orbit.core)
             implementation(libs.orbit.viewmodel)
             implementation(libs.orbit.compose)
+            implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
+            implementation(libs.koin.compose.navigation3)
+            implementation(libs.navigation3.ui)
+            implementation(libs.kotlinx.serialization.core)
         }
         androidMain.dependencies {
             implementation(libs.androidx.security.crypto)
@@ -77,7 +85,7 @@ kotlin {
 
 android {
     namespace = "evola.composeapp"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         minSdk = 24
     }
