@@ -41,11 +41,14 @@ import evola.composeapp.generated.resources.main_home_streak_freeze_available_pl
 import evola.composeapp.generated.resources.main_home_streak_freeze_available_singular
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.shared.goals.DayActivity
 import evola.shared.goals.GoalProgress
+import evola.shared.goals.VocabularyBreakdown
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Reword's "Stats" section - a day-of-week strip (already built as [WeeklyStreakStrip]), two big
  * Current/Best streak tiles, and a Share row, all in one card, matching the real app's structure
@@ -172,4 +175,28 @@ private fun dayInitial(day: DayOfWeek): String = when (day) {
     DayOfWeek.SATURDAY -> "S"
     DayOfWeek.SUNDAY -> "S"
     else -> "?"
+}
+
+private val fakeStatsWeeklyActivity = listOf(
+    DayActivity(date = "2026-08-14", hadActivity = true, newWordsLearned = 3, wordsReviewed = 5),
+    DayActivity(date = "2026-08-15", hadActivity = true, newWordsLearned = 2, wordsReviewed = 4),
+    DayActivity(date = "2026-08-16", hadActivity = false, newWordsLearned = 0, wordsReviewed = 0),
+    DayActivity(date = "2026-08-17", hadActivity = true, newWordsLearned = 4, wordsReviewed = 2),
+    DayActivity(date = "2026-08-18", hadActivity = true, newWordsLearned = 1, wordsReviewed = 6),
+    DayActivity(date = "2026-08-19", hadActivity = true, newWordsLearned = 5, wordsReviewed = 3),
+    DayActivity(date = "2026-08-20", hadActivity = true, newWordsLearned = 2, wordsReviewed = 1),
+)
+
+@Preview
+@Composable
+private fun StatsSectionPreview() {
+    EvolaTheme {
+        StatsSection(
+            progress = GoalProgress(
+                overallPct = 0.42f, currentLessonId = "l1", streakDays = 5, todayCompleted = true,
+                vocabulary = VocabularyBreakdown(notStarted = 12, inProgress = 8, mastered = 20, struggling = 3),
+                weeklyActivity = fakeStatsWeeklyActivity, bestStreakDays = 12, streakFreezesAvailable = 1,
+            ),
+        )
+    }
 }

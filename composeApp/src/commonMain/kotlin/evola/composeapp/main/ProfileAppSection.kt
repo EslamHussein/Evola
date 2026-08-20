@@ -21,6 +21,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -49,14 +51,18 @@ import evola.composeapp.generated.resources.main_profile_share_text_no_progress
 import evola.composeapp.generated.resources.main_profile_share_text_with_progress
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.components.IconTile
 import evola.shared.core.ApiResult
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalProgress
+import evola.shared.goals.VocabularyBreakdown
+import evola.shared.language.NativeLanguage
 import evola.shared.local.BackupRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Settings entry point + local backup/restore - a JSON file export/import
  * ([BackupRepository]) rather than any cloud sync, matching this app's no-
@@ -135,5 +141,35 @@ internal fun AppRow(icon: ImageVector, title: String, subtitle: String, onClick:
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
         }
         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = EvolaColors.Text3)
+    }
+}
+
+private object FakeAppSectionBackupRepository : BackupRepository {
+    override fun export() = ""
+    override fun import(json: String): ApiResult<Unit> = ApiResult.Success(Unit)
+}
+
+private val fakeAppSectionGoal = Goal(
+    id = "g1", goalText = "Learn German", title = "German basics",
+    nativeLanguage = NativeLanguage.ARABIC, isActive = true, createdAt = "2026-01-01",
+)
+
+@Preview
+@Composable
+private fun AppSectionPreview() {
+    EvolaTheme {
+        Column {
+            AppSection(
+                onOpenSettings = {},
+                backupRepository = FakeAppSectionBackupRepository,
+                latestProgress = GoalProgress(
+                    overallPct = 0.42f, currentLessonId = "l1", streakDays = 5, todayCompleted = false,
+                    vocabulary = VocabularyBreakdown(notStarted = 12, inProgress = 8, mastered = 20, struggling = 3),
+                ),
+                goal = fakeAppSectionGoal,
+                snackbarHostState = remember { SnackbarHostState() },
+                coroutineScope = rememberCoroutineScope(),
+            )
+        }
     }
 }

@@ -25,8 +25,10 @@ import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_profile_achievements_title
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.shared.achievements.ALL_BADGES
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Reword's achievement badges - a fixed grid of every [ALL_BADGES]
  * entry, locked/unlocked styled by [unlockedBadgeIds] rather than only showing what's earned so
@@ -62,5 +64,13 @@ internal fun AchievementsSection(unlockedBadgeIds: Set<String>) {
                 }
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun AchievementsSectionPreview() {
+    EvolaTheme {
+        AchievementsSection(unlockedBadgeIds = ALL_BADGES.take(2).map { it.id }.toSet())
     }
 }

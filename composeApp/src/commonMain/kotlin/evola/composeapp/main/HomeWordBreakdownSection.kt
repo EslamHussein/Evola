@@ -46,11 +46,13 @@ import evola.composeapp.generated.resources.main_home_word_breakdown_title
 import evola.composeapp.generated.resources.main_home_words_total
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.shared.goals.NudgeWord
 import evola.shared.goals.VocabularyBreakdown
 import evola.shared.vocabulary.WordCategory
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** "Word breakdown" header (with the goal's total word count as a pill) plus three red/yellow/
  * green cards - a re-cut of the same words by how they're actually going, not just SRS status:
@@ -192,5 +194,26 @@ internal fun NudgeCard(nudge: NudgeWord, onClick: () -> Unit) {
             Spacer(Modifier.height(EvolaSpacing.xs))
             Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = EvolaColors.Accent)
         }
+    }
+}
+
+@Preview
+@Composable
+private fun WordBreakdownSectionPreview() {
+    EvolaTheme {
+        Column {
+            WordBreakdownSection(
+                vocabulary = VocabularyBreakdown(notStarted = 12, inProgress = 8, mastered = 20, struggling = 3),
+                onStartCategorySession = {},
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun NudgeCardPreview() {
+    EvolaTheme {
+        NudgeCard(nudge = NudgeWord(term = "Haus", reviewsRemaining = 2), onClick = {})
     }
 }

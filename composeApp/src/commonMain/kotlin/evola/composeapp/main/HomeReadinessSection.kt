@@ -32,10 +32,12 @@ import evola.composeapp.generated.resources.main_home_exam_readiness
 import evola.composeapp.generated.resources.main_home_no_activity
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.shared.goals.DayActivity
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.VocabularyBreakdown
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Colors shared across the mini ring and the activity chart below it, so every "mastered/learning/
  * not started" signal on the dashboard reads as one system. */
@@ -157,5 +159,38 @@ private fun ActivityChart(days: List<DayActivity>) {
                 }
             }
         }
+    }
+}
+
+private val fakeReadinessVocabulary = VocabularyBreakdown(notStarted = 12, inProgress = 8, mastered = 20, struggling = 3)
+
+private val fakeWeeklyActivity = listOf(
+    DayActivity(date = "2026-08-14", hadActivity = true, newWordsLearned = 3, wordsReviewed = 5),
+    DayActivity(date = "2026-08-15", hadActivity = true, newWordsLearned = 2, wordsReviewed = 4),
+    DayActivity(date = "2026-08-16", hadActivity = false, newWordsLearned = 0, wordsReviewed = 0),
+    DayActivity(date = "2026-08-17", hadActivity = true, newWordsLearned = 4, wordsReviewed = 2),
+    DayActivity(date = "2026-08-18", hadActivity = true, newWordsLearned = 1, wordsReviewed = 6),
+    DayActivity(date = "2026-08-19", hadActivity = true, newWordsLearned = 5, wordsReviewed = 3),
+    DayActivity(date = "2026-08-20", hadActivity = true, newWordsLearned = 2, wordsReviewed = 1),
+)
+
+@Preview
+@Composable
+private fun TopTilesRowPreview() {
+    EvolaTheme {
+        TopTilesRow(percent = 62, vocabulary = fakeReadinessVocabulary)
+    }
+}
+
+@Preview
+@Composable
+private fun ActivityChartCardPreview() {
+    EvolaTheme {
+        ActivityChartCard(
+            progress = GoalProgress(
+                overallPct = 0.42f, currentLessonId = "l1", streakDays = 5, todayCompleted = false,
+                vocabulary = fakeReadinessVocabulary, weeklyActivity = fakeWeeklyActivity,
+            ),
+        )
     }
 }

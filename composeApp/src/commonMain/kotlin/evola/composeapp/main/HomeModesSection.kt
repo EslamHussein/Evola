@@ -45,9 +45,12 @@ import evola.composeapp.generated.resources.main_home_study_section_title
 import evola.composeapp.generated.resources.main_home_words_to_review
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.shared.goals.GoalProgress
+import evola.shared.goals.VocabularyBreakdown
 import evola.shared.vocabulary.SessionMode
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Reword's Home "Spaced repetition" section - three rows with real counts, each a plain multi-word
  * session across the whole goal (see [evola.shared.vocabulary.SessionMode]) rather than tied to any
@@ -139,5 +142,27 @@ internal fun ExtraModesSection(onBrowseFlashcards: () -> Unit, onStartHandsFree:
                 Text(stringResource(Res.string.main_home_hands_free_mode), style = MaterialTheme.typography.titleSmall)
             }
         }
+    }
+}
+
+private val fakeSectionGoalProgress = GoalProgress(
+    overallPct = 0.42f, currentLessonId = "l1", streakDays = 5, todayCompleted = false,
+    vocabulary = VocabularyBreakdown(notStarted = 12, inProgress = 8, mastered = 20, struggling = 3),
+    todayNewWordsLearned = 4, dailyGoal = 8, wordsToReviewCount = 6,
+)
+
+@Preview
+@Composable
+private fun SessionModesSectionPreview() {
+    EvolaTheme {
+        Column { SessionModesSection(progress = fakeSectionGoalProgress, onStartModeSession = {}) }
+    }
+}
+
+@Preview
+@Composable
+private fun ExtraModesSectionPreview() {
+    EvolaTheme {
+        Column { ExtraModesSection(onBrowseFlashcards = {}, onStartHandsFree = {}) }
     }
 }

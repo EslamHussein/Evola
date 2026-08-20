@@ -20,7 +20,9 @@ import evola.composeapp.generated.resources.main_profile_reset_all_row_subtitle
 import evola.composeapp.generated.resources.main_profile_reset_all_row_title
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Reword's Menu "Reset all progress" - a single destructive row, kept separate from [AppSection]
  * so it doesn't sit next to routine actions like Settings/backup. */
@@ -51,4 +53,20 @@ internal fun CreditsSection() {
         style = MaterialTheme.typography.bodySmall,
         color = EvolaColors.Text3,
     )
+}
+
+@Preview
+@Composable
+private fun DangerZoneSectionPreview() {
+    EvolaTheme {
+        DangerZoneSection(onResetAllProgress = {})
+    }
+}
+
+@Preview
+@Composable
+private fun CreditsSectionPreview() {
+    EvolaTheme {
+        CreditsSection()
+    }
 }
