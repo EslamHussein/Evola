@@ -17,7 +17,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +34,6 @@ import org.koin.compose.koinInject
 import org.koin.compose.navigation3.koinEntryProvider
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import org.orbitmvi.orbit.compose.collectAsState
 import evola.shared.goals.Goal
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_nav_home
@@ -44,13 +42,6 @@ import evola.composeapp.generated.resources.main_nav_profile
 import org.jetbrains.compose.resources.stringResource
 
 private enum class MainTab { HOME, MATERIALS, PROFILE }
-
-/** Profile's own tiny sub-navigation, same shape as [MaterialsRoute] but with just the two
- * destinations Profile currently needs. Not yet migrated to Navigation 3 - see the plan file. */
-private sealed interface ProfileSubScreen {
-    data object Main : ProfileSubScreen
-    data object Settings : ProfileSubScreen
-}
 
 /**
  * The 3-tab navigation shell: Home / Materials / Profile. Materials doubles as the lesson browser
@@ -72,23 +63,28 @@ fun MainScreen(
     var goal by remember { mutableStateOf(initialGoal) }
     var selectedTab by remember { mutableStateOf(MainTab.HOME) }
     val materialsBackStack = remember { mutableStateListOf<MaterialsRoute>(MaterialsRoute.List) }
-    var profileSubScreen by remember { mutableStateOf<ProfileSubScreen>(ProfileSubScreen.Main) }
+    val profileBackStack = remember { mutableStateListOf<ProfileRoute>(ProfileRoute.Main) }
 
-    // MaterialsNavContext (see that class's doc comment) is the bridge between MainScreen's own
-    // state and the Koin-declared MaterialsRoute entries - kept in sync here rather than recreated
-    // per-composition so Home's cross-tab CTAs below and every route in materialsNavigationModule
-    // see the same backStack instance and the current goal id.
+    // MaterialsNavContext/ProfileNavContext (see their doc comments) are the bridge between
+    // MainScreen's own state and the Koin-declared route entries - kept in sync here (plain field
+    // writes, not a LaunchedEffect, so a route reading them on its very first composition never sees
+    // a stale value) rather than recreated per-composition, so Home's cross-tab CTAs below and every
+    // route in materialsNavigationModule/profileNavigationModule see the same instances.
     val materialsNavContext = koinInject<MaterialsNavContext>()
     materialsNavContext.backStack = materialsBackStack
-    LaunchedEffect(goal.id) { materialsNavContext.goalId = goal.id }
+    materialsNavContext.goalId = goal.id
     materialsNavContext.onExitToHome = {
         selectedTab = MainTab.HOME
         materialsBackStack.clear()
         materialsBackStack.add(MaterialsRoute.List)
     }
+    val profileNavContext = koinInject<ProfileNavContext>()
+    profileNavContext.backStack = profileBackStack
+    profileNavContext.goal = goal
+    profileNavContext.onGoalUpdated = { updated -> goal = updated }
 
     val showTabBar = (selectedTab != MainTab.MATERIALS || materialsBackStack.size == 1) &&
-        (selectedTab != MainTab.PROFILE || profileSubScreen is ProfileSubScreen.Main)
+        (selectedTab != MainTab.PROFILE || profileBackStack.size == 1)
 
     // A white-alpha indicator (right for the old dark glass bar) all but disappears against
     // Reword's light palette's white/near-white blurred surface - the accent at low alpha reads on
@@ -133,7 +129,8 @@ fun MainScreen(
                         selected = selectedTab == MainTab.PROFILE,
                         onClick = {
                             selectedTab = MainTab.PROFILE
-                            profileSubScreen = ProfileSubScreen.Main
+                            profileBackStack.clear()
+                            profileBackStack.add(ProfileRoute.Main)
                         },
                         icon = { Icon(Icons.Filled.Person, contentDescription = profileLabel) },
                         label = { Text(profileLabel) },
@@ -186,12 +183,7 @@ fun MainScreen(
 
                 MainTab.MATERIALS -> MaterialsTabHost(backStack = materialsBackStack)
 
-                MainTab.PROFILE -> ProfileTabHost(
-                    goal = goal,
-                    subScreen = profileSubScreen,
-                    onSubScreenChange = { profileSubScreen = it },
-                    onGoalUpdated = { updated -> goal = updated },
-                )
+                MainTab.PROFILE -> ProfileTabHost(backStack = profileBackStack)
             }
         }
     }
@@ -215,46 +207,11 @@ private fun MaterialsTabHost(backStack: MutableList<MaterialsRoute>) {
 
 /** Profile tab's own sub-navigation - same extraction rationale as [MaterialsTabHost]. */
 @Composable
-private fun ProfileTabHost(
-    goal: Goal,
-    subScreen: ProfileSubScreen,
-    onSubScreenChange: (ProfileSubScreen) -> Unit,
-    onGoalUpdated: (Goal) -> Unit,
-) {
-    when (subScreen) {
-        ProfileSubScreen.Main -> {
-            val profileViewModel = koinViewModel<ProfileViewModel>(key = goal.id) { parametersOf(goal.id) }
-            ProfileScreen(
-                goal = goal,
-                viewModel = profileViewModel,
-                onGoalUpdated = onGoalUpdated,
-                onOpenSettings = { onSubScreenChange(ProfileSubScreen.Settings) },
-            )
-        }
-
-        ProfileSubScreen.Settings -> {
-            val settingsViewModel = koinViewModel<SettingsViewModel>()
-            val reminderScheduler = evola.composeapp.reminders.rememberReminderScheduler()
-            val currentSettingsState by settingsViewModel.collectAsState()
-            val requestNotificationPermission = evola.composeapp.reminders.rememberNotificationPermissionRequester { granted ->
-                if (granted) {
-                    reminderScheduler.scheduleDaily(currentSettingsState.settings.reminderHour)
-                } else {
-                    // Permission denied - the toggle stays visually on (matching the OS's own
-                    // "you can flip this in system settings later" convention) but nothing is
-                    // actually scheduled until the user grants it from system settings.
-                    settingsViewModel.setNotificationsEnabled(false)
-                }
-            }
-            val speechService = evola.composeapp.speech.rememberSpeechService()
-            SettingsScreen(
-                viewModel = settingsViewModel,
-                speechService = speechService,
-                onBack = { onSubScreenChange(ProfileSubScreen.Main) },
-                onNotificationsToggled = { enabled ->
-                    if (enabled) requestNotificationPermission() else reminderScheduler.cancel()
-                },
-            )
-        }
-    }
+private fun ProfileTabHost(backStack: MutableList<ProfileRoute>) {
+    BackHandler(enabled = backStack.size > 1) { backStack.removeLastOrNull() }
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        entryProvider = koinEntryProvider(),
+    )
 }

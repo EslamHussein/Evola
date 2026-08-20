@@ -16,6 +16,7 @@ import evola.composeapp.di.rememberFileTextExtractor
 import evola.composeapp.di.rememberLogFileWriterFactory
 import evola.composeapp.main.MainScreen
 import evola.composeapp.main.materialsNavigationModule
+import evola.composeapp.main.profileNavigationModule
 import evola.composeapp.onboarding.CategoryPickerScreen
 import evola.composeapp.onboarding.DailyGoalPickerScreen
 import evola.composeapp.onboarding.GoalSetupScreen
@@ -70,7 +71,11 @@ fun App() {
 
     KoinApplication(
         application = {
-            modules(evolaModule(driverFactory, secureStore, fileTextExtractor), materialsNavigationModule)
+            modules(
+                evolaModule(driverFactory, secureStore, fileTextExtractor),
+                materialsNavigationModule,
+                profileNavigationModule,
+            )
         },
     ) {
         val settingsRepository = koinInject<SettingsRepository>()
