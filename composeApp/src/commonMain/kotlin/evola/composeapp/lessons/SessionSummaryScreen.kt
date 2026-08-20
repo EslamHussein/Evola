@@ -99,7 +99,7 @@ private fun StatCard(value: String, label: String) {
     }
 }
 
-private val fakeSessionSummary = VocabularySessionSummary(
+private val summaryScreenFakeSessionSummary = VocabularySessionSummary(
     sessionNumber = 1, wordsLearned = 8, accuracy = 87.5, timeSeconds = 154, newWordsCount = 5, reviewWordsCount = 3,
 )
 
@@ -107,6 +107,6 @@ private val fakeSessionSummary = VocabularySessionSummary(
 @Composable
 private fun SessionSummaryScreenPreview() {
     EvolaTheme {
-        SessionSummaryScreen(summary = fakeSessionSummary, onContinueToNextSession = {}, onDone = {})
+        SessionSummaryScreen(summary = summaryScreenFakeSessionSummary, onContinueToNextSession = {}, onDone = {})
     }
 }
