@@ -42,8 +42,12 @@ import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilledTonalIconToggleButton
+import androidx.compose.material3.HorizontalDivider
 import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -59,6 +63,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
@@ -78,6 +83,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -85,10 +92,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.BackHandler
+import evola.composeapp.language.LocalNativeLanguage
 import evola.composeapp.rtl.RtlText
 import evola.composeapp.speech.SpeechService
 import evola.composeapp.speech.rememberSpeechService
@@ -253,8 +262,9 @@ private fun VocabularySessionContent(
                 )
                 (state as? VocabularySessionUiState.InProgress)?.let { inProgress ->
                     val session = inProgress.session
+                    val progressLabel = stringResource(Res.string.lessons_word_progress, session.wordIndex, session.totalWords)
                     Text(
-                        stringResource(Res.string.lessons_word_progress, session.wordIndex, session.totalWords),
+                        progressLabel,
                         style = MaterialTheme.typography.labelSmall,
                         color = EvolaColors.Text3,
                         modifier = Modifier.padding(horizontal = EvolaSpacing.lg),
@@ -263,7 +273,8 @@ private fun VocabularySessionContent(
                     SegmentedProgressDashes(
                         total = session.totalWords.coerceAtLeast(1),
                         filled = session.wordIndex - 1,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = EvolaSpacing.lg, vertical = EvolaSpacing.xs),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = EvolaSpacing.lg, vertical = EvolaSpacing.xs)
+                            .semantics { contentDescription = progressLabel },
                     )
                 }
             }
@@ -385,18 +396,40 @@ private fun SwipeTutorialOverlay(invertSwipe: Boolean, onDismiss: () -> Unit) {
 
 /** Reword's segmented progress strip - one dash per distinct word in the session (matching the
  * already-shown "Word X of Y" text), filled up to [filled]. Reads at a glance far better than a
- * single continuous bar once there are only a handful of words. */
+ * single continuous bar once there are only a handful of words. Unfilled segments use [EvolaColors.Border]
+ * rather than [EvolaColors.AccentSoft] - AccentSoft sits too close in lightness to the page
+ * background to read at a glance (confirmed via a live screenshot); Border is the token already
+ * meant for "visible against the page" hairlines. */
 @Composable
 private fun SegmentedProgressDashes(total: Int, filled: Int, modifier: Modifier = Modifier) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
         repeat(total) { index ->
             Box(
                 modifier = Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp))
-                    .background(if (index < filled) EvolaColors.Accent else EvolaColors.AccentSoft),
+                    .background(if (index < filled) EvolaColors.Accent else EvolaColors.Border),
             )
         }
     }
 }
+
+/** Centers the (single) child like [Arrangement.Center], except the gap ABOVE it is capped at
+ * [maxTopGapFraction] of the column's height - any extra leftover space falls below instead. A
+ * short card (little/no optional content) would otherwise split its large leftover space evenly
+ * into two big dead zones above and below; capping the top half biases it toward the top third,
+ * which reads as "a card near the top of the screen" instead of "a card floating in a void". */
+private fun cardBiasedArrangement(maxTopGapFraction: Float = 0.18f): Arrangement.Vertical =
+    object : Arrangement.Vertical {
+        override fun Density.arrange(totalSize: Int, sizes: IntArray, outPositions: IntArray) {
+            val contentHeight = sizes.sum()
+            val extraSpace = (totalSize - contentHeight).coerceAtLeast(0)
+            val topGap = (extraSpace / 2).coerceAtMost((totalSize * maxTopGapFraction).toInt())
+            var y = topGap
+            for (i in sizes.indices) {
+                outPositions[i] = y
+                y += sizes[i]
+            }
+        }
+    }
 
 @Composable
 private fun CenteredMessage(content: @Composable () -> Unit) {
@@ -434,11 +467,14 @@ private fun CardBody(
     }
     // Wrapped in a bordered Card (previously the card content sat directly on the page background
     // with no visible boundary, and top-pinned in a plain Column - left most of the screen as dead
-    // empty space below short content, confirmed by a live screenshot). Centered vertically via
-    // Arrangement.Center on the scrollable Column: when content fits, it centers in the available
-    // space same as Reword's own bounded card; when content overflows (e.g. the typed-check keyboard
-    // pushing things up), the Column simply scrolls and Center has no effect, which is the correct
-    // fallback either way.
+    // empty space below short content, confirmed by a live screenshot). Vertically placed via
+    // [cardBiasedArrangement], not a plain Arrangement.Center: a short card (e.g. a New word with
+    // no example sentence/related words/memory tip - all optional) left equally huge dead gaps
+    // above AND below when centered, confirmed by a live screenshot. Capping the top gap biases
+    // short cards toward the top third instead, while a tall card that fills the column still
+    // behaves the same as before (no gap to cap). When content overflows (e.g. the typed-check
+    // keyboard pushing things up), the Column simply scrolls and the arrangement has no effect,
+    // which is the correct fallback either way.
     Column(
         modifier = Modifier.fillMaxSize()
             .clickable(
@@ -448,7 +484,7 @@ private fun CardBody(
             .verticalScroll(rememberScrollState())
             .imePadding()
             .padding(EvolaSpacing.lg),
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = cardBiasedArrangement(),
     ) {
         // Reword's "Reduce motion" setting exists (Settings > Appearance) but is not wired to any
         // transition here - an AnimatedContent wrapping this when(card) was tried and reverted: it
@@ -554,9 +590,13 @@ private fun GenderBadge(gender: String?) {
 /** Wraps [content] in a two-direction swipe gesture that fires [onSwipeLeft]/[onSwipeRight] on
  * commit and always snaps back to settled (this screen advances by replacing the card's state, not
  * by animating the row away) - same "swipe reveals/triggers, doesn't remove itself" convention as
- * [evola.composeapp.materials.MaterialsListScreen]'s delete swipe. [leftLabel]/[rightLabel] are also
- * plain tappable text, matching Reword's persistent bottom affordance and giving a non-gesture path
- * to the same actions. */
+ * [evola.composeapp.materials.MaterialsListScreen]'s delete swipe. Below the card, [footer] renders
+ * a non-gesture path to the same two actions - it receives the invert-aware label/action pair
+ * already resolved, so callers never need to duplicate the invertSwipe logic themselves. The
+ * default footer (both actions as equal-weight tappable text) fits [PracticeCard]'s right/wrong
+ * grading, where [leftSwipeColor]'s [EvolaColors.Rust] default correctly reads as "incorrect"; a
+ * caller like [NewCard], whose left action is a neutral choice rather than a wrong answer, passes
+ * its own [footer] and a non-danger [leftSwipeColor]. */
 @Composable
 private fun SwipeGradeCard(
     leftLabel: String,
@@ -564,6 +604,9 @@ private fun SwipeGradeCard(
     onSwipeLeft: () -> Unit,
     onSwipeRight: () -> Unit,
     invertSwipe: Boolean = false,
+    leftSwipeColor: Color = EvolaColors.Rust,
+    rightSwipeColor: Color = EvolaColors.Gold,
+    footer: (@Composable (leftLabel: String, rightLabel: String, onLeft: () -> Unit, onRight: () -> Unit) -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     // Settings > Invert swipe direction: swaps which physical side triggers which action, without
@@ -573,6 +616,8 @@ private fun SwipeGradeCard(
     val effectiveRightLabel = if (invertSwipe) leftLabel else rightLabel
     val effectiveOnSwipeLeft = if (invertSwipe) onSwipeRight else onSwipeLeft
     val effectiveOnSwipeRight = if (invertSwipe) onSwipeLeft else onSwipeRight
+    val effectiveLeftColor = if (invertSwipe) rightSwipeColor else leftSwipeColor
+    val effectiveRightColor = if (invertSwipe) leftSwipeColor else rightSwipeColor
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -588,8 +633,8 @@ private fun SwipeGradeCard(
         state = dismissState,
         backgroundContent = {
             val (label, color) = when (dismissState.dismissDirection) {
-                SwipeToDismissBoxValue.StartToEnd -> effectiveRightLabel to EvolaColors.Gold
-                SwipeToDismissBoxValue.EndToStart -> effectiveLeftLabel to EvolaColors.Rust
+                SwipeToDismissBoxValue.StartToEnd -> effectiveRightLabel to effectiveRightColor
+                SwipeToDismissBoxValue.EndToStart -> effectiveLeftLabel to effectiveLeftColor
                 SwipeToDismissBoxValue.Settled -> "" to Color.Transparent
             }
             Box(modifier = Modifier.fillMaxSize().background(color), contentAlignment = Alignment.Center) {
@@ -602,21 +647,25 @@ private fun SwipeGradeCard(
         Surface { content() }
     }
     Spacer(Modifier.height(EvolaSpacing.md))
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(
-            effectiveLeftLabel,
-            style = MaterialTheme.typography.labelLarge,
-            color = EvolaColors.Rust,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.weight(1f).clickable(onClick = effectiveOnSwipeLeft),
-        )
-        Text(
-            effectiveRightLabel,
-            style = MaterialTheme.typography.labelLarge,
-            color = EvolaColors.Gold,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f).clickable(onClick = effectiveOnSwipeRight),
-        )
+    if (footer != null) {
+        footer(effectiveLeftLabel, effectiveRightLabel, effectiveOnSwipeLeft, effectiveOnSwipeRight)
+    } else {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                effectiveLeftLabel,
+                style = MaterialTheme.typography.labelLarge,
+                color = EvolaColors.Rust,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.weight(1f).clickable(onClick = effectiveOnSwipeLeft),
+            )
+            Text(
+                effectiveRightLabel,
+                style = MaterialTheme.typography.labelLarge,
+                color = EvolaColors.Gold,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(1f).clickable(onClick = effectiveOnSwipeRight),
+            )
+        }
     }
 }
 
@@ -633,67 +682,104 @@ private fun NewCard(
     onExplain: () -> Unit,
     onPlayPronunciation: () -> Unit,
 ) {
+    val alreadyKnowLabel = stringResource(Res.string.lessons_action_already_know)
+    val startLearningLabel = stringResource(Res.string.lessons_action_start_learning)
     SwipeGradeCard(
-        leftLabel = stringResource(Res.string.lessons_action_already_know),
-        rightLabel = stringResource(Res.string.lessons_action_start_learning),
+        leftLabel = alreadyKnowLabel,
+        rightLabel = startLearningLabel,
         onSwipeLeft = onAlreadyKnown,
         onSwipeRight = onStartLearning,
         invertSwipe = invertSwipe,
-    ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(EvolaSpacing.xs))
-                Text(stringResource(Res.string.lessons_new_word_label), style = MaterialTheme.typography.labelMedium, color = EvolaColors.Text2)
+        // "I already know this" is a neutral, non-destructive choice (unlike PracticeCard's
+        // right/wrong grading swipe, where the default Rust legitimately means "incorrect") - Ink2
+        // reads as a real state change without reading as an error.
+        leftSwipeColor = EvolaColors.Ink2,
+        footer = { leftLabel, rightLabel, onLeft, onRight ->
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // The one accent-filled button on the card - "Start learning this word" is the
+                // primary path forward, so it's the only control with that visual weight.
+                Button(onClick = onRight, modifier = Modifier.fillMaxWidth()) {
+                    Text(rightLabel)
+                }
+                Spacer(Modifier.height(EvolaSpacing.sm))
+                // Plain text, neutral color - previously Rust (the danger/error role) on an action
+                // that isn't destructive at all, just a different, equally valid outcome.
+                TextButton(
+                    onClick = onLeft,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.textButtonColors(contentColor = EvolaColors.Text2),
+                ) {
+                    Text(leftLabel)
+                }
             }
-            Spacer(Modifier.height(EvolaSpacing.md))
+        },
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // "New word" badge - pill shape, accent-tinted background (previously a bare icon+text
+            // row with no container, easy to mistake for body copy rather than a status marker).
+            Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.AccentSoft) {
+                Row(
+                    modifier = Modifier.padding(horizontal = EvolaSpacing.md, vertical = EvolaSpacing.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(EvolaSpacing.xs))
+                    Text(stringResource(Res.string.lessons_new_word_label), style = MaterialTheme.typography.labelMedium, color = EvolaColors.Accent)
+                }
+            }
+            Spacer(Modifier.height(EvolaSpacing.lg))
 
-            Row(verticalAlignment = Alignment.Top) {
+            // The word - the card's visual anchor, centered and large. The bookmark toggle that
+            // previously sat in this row now lives in the action row below with the other
+            // icon-only toggle, so nothing competes with the word for attention here.
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 GenderBadge(card.gender)
-                Spacer(Modifier.width(EvolaSpacing.md))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        buildAnnotatedString {
-                            card.gender?.let { gender ->
-                                articleColor(gender)?.let { color ->
-                                    withStyle(SpanStyle(color = color)) { append("$gender ") }
-                                } ?: append("$gender ")
-                            }
-                            append(termWithoutDuplicateArticle(card.term, card.gender))
-                        },
-                        style = MaterialTheme.typography.headlineMedium,
-                    )
-                }
-                IconButton(onClick = onToggleBookmark) {
-                    Icon(
-                        if (card.isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                        contentDescription = stringResource(Res.string.lessons_content_desc_bookmark),
-                        tint = if (card.isBookmarked) EvolaColors.Gold else EvolaColors.Text3,
-                    )
-                }
+                if (genderBadgeLabel(card.gender) != null) Spacer(Modifier.width(EvolaSpacing.sm))
+                Text(
+                    buildAnnotatedString {
+                        card.gender?.let { gender ->
+                            articleColor(gender)?.let { color ->
+                                withStyle(SpanStyle(color = color)) { append("$gender ") }
+                            } ?: append("$gender ")
+                        }
+                        append(termWithoutDuplicateArticle(card.term, card.gender))
+                    },
+                    style = MaterialTheme.typography.displaySmall,
+                    textAlign = TextAlign.Center,
+                )
             }
 
             val posLine = listOfNotNull(card.partOfSpeech, card.plural?.let { "Pl. $it" }).joinToString(" · ")
             if (posLine.isNotEmpty()) {
+                Spacer(Modifier.height(EvolaSpacing.xs))
                 Text(posLine, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
             }
-            Spacer(Modifier.height(EvolaSpacing.sm))
+            Spacer(Modifier.height(EvolaSpacing.lg))
 
-            RtlText(card.meaning, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(EvolaSpacing.md))
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onPlayPronunciation, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = stringResource(Res.string.lessons_action_play_pronunciation), tint = EvolaColors.Accent)
-                }
-                if (showTranscription) {
-                    card.ipaPronunciation?.let {
-                        Spacer(Modifier.width(EvolaSpacing.sm))
-                        Text(it, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
-                    }
+            // Pronunciation - a real circular button (filled-tonal, not a bare icon) so it reads as
+            // its own tappable control rather than decoration next to the transcription.
+            FilledTonalIconButton(onClick = onPlayPronunciation, shape = CircleShape) {
+                Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = stringResource(Res.string.lessons_action_play_pronunciation), tint = EvolaColors.Accent)
+            }
+            if (showTranscription) {
+                card.ipaPronunciation?.let {
+                    Spacer(Modifier.height(EvolaSpacing.xs))
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
                 }
             }
-            Spacer(Modifier.height(EvolaSpacing.md))
+            Spacer(Modifier.height(EvolaSpacing.lg))
+
+            HorizontalDivider(color = EvolaColors.Border)
+            Spacer(Modifier.height(EvolaSpacing.lg))
+
+            Text(
+                LocalNativeLanguage.current.code.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = EvolaColors.Text3,
+            )
+            Spacer(Modifier.height(EvolaSpacing.xs))
+            RtlText(card.meaning, style = MaterialTheme.typography.titleLarge, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(EvolaSpacing.lg))
 
             card.exampleSentence?.let { sentence ->
                 Surface(color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.small, modifier = Modifier.fillMaxWidth()) {
@@ -747,38 +833,46 @@ private fun NewCard(
                 Spacer(Modifier.height(EvolaSpacing.md))
             }
 
-            val aiExplanation = card.aiExplanation
-            if (aiExplanation == null) {
-                OutlinedButton(onClick = onExplain, enabled = !explainLoading, modifier = Modifier.fillMaxWidth()) {
-                    if (explainLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = EvolaColors.Accent)
-                        Spacer(Modifier.width(EvolaSpacing.sm))
-                    } else {
-                        Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(EvolaSpacing.xs))
+            // Action row - AI explain (exploratory/optional) takes the remaining width; mark-difficult
+            // and save are icon-only toggles of equal, lesser visual weight, matching each other.
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
+                val aiExplanation = card.aiExplanation
+                if (aiExplanation == null) {
+                    OutlinedButton(onClick = onExplain, enabled = !explainLoading, modifier = Modifier.weight(1f)) {
+                        if (explainLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = EvolaColors.Accent)
+                            Spacer(Modifier.width(EvolaSpacing.sm))
+                        } else {
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(EvolaSpacing.xs))
+                        }
+                        Text(stringResource(Res.string.lessons_ai_explain))
                     }
-                    Text(stringResource(Res.string.lessons_ai_explain))
-                }
-            } else {
-                Surface(color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.small, modifier = Modifier.fillMaxWidth()) {
-                    Row(modifier = Modifier.padding(EvolaSpacing.md)) {
-                        Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(EvolaSpacing.sm))
-                        Text(aiExplanation, style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    Surface(color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.small, modifier = Modifier.weight(1f)) {
+                        Row(modifier = Modifier.padding(EvolaSpacing.md)) {
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(EvolaSpacing.sm))
+                            Text(aiExplanation, style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
-            }
-            Spacer(Modifier.height(EvolaSpacing.md))
 
-            OutlinedButton(onClick = onToggleDifficult, modifier = Modifier.fillMaxWidth()) {
-                Icon(
-                    Icons.Filled.Warning,
-                    contentDescription = null,
-                    tint = if (card.markedDifficult) EvolaColors.Rust else EvolaColors.Text3,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(Modifier.width(EvolaSpacing.xs))
-                Text(if (card.markedDifficult) stringResource(Res.string.lessons_marked_difficult) else stringResource(Res.string.lessons_mark_difficult))
+                val markDifficultDesc = if (card.markedDifficult) stringResource(Res.string.lessons_marked_difficult) else stringResource(Res.string.lessons_mark_difficult)
+                FilledTonalIconToggleButton(checked = card.markedDifficult, onCheckedChange = { onToggleDifficult() }) {
+                    Icon(
+                        Icons.Filled.Warning,
+                        contentDescription = markDifficultDesc,
+                        tint = if (card.markedDifficult) EvolaColors.Rust else EvolaColors.Text3,
+                    )
+                }
+                FilledTonalIconToggleButton(checked = card.isBookmarked, onCheckedChange = { onToggleBookmark() }) {
+                    Icon(
+                        if (card.isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                        contentDescription = stringResource(Res.string.lessons_content_desc_bookmark),
+                        tint = if (card.isBookmarked) EvolaColors.Gold else EvolaColors.Text3,
+                    )
+                }
             }
         }
     }

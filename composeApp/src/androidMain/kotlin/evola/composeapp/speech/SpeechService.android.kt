@@ -6,16 +6,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import java.util.Locale
 
-actual class SpeechService(context: Context) {
+/** [initializeEngine] is false only from a `@Preview` ([rememberSpeechService] passes
+ * `!LocalInspectionMode.current]) - Android Studio's layoutlib preview sandbox doesn't ship
+ * [TextToSpeech] at all, so constructing it there throws `NoClassDefFoundError` and crashes every
+ * preview that (transitively) requests a [SpeechService], not just ones that actually speak. */
+actual class SpeechService(context: Context, initializeEngine: Boolean = true) {
     private var engine: TextToSpeech? = null
     private var ready = false
 
     init {
-        engine = TextToSpeech(context.applicationContext) { status ->
-            ready = status == TextToSpeech.SUCCESS
-            if (ready) engine?.language = Locale.GERMANY
+        if (initializeEngine) {
+            engine = TextToSpeech(context.applicationContext) { status ->
+                ready = status == TextToSpeech.SUCCESS
+                if (ready) engine?.language = Locale.GERMANY
+            }
         }
     }
 
@@ -53,7 +60,8 @@ actual class SpeechService(context: Context) {
 @Composable
 actual fun rememberSpeechService(): SpeechService {
     val context = LocalContext.current
-    val service = remember { SpeechService(context) }
+    val inPreview = LocalInspectionMode.current
+    val service = remember { SpeechService(context, initializeEngine = !inPreview) }
     DisposableEffect(Unit) {
         onDispose { service.shutdown() }
     }
