@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.ui.NavDisplay
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import evola.composeapp.BackHandler
 import evola.composeapp.language.LocalNativeLanguage
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.components.GlassNavigationBar
@@ -194,10 +193,15 @@ fun MainScreen(
  * [materialsNavigationModule]) instead of the hand-rolled `when`-on-a-sealed-interface state
  * machine this replaced (see git history for that version). [backStack] is hoisted in [MainScreen],
  * not created here, since [MainScreen] also needs its size to decide whether the tab bar is
- * visible, and Home's cross-tab CTAs need to reset it before switching tabs in. */
+ * visible, and Home's cross-tab CTAs need to reset it before switching tabs in.
+ *
+ * No manual [evola.composeapp.BackHandler] here (unlike the pre-migration version) - [NavDisplay]
+ * already registers its own back handling via `androidx.navigationevent`, predictive-back animation
+ * included, and only intercepts the system back gesture when there's a previous entry to return to.
+ * A redundant `BackHandler` on top would use the older `OnBackPressedCallback` API and risks
+ * pre-empting Nav3's own predictive-back gesture instead of just duplicating `removeLastOrNull()`. */
 @Composable
 private fun MaterialsTabHost(backStack: MutableList<MaterialsRoute>) {
-    BackHandler(enabled = backStack.size > 1) { backStack.removeLastOrNull() }
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
@@ -208,7 +212,6 @@ private fun MaterialsTabHost(backStack: MutableList<MaterialsRoute>) {
 /** Profile tab's own sub-navigation - same extraction rationale as [MaterialsTabHost]. */
 @Composable
 private fun ProfileTabHost(backStack: MutableList<ProfileRoute>) {
-    BackHandler(enabled = backStack.size > 1) { backStack.removeLastOrNull() }
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
