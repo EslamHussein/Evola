@@ -18,15 +18,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.misc_continue
 import evola.composeapp.generated.resources.misc_native_language_subtitle
 import evola.composeapp.generated.resources.misc_native_language_title
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.components.SelectableChip
 import evola.shared.language.NativeLanguage
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Onboarding step between Welcome and Goal Setup: pick the learner's native language. The
  * selection is carried forward as plain UI state and saved atomically with the goal itself (see
@@ -35,37 +36,59 @@ import org.jetbrains.compose.resources.stringResource
 fun NativeLanguageScreen(onContinue: (NativeLanguage) -> Unit) {
     var selected by remember { mutableStateOf<NativeLanguage?>(null) }
 
-    Surface(modifier = Modifier.fillMaxSize()) {
+    NativeLanguageContent(
+        selected = selected,
+        onSelectedChange = { selected = it },
+        onContinue = { selected?.let(onContinue) },
+    )
+}
+
+@Composable
+private fun NativeLanguageContent(
+    selected: NativeLanguage?,
+    onSelectedChange: (NativeLanguage) -> Unit,
+    onContinue: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(modifier = modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
+            modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             Text(stringResource(Res.string.misc_native_language_title), style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(EvolaSpacing.sm))
             Text(
                 stringResource(Res.string.misc_native_language_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(EvolaSpacing.xl))
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
                 NativeLanguage.entries.forEach { language ->
                     SelectableChip(
                         label = "${language.englishName} - ${language.nativeName}",
                         selected = selected == language,
-                        onClick = { selected = language },
+                        onClick = { onSelectedChange(language) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(EvolaSpacing.xl))
             Button(
-                onClick = { selected?.let(onContinue) },
+                onClick = onContinue,
                 enabled = selected != null,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(Res.string.misc_continue))
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun NativeLanguageContentPreview() {
+    EvolaTheme {
+        NativeLanguageContent(selected = NativeLanguage.entries.first(), onSelectedChange = {}, onContinue = {})
     }
 }

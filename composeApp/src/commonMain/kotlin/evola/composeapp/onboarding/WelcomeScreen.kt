@@ -15,40 +15,50 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.misc_continue
 import evola.composeapp.generated.resources.misc_welcome_body
 import evola.composeapp.generated.resources.misc_welcome_subtitle
 import evola.composeapp.generated.resources.misc_welcome_title
+import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Onboarding Welcome per 01_PRODUCT_SPEC.md §1.3 - exactly one static screen, no quiz/wizard. */
 @Composable
 fun WelcomeScreen(onContinue: () -> Unit) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
+            modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             Text(stringResource(Res.string.misc_welcome_title), style = MaterialTheme.typography.displayMedium, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(EvolaSpacing.lg))
             Text(
                 stringResource(Res.string.misc_welcome_body),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(EvolaSpacing.sm))
             Text(
                 stringResource(Res.string.misc_welcome_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(EvolaSpacing.xxl))
             Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(Res.string.misc_continue))
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun WelcomeScreenPreview() {
+    EvolaTheme {
+        WelcomeScreen(onContinue = {})
     }
 }

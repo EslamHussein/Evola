@@ -57,12 +57,15 @@ import evola.composeapp.generated.resources.onboarding_category_words_count
 import evola.composeapp.generated.resources.onboarding_level_lesson_title
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.shared.vocabulary.StarterLesson
 import evola.shared.vocabulary.StarterLevel
+import evola.shared.vocabulary.StarterWord
 import evola.shared.vocabulary.VocabularyRepository
 import evola.shared.vocabulary.decodeStarterLevels
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 
 /** Reword's onboarding level/lesson picker - see [evola.shared.vocabulary.StarterLevel]'s own doc
@@ -97,16 +100,56 @@ fun CategoryPickerScreen(goalId: String, onContinue: () -> Unit) {
         levels = decodeStarterLevels(jsonTexts)
     }
 
-    Surface(modifier = Modifier.fillMaxSize()) {
-        val currentLevels = levels
-        if (currentLevels == null) {
+    CategoryPickerContent(
+        levels = levels,
+        selected = selected,
+        onSelectedChange = { selected = it },
+        expandedLevels = expandedLevels,
+        onExpandedLevelsChange = { expandedLevels = it },
+        isSubmitting = isSubmitting,
+        onContinue = { currentLevels, levelLessonTitles ->
+            isSubmitting = true
+            coroutineScope.launch {
+                currentLevels.forEach { level ->
+                    level.lessons.forEach { lesson ->
+                        if (lesson.id in selected) {
+                            // "A2" alone when the level has just one lesson; "A2 · Kapitel 1: ..."
+                            // once a level splits into several, so the created lesson's own
+                            // title still says which level it's from.
+                            val title = if (level.lessons.size == 1) level.title else levelLessonTitles.getValue(lesson.id)
+                            vocabularyRepository.createStarterLesson(goalId, title, lesson.words)
+                        }
+                    }
+                }
+                isSubmitting = false
+                onContinue()
+            }
+        },
+        onSkip = onContinue,
+    )
+}
+
+@Composable
+private fun CategoryPickerContent(
+    levels: List<StarterLevel>?,
+    selected: Set<String>,
+    onSelectedChange: (Set<String>) -> Unit,
+    expandedLevels: Set<String>,
+    onExpandedLevelsChange: (Set<String>) -> Unit,
+    isSubmitting: Boolean,
+    onContinue: (levels: List<StarterLevel>, levelLessonTitles: Map<String, String>) -> Unit,
+    onSkip: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(modifier = modifier.fillMaxSize()) {
+        if (levels == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             return@Surface
         }
         // Pre-resolved here (composable context) since it's needed inside the non-composable
         // onClick/launch below - stringResource can't be called from there directly.
         val levelLessonTitles = buildMap {
-            currentLevels.forEach { level ->
+            levels.forEach { level ->
                 if (level.lessons.size > 1) {
                     level.lessons.forEach { lesson ->
                         put(lesson.id, stringResource(Res.string.onboarding_level_lesson_title, level.title, lesson.title))
@@ -125,47 +168,30 @@ fun CategoryPickerScreen(goalId: String, onContinue: () -> Unit) {
                 color = EvolaColors.Text2,
             )
             Spacer(Modifier.height(EvolaSpacing.xl))
-            currentLevels.forEach { level ->
+            levels.forEach { level ->
                 LevelCard(
                     level = level,
                     selected = selected,
                     expanded = level.id in expandedLevels,
                     onToggleExpanded = {
-                        expandedLevels = if (level.id in expandedLevels) expandedLevels - level.id else expandedLevels + level.id
+                        onExpandedLevelsChange(if (level.id in expandedLevels) expandedLevels - level.id else expandedLevels + level.id)
                     },
                     onToggleLesson = { lessonId ->
                         val nowSelected = lessonId !in selected
-                        selected = if (nowSelected) selected + lessonId else selected - lessonId
-                        if (nowSelected) expandedLevels = expandedLevels + level.id
+                        onSelectedChange(if (nowSelected) selected + lessonId else selected - lessonId)
+                        if (nowSelected) onExpandedLevelsChange(expandedLevels + level.id)
                     },
                     onToggleLevel = { allSelected ->
                         val ids = level.lessons.map { it.id }.toSet()
-                        selected = if (allSelected) selected - ids else selected + ids
-                        if (!allSelected) expandedLevels = expandedLevels + level.id
+                        onSelectedChange(if (allSelected) selected - ids else selected + ids)
+                        if (!allSelected) onExpandedLevelsChange(expandedLevels + level.id)
                     },
                 )
                 Spacer(Modifier.height(EvolaSpacing.sm))
             }
             Spacer(Modifier.height(EvolaSpacing.lg))
             Button(
-                onClick = {
-                    isSubmitting = true
-                    coroutineScope.launch {
-                        currentLevels.forEach { level ->
-                            level.lessons.forEach { lesson ->
-                                if (lesson.id in selected) {
-                                    // "A2" alone when the level has just one lesson; "A2 · Kapitel 1: ..."
-                                    // once a level splits into several, so the created lesson's own
-                                    // title still says which level it's from.
-                                    val title = if (level.lessons.size == 1) level.title else levelLessonTitles.getValue(lesson.id)
-                                    vocabularyRepository.createStarterLesson(goalId, title, lesson.words)
-                                }
-                            }
-                        }
-                        isSubmitting = false
-                        onContinue()
-                    }
-                },
+                onClick = { onContinue(levels, levelLessonTitles) },
                 enabled = !isSubmitting,
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -179,7 +205,7 @@ fun CategoryPickerScreen(goalId: String, onContinue: () -> Unit) {
             }
             if (selected.isNotEmpty()) {
                 Spacer(Modifier.height(EvolaSpacing.sm))
-                TextButton(onClick = onContinue, enabled = !isSubmitting, modifier = Modifier.fillMaxWidth()) {
+                TextButton(onClick = onSkip, enabled = !isSubmitting, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(Res.string.onboarding_category_skip))
                 }
             }
@@ -304,5 +330,55 @@ private fun TriStateSquare(selectedCount: Int, total: Int, onClick: () -> Unit) 
                 modifier = Modifier.size(16.dp),
             )
         }
+    }
+}
+
+private fun fakeStarterWords(count: Int) = List(count) { i -> StarterWord(term = "Wort $i", meaning = "word $i") }
+
+private val fakeStarterLevels = listOf(
+    StarterLevel(
+        id = "a1", title = "A1", subtitle = "Beginner",
+        lessons = listOf(StarterLesson(id = "a1-1", title = "A1", words = fakeStarterWords(60))),
+    ),
+    StarterLevel(
+        id = "a2", title = "A2", subtitle = "Elementary",
+        lessons = listOf(
+            StarterLesson(id = "a2-1", title = "Kapitel 1: Alltag", words = fakeStarterWords(30)),
+            StarterLesson(id = "a2-2", title = "Kapitel 2: Reisen", words = fakeStarterWords(25)),
+        ),
+    ),
+)
+
+@Preview
+@Composable
+private fun CategoryPickerContentLoadingPreview() {
+    EvolaTheme {
+        CategoryPickerContent(
+            levels = null,
+            selected = emptySet(),
+            onSelectedChange = {},
+            expandedLevels = emptySet(),
+            onExpandedLevelsChange = {},
+            isSubmitting = false,
+            onContinue = { _, _ -> },
+            onSkip = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun CategoryPickerContentLoadedPreview() {
+    EvolaTheme {
+        CategoryPickerContent(
+            levels = fakeStarterLevels,
+            selected = setOf("a2-1"),
+            onSelectedChange = {},
+            expandedLevels = setOf("a2"),
+            onExpandedLevelsChange = {},
+            isSubmitting = false,
+            onContinue = { _, _ -> },
+            onSkip = {},
+        )
     }
 }

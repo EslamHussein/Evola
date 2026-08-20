@@ -26,10 +26,12 @@ import evola.composeapp.generated.resources.onboarding_daily_goal_description
 import evola.composeapp.generated.resources.onboarding_daily_goal_prompt
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.components.SelectableChip
 import evola.shared.local.SettingsRepository
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 
 private val DAILY_GOAL_OPTIONS = listOf(5, 8, 12, 20)
@@ -45,7 +47,26 @@ fun DailyGoalPickerScreen(onContinue: () -> Unit) {
     val coroutineScope = rememberCoroutineScope()
     var selected by remember { mutableStateOf(8) }
 
-    Surface(modifier = Modifier.fillMaxSize()) {
+    DailyGoalPickerContent(
+        selected = selected,
+        onSelectedChange = { selected = it },
+        onContinue = {
+            coroutineScope.launch {
+                settingsRepository.setDailyNewWordGoal(selected)
+                onContinue()
+            }
+        },
+    )
+}
+
+@Composable
+private fun DailyGoalPickerContent(
+    selected: Int,
+    onSelectedChange: (Int) -> Unit,
+    onContinue: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -64,22 +85,22 @@ fun DailyGoalPickerScreen(onContinue: () -> Unit) {
                     SelectableChip(
                         label = "$option",
                         selected = selected == option,
-                        onClick = { selected = option },
+                        onClick = { onSelectedChange(option) },
                     )
                 }
             }
             Spacer(Modifier.height(EvolaSpacing.xxl))
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        settingsRepository.setDailyNewWordGoal(selected)
-                        onContinue()
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(Res.string.onboarding_daily_goal_continue))
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun DailyGoalPickerContentPreview() {
+    EvolaTheme {
+        DailyGoalPickerContent(selected = 8, onSelectedChange = {}, onContinue = {})
     }
 }
