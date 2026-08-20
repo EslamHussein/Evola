@@ -36,7 +36,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Sample data for one "nearby location" row, standing in for whatever real list content a caller
  * would put in [sheetContent] - the point of this screen is exercising [AppBottomSheetScaffold]'s
@@ -147,5 +149,13 @@ fun BottomSheetDemoScreen() {
                 }
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun BottomSheetDemoScreenPreview() {
+    EvolaTheme {
+        BottomSheetDemoScreen()
     }
 }

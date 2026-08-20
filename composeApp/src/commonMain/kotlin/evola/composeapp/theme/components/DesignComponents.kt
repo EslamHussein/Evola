@@ -15,11 +15,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +42,9 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import kotlin.math.min
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** A selectable, icon+label chip (resource-type grid, wizard single/multi-select options) -
  * recreates the design handoff's outlined/tinted-when-selected chip using EvolaTheme colors
@@ -232,5 +241,87 @@ fun GlassNavigationBar(hazeState: HazeState, modifier: Modifier = Modifier, cont
             verticalAlignment = Alignment.CenterVertically,
             content = content,
         )
+    }
+}
+
+@Preview
+@Composable
+private fun SelectableChipPreview() {
+    EvolaTheme {
+        Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
+            SelectableChip(label = "PDF", selected = true, onClick = {}, icon = Icons.AutoMirrored.Filled.MenuBook)
+            SelectableChip(label = "Text", selected = false, onClick = {})
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun IconTilePreview() {
+    EvolaTheme {
+        Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
+            IconTile(icon = Icons.Filled.Star, locked = false)
+            IconTile(icon = Icons.Filled.Lock, locked = true)
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun StatusTagPreview() {
+    EvolaTheme {
+        Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
+            StatusTag(label = "Ready", style = StatusTagStyle.FILLED)
+            StatusTag(label = "In progress", style = StatusTagStyle.OUTLINE)
+            StatusTag(label = "Not started", style = StatusTagStyle.NEUTRAL)
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun SegmentedProgressBarPreview() {
+    EvolaTheme {
+        SegmentedProgressBar(segmentCount = 4, filledCount = 2, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+@Preview
+@Composable
+private fun CircularProgressRingPreview() {
+    EvolaTheme {
+        Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
+            CircularProgressRing(percent = 35)
+            CircularProgressRing(percent = 80, size = 40.dp)
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun ComingSoonChipPreview() {
+    EvolaTheme {
+        ComingSoonChip(label = "Flashcards", icon = Icons.Filled.Star)
+    }
+}
+
+@Preview
+@Composable
+private fun LockedRowPreview() {
+    EvolaTheme {
+        LockedRow(label = "Grammar drills", subtitle = "Coming soon", icon = Icons.AutoMirrored.Filled.MenuBook, lockIcon = Icons.Filled.Lock)
+    }
+}
+
+@Preview
+@Composable
+private fun GlassNavigationBarPreview() {
+    EvolaTheme {
+        val hazeState = remember { HazeState() }
+        GlassNavigationBar(hazeState = hazeState) {
+            Icon(Icons.Filled.Home, contentDescription = null, tint = EvolaColors.Accent)
+            Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, tint = EvolaColors.Text3)
+            Icon(Icons.Filled.Person, contentDescription = null, tint = EvolaColors.Text3)
+        }
     }
 }

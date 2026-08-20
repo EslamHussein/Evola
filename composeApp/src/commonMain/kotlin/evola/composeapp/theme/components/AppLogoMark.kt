@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Static version of the splash/loading indicator's 3-square mark, for root-tab top bars.
  * Same 72x60 coordinate space and squares as [evola.composeapp.loading.ChaseLoadingIndicator],
@@ -53,5 +55,13 @@ fun RootTopBarTitle(text: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.md)) {
         AppLogoMark()
         Text(text, style = MaterialTheme.typography.titleLarge)
+    }
+}
+
+@Preview
+@Composable
+private fun RootTopBarTitlePreview() {
+    EvolaTheme {
+        RootTopBarTitle(text = "Evola")
     }
 }
