@@ -224,7 +224,7 @@ private fun HandsFreeCard(
 
 private data class HandsFreeActions(val leftLabel: String, val rightLabel: String, val onLeft: () -> Unit, val onRight: () -> Unit)
 
-private val fakeNewCard = VocabularyCard.New(
+private val handsFreeFakeNewCard = VocabularyCard.New(
     itemId = "v1", term = "Hund", gender = "der", partOfSpeech = "noun", plural = "Hunde", ipaPronunciation = "/hʊnt/",
     meaning = "dog", exampleSentence = "Der Hund läuft schnell.", exampleSentenceTranslation = null, grammarNote = null,
     relatedWords = emptyList(), difficultyRating = null, frequencyRating = null, memoryTip = null,
@@ -233,10 +233,10 @@ private val fakeNewCard = VocabularyCard.New(
 
 private val fakeHandsFreeSession = VocabularySessionState(
     sessionId = "s1", sessionNumber = 1, cardsCompleted = 2, cardsRemaining = 5,
-    card = fakeNewCard, origin = "new", wordIndex = 3, totalWords = 8,
+    card = handsFreeFakeNewCard, origin = "new", wordIndex = 3, totalWords = 8,
 )
 
-private val fakeSessionSummary = VocabularySessionSummary(
+private val handsFreeFakeSessionSummary = VocabularySessionSummary(
     sessionNumber = 1, wordsLearned = 8, accuracy = 87.5, timeSeconds = 240, newWordsCount = 5, reviewWordsCount = 3,
 )
 
@@ -281,7 +281,7 @@ private fun HandsFreeSessionEmptyPreview() {
 private fun HandsFreeSessionSummaryPreview() {
     EvolaTheme {
         HandsFreeSessionContent(
-            state = VocabularySessionUiState.Summary(fakeSessionSummary), settings = AppSettings(), speechService = rememberSpeechService(),
+            state = VocabularySessionUiState.Summary(handsFreeFakeSessionSummary), settings = AppSettings(), speechService = rememberSpeechService(),
             onDone = {}, onContinueToNextSession = {}, onAlreadyKnown = { _, _ -> }, onStartLearning = { _, _ -> },
             onSelfGrade = { _, _, _ -> }, onKeepShowing = { _, _ -> },
         )

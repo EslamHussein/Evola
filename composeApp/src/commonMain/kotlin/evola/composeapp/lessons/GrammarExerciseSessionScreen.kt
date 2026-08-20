@@ -150,13 +150,6 @@ private fun GrammarExerciseSessionContent(
 }
 
 @Composable
-private fun CenteredMessage(content: @Composable () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) { content() }
-    }
-}
-
-@Composable
 private fun ExerciseBody(exercise: GrammarExercise, answeredCount: Int, onSubmit: (String, Boolean) -> Unit) {
     val focusManager = LocalFocusManager.current
     Column(
