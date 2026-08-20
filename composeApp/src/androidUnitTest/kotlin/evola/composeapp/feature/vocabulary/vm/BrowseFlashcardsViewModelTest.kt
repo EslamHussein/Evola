@@ -17,7 +17,7 @@ import kotlin.test.assertIs
 
 /** [BrowseFlashcardsViewModel] is a plain local flip-through of [LocalVocabularyRepository.listVocabulary]
  * with no repository writes at all - these tests exercise the local index math (next/previous, clamped
- * at both ends) against a real vocabulary repository, same convention as [evola.composeapp.main.HomeViewModelTest]. */
+ * at both ends) against a real vocabulary repository, same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]. */
 class BrowseFlashcardsViewModelTest {
 
     private fun vocabularyRepository(itemCount: Int, lessonId: String = "l1"): LocalVocabularyRepository {

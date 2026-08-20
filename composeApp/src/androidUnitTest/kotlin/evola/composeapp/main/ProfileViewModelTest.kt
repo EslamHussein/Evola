@@ -23,7 +23,7 @@ import kotlin.test.assertTrue
 /** [ProfileViewModel] now owns the achievement-badge and progress-summary reads that used to be
  * fetched straight from the composable (see the ViewModel's own doc comment) - these tests cover
  * both that `onCreate` load and the two intents, driven through the real [ProfileViewModel] via
- * the `org.orbit-mvi:orbit-test` DSL (same pattern as [HomeViewModelTest]), backed by real
+ * the `org.orbit-mvi:orbit-test` DSL (same pattern as [evola.composeapp.feature.home.vm.HomeViewModelTest]), backed by real
  * Local*Repository implementations sharing one in-memory SQLite [EvolaDatabase] - never mocks. */
 class ProfileViewModelTest {
 

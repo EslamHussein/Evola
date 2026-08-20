@@ -1,4 +1,4 @@
-package evola.composeapp.main
+package evola.composeapp.feature.home.vm
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.shared.db.EvolaDatabase

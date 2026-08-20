@@ -17,7 +17,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** Same convention as [evola.composeapp.main.HomeViewModelTest]: a real [LocalVocabularyRepository]
+/** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]: a real [LocalVocabularyRepository]
  * backed by an in-memory SQLite [EvolaDatabase], driven through [VocabularyListViewModel] via the
  * official `org.orbit-mvi:orbit-test` DSL - never a mocked repository. Seeding follows
  * `LocalVocabularyRepositoryTest`'s own helper pattern (goal/material/lesson/vocabulary-item inserts). */

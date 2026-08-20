@@ -10,7 +10,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
-/** Same convention as [evola.composeapp.main.HomeViewModelTest]: a real [LocalGrammarRepository]
+/** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]: a real [LocalGrammarRepository]
  * backed by an in-memory SQLite [EvolaDatabase], driven through [GrammarExerciseSessionViewModel]
  * via the official `org.orbit-mvi:orbit-test` DSL. */
 class GrammarExerciseSessionViewModelTest {

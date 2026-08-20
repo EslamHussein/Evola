@@ -15,7 +15,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** Same real-repository-over-in-memory-SQLite convention as [evola.composeapp.main.HomeViewModelTest],
+/** Same real-repository-over-in-memory-SQLite convention as [evola.composeapp.feature.home.vm.HomeViewModelTest],
  * driven through the real [GoalSetupViewModel] via `org.orbit-mvi:orbit-test`. */
 class GoalSetupViewModelTest {
 

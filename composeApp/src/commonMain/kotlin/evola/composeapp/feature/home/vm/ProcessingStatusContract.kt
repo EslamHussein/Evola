@@ -1,4 +1,4 @@
-package evola.composeapp.main
+package evola.composeapp.feature.home.vm
 
 import evola.shared.feature.materials.domain.Material
 

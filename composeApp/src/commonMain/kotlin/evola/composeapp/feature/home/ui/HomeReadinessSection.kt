@@ -1,4 +1,4 @@
-package evola.composeapp.main
+package evola.composeapp.feature.home.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background

@@ -23,7 +23,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-/** Same convention as [evola.composeapp.main.HomeViewModelTest]: a real [LocalMaterialsRepository]
+/** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]: a real [LocalMaterialsRepository]
  * backed by an in-memory SQLite [EvolaDatabase]. Seeds a material already in a terminal status
  * (READY/FAILED) so the very first poll tick resolves without needing to manipulate virtual time -
  * [ProcessingViewModel]'s poll loop terminates itself on the first tick in every one of these

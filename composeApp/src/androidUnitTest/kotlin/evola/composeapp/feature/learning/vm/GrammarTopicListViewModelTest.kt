@@ -11,7 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-/** Same convention as [evola.composeapp.main.HomeViewModelTest]: a real [LocalGrammarRepository]
+/** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]: a real [LocalGrammarRepository]
  * backed by an in-memory SQLite [EvolaDatabase], driven through [GrammarTopicListViewModel] via
  * the official `org.orbit-mvi:orbit-test` DSL. */
 class GrammarTopicListViewModelTest {

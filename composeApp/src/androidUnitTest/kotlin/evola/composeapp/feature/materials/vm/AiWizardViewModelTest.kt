@@ -24,7 +24,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
-/** Same convention as [evola.composeapp.main.HomeViewModelTest]: a real [LocalMaterialsRepository]
+/** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]: a real [LocalMaterialsRepository]
  * backed by an in-memory SQLite [EvolaDatabase] and a [MockEngine] that always returns an empty
  * Anthropic response, driven through [AiWizardViewModel] via the official
  * `org.orbit-mvi:orbit-test` DSL. `startAnalysis` only needs to be asserted on its immediate,

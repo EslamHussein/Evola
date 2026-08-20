@@ -14,12 +14,11 @@ import evola.shared.local.LocalAchievementsRepository
 import evola.shared.local.LocalBackupRepository
 import evola.shared.local.LocalSettingsRepository
 import evola.shared.local.SettingsRepository
+import evola.composeapp.feature.home.vm.homeModule
 import evola.composeapp.feature.learning.vm.learningModule
 import evola.composeapp.feature.materials.vm.materialsModule
 import evola.composeapp.feature.onboarding.vm.onboardingModule
 import evola.composeapp.feature.vocabulary.vm.vocabularyModule
-import evola.composeapp.main.HomeViewModel
-import evola.composeapp.main.ProcessingStatusViewModel
 import evola.composeapp.main.ProfileViewModel
 import evola.composeapp.main.SettingsViewModel
 import evola.shared.feature.vocabulary.domain.GermanNounImportState
@@ -67,7 +66,7 @@ fun evolaModule(
     secureStore: SecureStore,
     fileTextExtractor: FileTextExtractor,
 ): Module = module {
-    includes(vocabularyModule, learningModule, materialsModule(fileTextExtractor), onboardingModule)
+    includes(vocabularyModule, learningModule, materialsModule(fileTextExtractor), onboardingModule, homeModule)
 
     single { EvolaDatabase(driverFactory.create()) }
     single { platformHttpEngine() }
@@ -83,8 +82,6 @@ fun evolaModule(
     single<BackupRepository> { LocalBackupRepository(get()) }
     single<AchievementsRepository> { LocalAchievementsRepository(get()) }
 
-    viewModel { (goalId: String) -> HomeViewModel(goalId, get()) }
-    viewModel { ProcessingStatusViewModel(get()) }
     viewModel { (goalId: String) -> ProfileViewModel(goalId, get(), get(), get()) }
     viewModel { SettingsViewModel(get()) }
 }

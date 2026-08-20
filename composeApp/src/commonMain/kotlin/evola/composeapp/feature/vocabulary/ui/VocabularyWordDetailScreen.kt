@@ -87,7 +87,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Maps the raw SRS status (unseen/introduced/learning/review/mastered - see VocabularySrs.STATUSES)
- * onto the same color scale [evola.composeapp.main.HomeScreen]'s word-breakdown cards already use
+ * onto the same color scale [evola.composeapp.feature.home.ui.HomeScreen]'s word-breakdown cards already use
  * for the same tiers, so a learner sees one consistent color language for "where a word stands"
  * across the whole app. Shared between [VocabularyRow] (in `VocabularyListScreen.kt`) and this
  * screen's own [VocabularyStatusBadge]. */

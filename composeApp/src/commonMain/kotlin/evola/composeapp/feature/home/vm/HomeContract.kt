@@ -1,4 +1,4 @@
-package evola.composeapp.main
+package evola.composeapp.feature.home.vm
 
 import evola.shared.feature.onboarding.domain.GoalProgress
 import evola.shared.feature.onboarding.domain.Lesson

@@ -11,7 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-/** Same convention as [evola.composeapp.main.HomeViewModelTest]: a real [LocalLessonsRepository]
+/** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]: a real [LocalLessonsRepository]
  * backed by an in-memory SQLite [EvolaDatabase]. Seeds a lesson already in a terminal ("ready")
  * status so the very first poll tick resolves without needing to manipulate virtual time - the
  * poll loop itself (re-fetching while "pending") is [LocalLessonsRepository]'s own concern, already

@@ -18,7 +18,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** Same convention as [evola.composeapp.main.HomeViewModelTest] and [VocabularyListViewModelTest]:
+/** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest] and [VocabularyListViewModelTest]:
  * a real [LocalVocabularyRepository] backed by an in-memory SQLite [EvolaDatabase], driven through
  * [VocabularySessionViewModel] via the official `org.orbit-mvi:orbit-test` DSL - never a mocked
  * repository. This is the actual spaced-repetition session state machine (New card -> Practice

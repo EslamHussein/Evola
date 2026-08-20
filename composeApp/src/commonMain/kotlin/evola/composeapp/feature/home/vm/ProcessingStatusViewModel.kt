@@ -1,4 +1,4 @@
-package evola.composeapp.main
+package evola.composeapp.feature.home.vm
 
 import androidx.lifecycle.ViewModel
 import evola.shared.core.analytics.EvolaLog
