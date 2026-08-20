@@ -7,6 +7,7 @@ import evola.shared.core.common.LOCAL_USER
 import evola.shared.core.common.nowMillis
 import evola.shared.db.EvolaDatabase
 import evola.shared.feature.vocabulary.domain.VocabularyCard
+import evola.shared.feature.vocabulary.domain.VocabularySessionState
 import evola.shared.feature.vocabulary.domain.WordCategory
 import evola.shared.feature.profile.data.LocalSettingsRepository
 import io.ktor.client.engine.mock.MockEngine
@@ -116,7 +117,7 @@ class LocalVocabularyRepositoryTest {
         assertIs<VocabularyCard.Practice>(result.next!!.card)
 
         // Second correct: learning -> review - graduated, so the session has nothing left to show.
-        result = (repo.submitSelfGrade(result.next!!.sessionId, "v0", correct = true) as ApiResult.Success).data
+        result = (repo.submitSelfGrade(result.next.sessionId, "v0", correct = true) as ApiResult.Success).data
         assertEquals(true, result.correct)
         assertEquals("review", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
         assertNull(result.next)
@@ -133,7 +134,7 @@ class LocalVocabularyRepositoryTest {
         assertEquals("introduced", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
         assertEquals(0L, db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().correct_streak)
         assertIs<VocabularyCard.Practice>(result.next!!.card)
-        assertEquals("v0", result.next!!.card.itemId)
+        assertEquals("v0", result.next.card.itemId)
     }
 
     @Test
@@ -156,7 +157,7 @@ class LocalVocabularyRepositoryTest {
         assertTrue(nextCard.itemId != "v0", "repeat card must not appear immediately next")
 
         // Drain forward until v0 resurfaces.
-        var current = result.next!!
+        var current: VocabularySessionState = result.next
         var sawRepeat = false
         var guard = 0
         while (guard < 30 && !sawRepeat) {

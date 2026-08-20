@@ -38,12 +38,12 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":shared"))
-            api(compose.runtime)
-            api(compose.foundation)
-            api(compose.material3)
-            api(compose.materialIconsExtended)
-            api(compose.ui)
-            implementation(compose.components.resources)
+            api("org.jetbrains.compose.runtime:runtime:${libs.versions.composeMultiplatform.get()}")
+            api("org.jetbrains.compose.foundation:foundation:${libs.versions.composeMultiplatform.get()}")
+            api("org.jetbrains.compose.material3:material3:1.9.0")
+            api("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+            api("org.jetbrains.compose.ui:ui:${libs.versions.composeMultiplatform.get()}")
+            implementation("org.jetbrains.compose.components:components-resources:${libs.versions.composeMultiplatform.get()}")
             implementation("org.jetbrains.compose.ui:ui-tooling-preview:${libs.versions.composeMultiplatform.get()}")
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)

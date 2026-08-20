@@ -174,7 +174,6 @@ private fun dayInitial(day: DayOfWeek): String = when (day) {
     DayOfWeek.FRIDAY -> "F"
     DayOfWeek.SATURDAY -> "S"
     DayOfWeek.SUNDAY -> "S"
-    else -> "?"
 }
 
 private val fakeStatsWeeklyActivity = listOf(

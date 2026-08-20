@@ -25,6 +25,9 @@ import platform.posix.memcpy
  * idiom for this is the share sheet (AirDrop, Save to Files, Mail, ...), so that's what this opens,
  * writing [content] to a temp file first since [UIActivityViewController] shares file URLs, not
  * raw strings held in memory. */
+// `as NSString` below is Kotlin/Native's toll-free-bridging idiom - it works at runtime even
+// though the compiler can't prove the static relationship, hence the warning.
+@Suppress("CAST_NEVER_SUCCEEDS")
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun rememberBackupFileSaver(content: () -> String, onSaved: (Boolean) -> Unit): () -> Unit {

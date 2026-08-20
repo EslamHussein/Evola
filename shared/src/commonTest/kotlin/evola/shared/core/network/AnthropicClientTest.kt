@@ -41,7 +41,7 @@ class AnthropicClientTest {
         val result = client.complete(AnthropicModels.SMALL, 100, null, "hi")
         assertIs<ApiResult.Failure>(result)
         assertIs<DataError.Http>(result.error)
-        assertEquals(401, (result.error as DataError.Http).code)
+        assertEquals(401, result.error.code)
         assertTrue(!called)
     }
 }

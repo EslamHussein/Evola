@@ -47,6 +47,10 @@ import platform.Security.kSecValueData
  * EncryptedSharedPreferences. Items are scoped to a fixed service name and made available after the
  * device's first unlock (`kSecAttrAccessibleAfterFirstUnlock`), never synced to iCloud.
  */
+// The `as NSString`/`as NSData`/`as String?` casts below are Kotlin/Native's toll-free-bridging
+// idiom - the compiler's static analysis of these interop types is inconsistent (some casts are
+// flagged as never succeeding, others as useless) even though they're all required at compile time.
+@Suppress("CAST_NEVER_SUCCEEDS", "USELESS_CAST")
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 class IosSecureStore(private val service: String = "evola_secure") : SecureStore {
 
