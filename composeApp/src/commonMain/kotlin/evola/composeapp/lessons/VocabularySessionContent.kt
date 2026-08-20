@@ -42,12 +42,12 @@ import evola.composeapp.generated.resources.lessons_vocab_status_review
 import evola.composeapp.generated.resources.lessons_vocab_title
 import evola.composeapp.generated.resources.lessons_word_mastered
 import evola.composeapp.generated.resources.lessons_word_progress
-import evola.composeapp.loading.ChaseLoadingIndicator
+import evola.composeapp.core.common.ChaseLoadingIndicator
 import evola.composeapp.speech.SpeechService
 import evola.composeapp.speech.rememberSpeechService
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.widget.rememberWidgetRefresher
 import evola.shared.local.AppSettings
 import evola.shared.vocabulary.VocabularyCard

@@ -22,9 +22,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import evola.composeapp.speech.SpeechService
 import evola.composeapp.speech.rememberSpeechService
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.local.AppSettings
 import evola.shared.vocabulary.VocabularyCard
 import evola.shared.vocabulary.VocabularySessionState

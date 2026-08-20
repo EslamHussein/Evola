@@ -35,10 +35,10 @@ import evola.composeapp.generated.resources.lessons_exercise_type_answer
 import evola.composeapp.generated.resources.lessons_marked_difficult
 import evola.composeapp.generated.resources.lessons_mark_difficult
 import evola.composeapp.generated.resources.lessons_whats_the_word_for
-import evola.composeapp.rtl.RtlText
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.common.RtlText
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.vocabulary.VocabularyAnswerResult
 import evola.shared.vocabulary.VocabularyCard
 import org.jetbrains.compose.resources.stringResource

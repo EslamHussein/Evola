@@ -48,11 +48,11 @@ import evola.composeapp.generated.resources.lessons_content_desc_bookmark
 import evola.composeapp.generated.resources.lessons_marked_difficult
 import evola.composeapp.generated.resources.lessons_mark_difficult
 import evola.composeapp.generated.resources.lessons_new_word_label
-import evola.composeapp.language.LocalNativeLanguage
-import evola.composeapp.rtl.RtlText
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.common.LocalNativeLanguage
+import evola.composeapp.core.common.RtlText
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.vocabulary.VocabularyCard
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

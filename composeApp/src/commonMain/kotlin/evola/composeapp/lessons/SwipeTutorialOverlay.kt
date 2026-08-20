@@ -29,9 +29,9 @@ import evola.composeapp.generated.resources.lessons_tutorial_missed_it
 import evola.composeapp.generated.resources.lessons_tutorial_start_learning
 import evola.composeapp.generated.resources.lessons_tutorial_swipe_hint
 import evola.composeapp.generated.resources.lessons_tutorial_tap_hint
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 

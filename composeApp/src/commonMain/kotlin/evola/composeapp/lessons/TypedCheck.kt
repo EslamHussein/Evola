@@ -14,8 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_check
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.vocabulary.VocabularyAnswerResult
 import evola.shared.vocabulary.VocabularyCard
 import org.jetbrains.compose.resources.stringResource

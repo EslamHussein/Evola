@@ -10,8 +10,8 @@ import androidx.compose.ui.Modifier
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_continue
 import evola.composeapp.generated.resources.lessons_finish_session
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.vocabulary.VocabularyAnswerResult
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

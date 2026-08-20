@@ -26,8 +26,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Typed recall rendered inline within the sentence itself - the blank IS the text field, styled
