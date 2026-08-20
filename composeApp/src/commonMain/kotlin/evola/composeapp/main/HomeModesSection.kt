@@ -43,9 +43,9 @@ import evola.composeapp.generated.resources.main_home_mixed_mode_subtitle
 import evola.composeapp.generated.resources.main_home_review_words
 import evola.composeapp.generated.resources.main_home_study_section_title
 import evola.composeapp.generated.resources.main_home_words_to_review
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.VocabularyBreakdown
 import evola.shared.vocabulary.SessionMode

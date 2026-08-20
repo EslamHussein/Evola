@@ -2,7 +2,7 @@ package evola.composeapp
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import evola.shared.core.EvolaLog
+import evola.shared.core.analytics.EvolaLog
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc

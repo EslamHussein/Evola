@@ -3,7 +3,10 @@ package evola.shared.local
 import evola.shared.achievements.ALL_BADGES
 import evola.shared.achievements.AchievementsRepository
 import evola.shared.achievements.BadgeDefinition
-import evola.shared.core.ApiResult
+import evola.shared.core.common.ApiResult
+import evola.shared.core.common.LOCAL_USER
+import evola.shared.core.common.newId
+import evola.shared.core.common.nowMillis
 import evola.shared.db.EvolaDatabase
 
 /** Threshold each badge unlocks at, keyed by [BadgeDefinition.id] - kept alongside [ALL_BADGES]'s

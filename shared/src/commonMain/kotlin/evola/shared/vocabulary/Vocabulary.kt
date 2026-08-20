@@ -1,6 +1,6 @@
 package evola.shared.vocabulary
 
-import evola.shared.core.ApiResult
+import evola.shared.core.common.ApiResult
 
 /** A lesson's own vocabulary item plus this user's current SRS status (Lingvist-style flat-queue
  * engine). [status] is one of [VocabularySrs.STATUSES]. */

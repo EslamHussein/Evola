@@ -1,6 +1,6 @@
 package evola.shared.segmentation
 
-import evola.shared.files.PAGE_BREAK
+import evola.shared.core.common.PAGE_BREAK
 
 /**
  * "Split by page" organization mode: no AI call at all (unlike [LessonSegmenter]'s LLM fallback) -

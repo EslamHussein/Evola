@@ -39,9 +39,9 @@ import evola.composeapp.generated.resources.main_home_share_streak_message
 import evola.composeapp.generated.resources.main_home_stats_title
 import evola.composeapp.generated.resources.main_home_streak_freeze_available_plural
 import evola.composeapp.generated.resources.main_home_streak_freeze_available_singular
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.goals.DayActivity
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.VocabularyBreakdown
@@ -52,11 +52,11 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Reword's "Stats" section - a day-of-week strip (already built as [WeeklyStreakStrip]), two big
  * Current/Best streak tiles, and a Share row, all in one card, matching the real app's structure
- * (confirmed against a live screenshot). [evola.composeapp.share.rememberShareText] is the same
+ * (confirmed against a live screenshot). [evola.composeapp.core.common.rememberShareText] is the same
  * platform share sheet Profile's own "Share progress" row uses. */
 @Composable
 internal fun StatsSection(progress: GoalProgress) {
-    val shareText = evola.composeapp.share.rememberShareText()
+    val shareText = evola.composeapp.core.common.rememberShareText()
     Text(stringResource(Res.string.main_home_stats_title), style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(EvolaSpacing.md))
     val streakShareMessage = stringResource(Res.string.main_home_share_streak_message, progress.streakDays)

@@ -7,7 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import evola.shared.core.EvolaLog
+import evola.shared.core.analytics.EvolaLog
 
 private const val PREFS_NAME = "evola_secure"
 

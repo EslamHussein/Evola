@@ -3,8 +3,8 @@ package evola.composeapp.materials
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import evola.shared.files.MIME_DOCX
-import evola.shared.files.MIME_PDF
+import evola.shared.core.common.MIME_DOCX
+import evola.shared.core.common.MIME_PDF
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned

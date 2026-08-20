@@ -55,9 +55,9 @@ import evola.composeapp.generated.resources.onboarding_category_some_selected
 import evola.composeapp.generated.resources.onboarding_category_subtitle_words
 import evola.composeapp.generated.resources.onboarding_category_words_count
 import evola.composeapp.generated.resources.onboarding_level_lesson_title
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.vocabulary.StarterLesson
 import evola.shared.vocabulary.StarterLevel
 import evola.shared.vocabulary.StarterWord

@@ -1,7 +1,7 @@
 package evola.composeapp.onboarding
 
 import androidx.lifecycle.ViewModel
-import evola.shared.core.getOrNull
+import evola.shared.core.common.getOrNull
 import evola.shared.goals.CreateGoalResult
 import evola.shared.goals.GoalsRepository
 import evola.shared.language.NativeLanguage

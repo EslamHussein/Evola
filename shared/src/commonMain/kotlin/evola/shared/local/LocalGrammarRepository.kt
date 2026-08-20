@@ -1,8 +1,12 @@
 package evola.shared.local
 
-import evola.shared.core.ApiResult
-import evola.shared.core.DataError
-import evola.shared.core.EvolaLog
+import evola.shared.core.common.ApiResult
+import evola.shared.core.common.DataError
+import evola.shared.core.analytics.EvolaLog
+import evola.shared.core.common.LOCAL_USER
+import evola.shared.core.common.decodeStringList
+import evola.shared.core.common.newId
+import evola.shared.core.common.nowMillis
 import evola.shared.db.EvolaDatabase
 import evola.shared.grammar.GrammarAnswerResult
 import evola.shared.grammar.GrammarExercise
@@ -10,7 +14,7 @@ import evola.shared.grammar.GrammarRepository
 import evola.shared.grammar.GrammarSession
 import evola.shared.grammar.GrammarSessionSummary
 import evola.shared.grammar.GrammarTopic
-import evola.shared.srs.MasterySrs
+import evola.shared.core.common.srs.MasterySrs
 import kotlin.time.Instant
 import kotlin.random.Random
 

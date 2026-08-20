@@ -1,7 +1,7 @@
 package evola.composeapp.main
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import evola.shared.ai.AnthropicClient
+import evola.shared.core.network.AnthropicClient
 import evola.shared.db.EvolaDatabase
 import evola.shared.goals.CreateGoalResult
 import evola.shared.language.NativeLanguage

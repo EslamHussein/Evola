@@ -18,7 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.orbitmvi.orbit.compose.collectAsState
-import evola.composeapp.BackHandler
+import evola.composeapp.core.navigation.BackHandler
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.wizard_processing_analyzing
 import evola.composeapp.generated.resources.wizard_processing_continue_background
@@ -27,9 +27,9 @@ import evola.composeapp.generated.resources.wizard_processing_extracting
 import evola.composeapp.generated.resources.wizard_processing_lesson_of_total
 import evola.composeapp.generated.resources.wizard_processing_splitting
 import evola.composeapp.generated.resources.wizard_processing_splitting_description
-import evola.composeapp.loading.ChaseLoadingIndicator
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.common.ChaseLoadingIndicator
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.materials.Lesson
 import evola.shared.materials.Material
 import evola.shared.materials.MaterialDetail

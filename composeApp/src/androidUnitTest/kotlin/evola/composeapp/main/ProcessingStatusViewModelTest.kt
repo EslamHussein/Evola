@@ -1,14 +1,14 @@
 package evola.composeapp.main
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import evola.shared.ai.AnthropicClient
+import evola.shared.core.network.AnthropicClient
 import evola.shared.ai.GrammarExtractor
 import evola.shared.ai.ImageTranscriber
 import evola.shared.ai.SegmentationExtractor
 import evola.shared.ai.VocabularyExtractor
 import evola.shared.db.EvolaDatabase
-import evola.shared.files.FileTextExtractor
-import evola.shared.local.LOCAL_USER
+import evola.shared.core.common.FileTextExtractor
+import evola.shared.core.common.LOCAL_USER
 import evola.shared.local.LocalMaterialsRepository
 import evola.shared.materials.MaterialStatus
 import io.ktor.client.engine.mock.MockEngine

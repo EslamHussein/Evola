@@ -1,9 +1,9 @@
 package evola.composeapp.lessons
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import evola.shared.ai.AnthropicClient
+import evola.shared.core.network.AnthropicClient
 import evola.shared.db.EvolaDatabase
-import evola.shared.local.LOCAL_USER
+import evola.shared.core.common.LOCAL_USER
 import evola.shared.local.LocalSettingsRepository
 import evola.shared.local.LocalVocabularyRepository
 import evola.shared.vocabulary.VocabularyCard

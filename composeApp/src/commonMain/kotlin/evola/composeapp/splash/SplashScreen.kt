@@ -34,8 +34,8 @@ import androidx.compose.ui.unit.sp
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.misc_app_name
 import evola.composeapp.generated.resources.misc_splash_tagline
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaTheme
 import kotlin.math.sin
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

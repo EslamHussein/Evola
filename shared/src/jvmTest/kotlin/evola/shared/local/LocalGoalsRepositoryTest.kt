@@ -1,7 +1,8 @@
 package evola.shared.local
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import evola.shared.core.ApiResult
+import evola.shared.core.common.ApiResult
+import evola.shared.core.common.LOCAL_USER
 import evola.shared.db.EvolaDatabase
 import evola.shared.goals.CreateGoalResult
 import evola.shared.language.NativeLanguage

@@ -1,6 +1,6 @@
 package evola.shared.materials
 
-import evola.shared.core.ApiResult
+import evola.shared.core.common.ApiResult
 
 /** The shortest text [MaterialsRepository.uploadText] will accept - also the UI's own "Continue"
  * gate for pasted text, so the button's enabled state can never drift from what upload will

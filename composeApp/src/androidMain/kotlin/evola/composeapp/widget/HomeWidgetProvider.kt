@@ -7,10 +7,10 @@ import android.content.ComponentName
 import android.content.Context
 import android.widget.RemoteViews
 import evola.composeapp.R
-import evola.composeapp.di.DatabaseDriverFactory
+import evola.composeapp.core.database.DatabaseDriverFactory
 import evola.shared.db.EvolaDatabase
-import evola.shared.local.LOCAL_USER
-import evola.shared.srs.computeStreak
+import evola.shared.core.common.LOCAL_USER
+import evola.shared.core.common.srs.computeStreak
 import evola.shared.todayLocalDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

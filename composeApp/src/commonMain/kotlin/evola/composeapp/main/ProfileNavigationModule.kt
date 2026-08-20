@@ -3,6 +3,7 @@
 package evola.composeapp.main
 
 import androidx.compose.runtime.getValue
+import evola.composeapp.core.navigation.ProfileNavContext
 import evola.composeapp.reminders.rememberNotificationPermissionRequester
 import evola.composeapp.reminders.rememberReminderScheduler
 import evola.composeapp.speech.rememberSpeechService

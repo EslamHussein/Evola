@@ -1,8 +1,8 @@
 package evola.composeapp.lessons
 
 import androidx.lifecycle.ViewModel
-import evola.composeapp.core.toUserMessage
-import evola.shared.core.ApiResult
+import evola.composeapp.core.common.toUserMessage
+import evola.shared.core.common.ApiResult
 import evola.shared.lessons.LessonsRepository
 import kotlinx.coroutines.delay
 import org.orbitmvi.orbit.OrbitContainerHost

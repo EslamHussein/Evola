@@ -42,10 +42,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import evola.composeapp.speech.SpeechService
 import evola.composeapp.speech.rememberSpeechService
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
-import evola.composeapp.theme.components.SelectableChip
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.SelectableChip
 import evola.shared.local.AppSettings
 import evola.shared.local.AppTheme
 import kotlin.math.roundToInt

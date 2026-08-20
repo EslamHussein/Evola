@@ -18,9 +18,9 @@ import evola.composeapp.generated.resources.main_profile_credits_title
 import evola.composeapp.generated.resources.main_profile_danger_zone_title
 import evola.composeapp.generated.resources.main_profile_reset_all_row_subtitle
 import evola.composeapp.generated.resources.main_profile_reset_all_row_title
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 

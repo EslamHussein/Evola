@@ -24,6 +24,6 @@ expect class SpeechService {
 }
 
 /** Composable provider so `App.kt`/screens obtain one instance (with the Android `Context` bound
- * where needed) and share it, mirroring [evola.composeapp.di.rememberDatabaseDriverFactory]. */
+ * where needed) and share it, mirroring [evola.composeapp.core.database.rememberDatabaseDriverFactory]. */
 @Composable
 expect fun rememberSpeechService(): SpeechService

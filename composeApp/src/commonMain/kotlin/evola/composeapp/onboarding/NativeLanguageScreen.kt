@@ -22,9 +22,9 @@ import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.misc_continue
 import evola.composeapp.generated.resources.misc_native_language_subtitle
 import evola.composeapp.generated.resources.misc_native_language_title
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
-import evola.composeapp.theme.components.SelectableChip
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.SelectableChip
 import evola.shared.language.NativeLanguage
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

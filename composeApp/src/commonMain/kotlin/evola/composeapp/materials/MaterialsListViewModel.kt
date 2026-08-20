@@ -1,10 +1,10 @@
 package evola.composeapp.materials
 
 import androidx.lifecycle.ViewModel
-import evola.composeapp.core.toUserMessage
-import evola.shared.core.ApiResult
-import evola.shared.core.EvolaLog
-import evola.shared.core.getOrNull
+import evola.composeapp.core.common.toUserMessage
+import evola.shared.core.common.ApiResult
+import evola.shared.core.analytics.EvolaLog
+import evola.shared.core.common.getOrNull
 import evola.shared.materials.MATERIAL_POLL_INTERVAL_MS
 import evola.shared.materials.MaterialStatus
 import evola.shared.materials.MaterialsRepository

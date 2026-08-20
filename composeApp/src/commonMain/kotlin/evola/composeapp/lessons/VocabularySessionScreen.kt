@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.orbitmvi.orbit.compose.collectAsState
-import evola.composeapp.BackHandler
+import evola.composeapp.core.navigation.BackHandler
 import evola.composeapp.speech.rememberSpeechService
 
 /** Vocabulary session screen: a persisted, priority-ordered SRS queue rendered as swipeable cards,

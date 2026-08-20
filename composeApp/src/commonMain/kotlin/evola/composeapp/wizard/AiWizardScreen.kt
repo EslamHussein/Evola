@@ -34,7 +34,7 @@ import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import evola.composeapp.loading.ChaseLoadingDots
+import evola.composeapp.core.common.ChaseLoadingDots
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -55,7 +55,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import evola.composeapp.BackHandler
+import evola.composeapp.core.navigation.BackHandler
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.wizard_add_lesson_range
 import evola.composeapp.generated.resources.wizard_back
@@ -78,12 +78,12 @@ import evola.composeapp.generated.resources.wizard_resource_info_prompt
 import evola.composeapp.generated.resources.wizard_start_analysis
 import evola.composeapp.generated.resources.wizard_starting
 import evola.composeapp.generated.resources.wizard_view_existing_material
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
-import evola.composeapp.theme.components.ComingSoonChip
-import evola.composeapp.theme.components.SegmentedProgressBar
-import evola.composeapp.theme.components.SelectableChip
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.ComingSoonChip
+import evola.composeapp.core.designsystem.components.SegmentedProgressBar
+import evola.composeapp.core.designsystem.components.SelectableChip
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.orbitmvi.orbit.compose.collectAsState

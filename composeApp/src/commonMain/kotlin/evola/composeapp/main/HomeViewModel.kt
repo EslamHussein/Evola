@@ -1,9 +1,9 @@
 package evola.composeapp.main
 
 import androidx.lifecycle.ViewModel
-import evola.composeapp.core.toUserMessage
-import evola.shared.core.ApiResult
-import evola.shared.core.getOrNull
+import evola.composeapp.core.common.toUserMessage
+import evola.shared.core.common.ApiResult
+import evola.shared.core.common.getOrNull
 import evola.shared.goals.GoalsRepository
 import evola.shared.todayLocalDate
 import org.orbitmvi.orbit.OrbitContainerHost

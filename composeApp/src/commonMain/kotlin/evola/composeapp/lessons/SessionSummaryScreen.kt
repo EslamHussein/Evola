@@ -32,9 +32,9 @@ import evola.composeapp.generated.resources.misc_session_subtitle
 import evola.composeapp.generated.resources.misc_stat_accuracy
 import evola.composeapp.generated.resources.misc_stat_time
 import evola.composeapp.generated.resources.misc_stat_words
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.vocabulary.VocabularySessionSummary
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

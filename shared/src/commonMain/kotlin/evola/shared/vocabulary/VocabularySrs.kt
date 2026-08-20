@@ -2,7 +2,7 @@ package evola.shared.vocabulary
 
 /**
  * Pure, dependency-free vocabulary SRS ladder for the Lingvist-style flat-queue engine — deliberately
- * separate from [evola.shared.srs.MasterySrs] (which remains Grammar-only) so the 5-status
+ * separate from [evola.shared.core.common.srs.MasterySrs] (which remains Grammar-only) so the 5-status
  * vocabulary lifecycle and Grammar's 4-stage ladder never share a data model, even though the
  * transition shape (index +/-1, capped/floored) is the same idea.
  */

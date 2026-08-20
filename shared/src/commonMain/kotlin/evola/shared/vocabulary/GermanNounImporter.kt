@@ -1,6 +1,6 @@
 package evola.shared.vocabulary
 
-import evola.shared.core.SqlLoggingGate
+import evola.shared.core.common.SqlLoggingGate
 import evola.shared.db.EvolaDatabase
 
 sealed interface GermanNounImportState {

@@ -2,7 +2,7 @@ package evola.composeapp.wizard
 
 import androidx.lifecycle.ViewModel
 import evola.composeapp.materials.StagedResource
-import evola.shared.core.EvolaLog
+import evola.shared.core.analytics.EvolaLog
 import evola.shared.materials.ImageInput
 import evola.shared.materials.MaterialsRepository
 import evola.shared.materials.UploadResult

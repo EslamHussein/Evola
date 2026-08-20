@@ -26,9 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.ui.NavDisplay
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import evola.composeapp.language.LocalNativeLanguage
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.components.GlassNavigationBar
+import evola.composeapp.core.navigation.MaterialsNavContext
+import evola.composeapp.core.navigation.ProfileNavContext
+import evola.composeapp.core.common.LocalNativeLanguage
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.components.GlassNavigationBar
 import org.koin.compose.koinInject
 import org.koin.compose.navigation3.koinEntryProvider
 import org.koin.compose.viewmodel.koinViewModel
@@ -195,7 +197,7 @@ fun MainScreen(
  * not created here, since [MainScreen] also needs its size to decide whether the tab bar is
  * visible, and Home's cross-tab CTAs need to reset it before switching tabs in.
  *
- * No manual [evola.composeapp.BackHandler] here (unlike the pre-migration version) - [NavDisplay]
+ * No manual [evola.composeapp.core.navigation.BackHandler] here (unlike the pre-migration version) - [NavDisplay]
  * already registers its own back handling via `androidx.navigationevent`, predictive-back animation
  * included, and only intercepts the system back gesture when there's a previous entry to return to.
  * A redundant `BackHandler` on top would use the older `OnBackPressedCallback` API and risks

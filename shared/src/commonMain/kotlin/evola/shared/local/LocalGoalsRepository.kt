@@ -1,8 +1,14 @@
 package evola.shared.local
 
 import evola.shared.achievements.AchievementsRepository
-import evola.shared.core.ApiResult
-import evola.shared.core.EvolaLog
+import evola.shared.core.common.ApiResult
+import evola.shared.core.analytics.EvolaLog
+import evola.shared.core.common.LOCAL_USER
+import evola.shared.core.common.grammarTopicCount
+import evola.shared.core.common.lessonGrammarProgress
+import evola.shared.core.common.lessonVocabProgress
+import evola.shared.core.common.newId
+import evola.shared.core.common.nowMillis
 import evola.shared.db.EvolaDatabase
 import evola.shared.goals.CreateGoalResult
 import evola.shared.goals.DayActivity
@@ -14,8 +20,8 @@ import evola.shared.goals.NudgeWord
 import evola.shared.goals.UpdateGoalResult
 import evola.shared.goals.VocabularyBreakdown
 import evola.shared.language.NativeLanguage
-import evola.shared.srs.computeBestStreak
-import evola.shared.srs.computeStreak
+import evola.shared.core.common.srs.computeBestStreak
+import evola.shared.core.common.srs.computeStreak
 import evola.shared.vocabulary.VocabularySrs
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
