@@ -33,7 +33,7 @@ import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.feature.vocabulary.domain.GermanNounImportState
 import evola.shared.feature.vocabulary.domain.GermanNounImporter
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Shown only during the one-time German-noun-dataset import ([GermanNounImporter]) - every app
  * launch after the first sees [GermanNounImportState.Done] almost immediately (a single row-count

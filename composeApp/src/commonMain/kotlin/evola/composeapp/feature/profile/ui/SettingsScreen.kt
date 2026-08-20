@@ -93,7 +93,7 @@ import evola.composeapp.generated.resources.main_settings_voice_default
 import evola.composeapp.generated.resources.main_settings_voice_picker_subtitle
 import evola.composeapp.generated.resources.main_settings_voice_picker_title
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /**
  * Every user-tunable knob Evola has, grouped the way Reword's own Settings screen does (General /

@@ -43,7 +43,7 @@ import evola.composeapp.generated.resources.lessons_field_native_meaning_optiona
 import evola.composeapp.generated.resources.lessons_field_term
 import evola.composeapp.generated.resources.lessons_section_meaning
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Reword-style "add your own word" - same shape as [EditVocabularyScreen] but starting from blank
  * fields and landing in whichever lesson is currently open (Evola's content is lesson-scoped, so

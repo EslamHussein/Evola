@@ -21,7 +21,7 @@ import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.feature.vocabulary.domain.VocabularyAnswerResult
 import evola.shared.feature.vocabulary.domain.VocabularyCard
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Multiple-choice check for a [VocabularyCard.Practice] card, reachable via the grid icon instead
  * of the plain swipe. Grades on tap; correctness feeds the same SRS transition a graded swipe

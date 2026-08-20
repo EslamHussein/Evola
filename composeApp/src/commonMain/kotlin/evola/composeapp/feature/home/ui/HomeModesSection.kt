@@ -50,7 +50,7 @@ import evola.shared.feature.onboarding.domain.GoalProgress
 import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import evola.shared.feature.vocabulary.domain.SessionMode
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Reword's Home "Spaced repetition" section - three rows with real counts, each a plain multi-word
  * session across the whole goal (see [evola.shared.feature.vocabulary.domain.SessionMode]) rather than tied to any

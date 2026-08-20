@@ -29,7 +29,7 @@ import evola.composeapp.core.designsystem.EvolaTheme
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Per LOADING_INDICATORS_HANDOFF.md: a single traveling brightness wave over 3 phase-offset
  * squares/dots, cycle length 1.2s. [cyclePos] and [offset] are both in [0,1). */

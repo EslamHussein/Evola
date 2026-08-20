@@ -31,7 +31,7 @@ import evola.composeapp.core.designsystem.components.SelectableChip
 import evola.shared.feature.profile.domain.SettingsRepository
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 
 private val DAILY_GOAL_OPTIONS = listOf(5, 8, 12, 20)

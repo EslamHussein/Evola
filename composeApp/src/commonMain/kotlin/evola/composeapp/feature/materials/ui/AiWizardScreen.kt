@@ -93,7 +93,7 @@ import evola.composeapp.core.designsystem.components.ComingSoonChip
 import evola.composeapp.core.designsystem.components.SegmentedProgressBar
 import evola.composeapp.core.designsystem.components.SelectableChip
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 

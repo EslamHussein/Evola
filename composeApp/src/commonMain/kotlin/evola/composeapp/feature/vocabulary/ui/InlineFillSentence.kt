@@ -28,7 +28,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaTheme
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Typed recall rendered inline within the sentence itself - the blank IS the text field, styled
  * to match the surrounding headline text, rather than a separate boxed Material field below. */

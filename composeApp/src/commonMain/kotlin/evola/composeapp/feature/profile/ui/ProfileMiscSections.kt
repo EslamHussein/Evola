@@ -22,7 +22,7 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Reword's Menu "Reset all progress" - a single destructive row, kept separate from [AppSection]
  * so it doesn't sit next to routine actions like Settings/backup. */

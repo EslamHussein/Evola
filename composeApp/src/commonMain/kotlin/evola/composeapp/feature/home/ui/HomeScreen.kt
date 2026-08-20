@@ -65,7 +65,7 @@ import evola.composeapp.generated.resources.main_home_retry
 import evola.composeapp.generated.resources.main_home_title
 import evola.composeapp.generated.resources.main_home_your_goal_label
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Home tab / Progress Dashboard (01_PRODUCT_SPEC.md §1.10). Three honest states: the encouraging
  * empty state when the goal has no lessons yet (never a broken 0% chart), a real readiness dial +

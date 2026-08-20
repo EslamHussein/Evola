@@ -84,7 +84,7 @@ import evola.shared.feature.materials.domain.Material
 import evola.shared.feature.materials.domain.MaterialDetail
 import evola.shared.feature.materials.domain.MaterialStatus
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun MaterialDetailScreen(viewModel: MaterialDetailViewModel, onBack: () -> Unit, onOpenLesson: (String) -> Unit) {

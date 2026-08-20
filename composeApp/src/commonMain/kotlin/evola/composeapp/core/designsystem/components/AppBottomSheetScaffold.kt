@@ -1,8 +1,8 @@
 package evola.composeapp.core.designsystem.components
 
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.splineBasedDecay
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -50,16 +49,9 @@ private const val EXPANDED_FRACTION = 0.92f
  */
 @Stable
 class AppBottomSheetState internal constructor(
-    density: Density,
     initialValue: AppBottomSheetValue,
 ) {
-    internal val anchoredDraggableState = AnchoredDraggableState(
-        initialValue = initialValue,
-        positionalThreshold = { distance: Float -> distance * 0.5f },
-        velocityThreshold = { with(density) { 125.dp.toPx() } },
-        snapAnimationSpec = tween(300),
-        decayAnimationSpec = splineBasedDecay(density),
-    )
+    internal val anchoredDraggableState = AnchoredDraggableState(initialValue = initialValue)
 
     val currentValue: AppBottomSheetValue get() = anchoredDraggableState.currentValue
     val targetValue: AppBottomSheetValue get() = anchoredDraggableState.targetValue
@@ -76,10 +68,7 @@ class AppBottomSheetState internal constructor(
 @Composable
 fun rememberAppBottomSheetState(
     initialValue: AppBottomSheetValue = AppBottomSheetValue.Hidden,
-): AppBottomSheetState {
-    val density = LocalDensity.current
-    return remember { AppBottomSheetState(density, initialValue) }
-}
+): AppBottomSheetState = remember { AppBottomSheetState(initialValue) }
 
 /**
  * A persistent, non-modal bottom sheet that never covers [bottomBar] - unlike
@@ -131,6 +120,10 @@ fun AppBottomSheetScaffold(
                     }
                 }
                 LaunchedEffect(anchors) { sheetState.anchoredDraggableState.updateAnchors(anchors) }
+                val flingBehavior = AnchoredDraggableDefaults.flingBehavior(
+                    state = sheetState.anchoredDraggableState,
+                    animationSpec = tween(300),
+                )
 
                 Surface(
                     modifier = Modifier
@@ -144,7 +137,7 @@ fun AppBottomSheetScaffold(
                             val offset = sheetState.anchoredDraggableState.offset
                             IntOffset(0, (if (offset.isNaN()) containerHeightPx else offset).roundToInt())
                         }
-                        .anchoredDraggable(sheetState.anchoredDraggableState, Orientation.Vertical),
+                        .anchoredDraggable(sheetState.anchoredDraggableState, Orientation.Vertical, flingBehavior = flingBehavior),
                     shape = MaterialTheme.shapes.large,
                     tonalElevation = 4.dp,
                 ) {

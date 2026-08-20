@@ -94,7 +94,7 @@ import evola.composeapp.generated.resources.main_profile_saving
 import evola.composeapp.generated.resources.main_profile_title
 import evola.composeapp.generated.resources.main_profile_your_goal_label
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Profile tab per 06_SCREENS_REFERENCE.md - account info + goal editing + sign-out.
  * Notifications/subscription/privacy are explicitly out of MVP scope (01_PRODUCT_SPEC.md), so

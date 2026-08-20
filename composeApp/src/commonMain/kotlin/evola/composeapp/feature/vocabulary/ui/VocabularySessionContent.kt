@@ -55,7 +55,7 @@ import evola.shared.feature.profile.domain.AppSettings
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import evola.shared.feature.vocabulary.domain.VocabularySessionState
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** A due review's swipe labels differ from a still-learning word's - both are stored as
  * [VocabularyCard.Practice], distinguished by [evola.shared.feature.vocabulary.domain.VocabularySessionState.origin]. */

@@ -19,6 +19,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,7 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Wraps [content] in a two-direction swipe gesture that fires [onSwipeLeft]/[onSwipeRight] on
  * commit and always snaps back to settled (this screen advances by replacing the card's state, not
@@ -60,16 +61,18 @@ internal fun SwipeGradeCard(
     val effectiveLeftColor = if (invertSwipe) rightSwipeColor else leftSwipeColor
     val effectiveRightColor = if (invertSwipe) leftSwipeColor else rightSwipeColor
 
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            when (value) {
-                SwipeToDismissBoxValue.StartToEnd -> effectiveOnSwipeRight()
-                SwipeToDismissBoxValue.EndToStart -> effectiveOnSwipeLeft()
-                SwipeToDismissBoxValue.Settled -> {}
-            }
-            false
-        },
-    )
+    val dismissState = rememberSwipeToDismissBoxState()
+    // rememberSwipeToDismissBoxState() no longer takes confirmValueChange (deprecated, no direct
+    // replacement) - a swipe always commits to its anchor, so the veto-and-snap-back-to-Settled
+    // behavior the old callback gave (returning false) is reproduced here explicitly instead.
+    LaunchedEffect(dismissState.currentValue) {
+        when (dismissState.currentValue) {
+            SwipeToDismissBoxValue.StartToEnd -> effectiveOnSwipeRight()
+            SwipeToDismissBoxValue.EndToStart -> effectiveOnSwipeLeft()
+            SwipeToDismissBoxValue.Settled -> return@LaunchedEffect
+        }
+        dismissState.snapTo(SwipeToDismissBoxValue.Settled)
+    }
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {

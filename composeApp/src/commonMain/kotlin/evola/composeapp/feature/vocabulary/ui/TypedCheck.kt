@@ -19,7 +19,7 @@ import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.feature.vocabulary.domain.VocabularyAnswerResult
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Typed-recall check for a [VocabularyCard.Practice] card, reachable via the keyboard icon instead
  * of the plain swipe. Grades on "Check"; correctness feeds the same SRS transition a graded swipe

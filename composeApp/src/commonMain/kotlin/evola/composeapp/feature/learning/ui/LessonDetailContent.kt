@@ -30,7 +30,7 @@ import evola.composeapp.generated.resources.lessons_nav_back
 import evola.shared.feature.learning.domain.LessonDetail
 import evola.shared.feature.learning.domain.LessonSection
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 internal fun LessonDetailContent(

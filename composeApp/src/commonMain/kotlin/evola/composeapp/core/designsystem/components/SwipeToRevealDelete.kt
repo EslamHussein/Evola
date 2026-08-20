@@ -1,8 +1,8 @@
 package evola.composeapp.core.designsystem.components
 
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.splineBasedDecay
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
@@ -58,15 +58,7 @@ fun SwipeToRevealDelete(
     val scope = rememberCoroutineScope()
     val revealWidthPx = with(density) { revealWidth.toPx() }
 
-    val state = remember {
-        AnchoredDraggableState(
-            initialValue = SwipeRevealValue.Closed,
-            positionalThreshold = { distance: Float -> distance * 0.5f },
-            velocityThreshold = { with(density) { 125.dp.toPx() } },
-            snapAnimationSpec = tween(300),
-            decayAnimationSpec = splineBasedDecay(density),
-        )
-    }
+    val state = remember { AnchoredDraggableState(initialValue = SwipeRevealValue.Closed) }
     val anchors = remember(revealWidthPx) {
         DraggableAnchors {
             SwipeRevealValue.Closed at 0f
@@ -74,6 +66,7 @@ fun SwipeToRevealDelete(
         }
     }
     LaunchedEffect(anchors) { state.updateAnchors(anchors) }
+    val flingBehavior = AnchoredDraggableDefaults.flingBehavior(state = state, animationSpec = tween(300))
 
     Box(modifier = modifier.fillMaxWidth()) {
         Box(
@@ -98,7 +91,7 @@ fun SwipeToRevealDelete(
                     val offset = state.offset
                     IntOffset((if (offset.isNaN()) 0f else offset).roundToInt(), 0)
                 }
-                .anchoredDraggable(state, Orientation.Horizontal),
+                .anchoredDraggable(state, Orientation.Horizontal, flingBehavior = flingBehavior),
         ) {
             content()
         }

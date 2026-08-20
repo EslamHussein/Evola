@@ -58,7 +58,7 @@ import evola.composeapp.generated.resources.lessons_empty_vocabulary
 import evola.composeapp.generated.resources.lessons_nav_close
 import evola.composeapp.generated.resources.lessons_word_progress
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import evola.shared.feature.vocabulary.domain.VocabularyItem
 
 /** Reword's "Extra modes (do not affect stats)" - flip through every word in the lesson, tap the

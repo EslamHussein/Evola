@@ -44,7 +44,7 @@ import evola.composeapp.generated.resources.lessons_field_term
 import evola.composeapp.generated.resources.lessons_section_meaning
 import evola.shared.feature.vocabulary.domain.VocabularyItem
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Full screen rather than a popup dialog - editing needs enough room for the on-screen keyboard
  * plus three fields (one of them RTL-aware) without the dialog's cramped fixed height. */

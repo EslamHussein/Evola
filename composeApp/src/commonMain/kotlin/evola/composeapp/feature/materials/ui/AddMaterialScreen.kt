@@ -83,7 +83,7 @@ import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.SelectableChip
 import evola.shared.feature.materials.domain.MIN_EXTRACTABLE_TEXT_LENGTH
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import org.orbitmvi.orbit.compose.collectAsState
 
 @Composable

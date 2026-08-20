@@ -8,6 +8,14 @@ plugins {
 
 kotlin {
     jvmToolchain(21)
+
+    // expect/actual classes (SpeechService, ReminderScheduler, etc.) are a stable, intentional
+    // part of this project's platform-bridge pattern - silences the per-declaration "in Beta"
+    // warning rather than suppressing it per-file.
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     androidTarget()
 
     // iosX64 (Intel Mac simulator target) intentionally excluded - navigation3-ui doesn't publish
@@ -36,7 +44,7 @@ kotlin {
             api(compose.materialIconsExtended)
             api(compose.ui)
             implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
+            implementation("org.jetbrains.compose.ui:ui-tooling-preview:${libs.versions.composeMultiplatform.get()}")
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.haze)
@@ -52,7 +60,6 @@ kotlin {
             implementation(libs.kotlinx.serialization.core)
         }
         androidMain.dependencies {
-            implementation(libs.androidx.security.crypto)
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.sqldelight.android.driver)
@@ -61,7 +68,7 @@ kotlin {
             implementation(libs.androidx.work.runtime.ktx)
             // Not debug-scoped: the KMP androidMain DSL doesn't expose build-type-specific
             // configurations. Small tooling dependency, acceptable to ship in release too.
-            implementation(compose.uiTooling)
+            implementation("org.jetbrains.compose.ui:ui-tooling:${libs.versions.composeMultiplatform.get()}")
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

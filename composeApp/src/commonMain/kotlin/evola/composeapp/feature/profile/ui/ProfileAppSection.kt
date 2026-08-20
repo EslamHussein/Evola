@@ -62,7 +62,7 @@ import evola.shared.feature.profile.domain.BackupRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Settings entry point + local backup/restore - a JSON file export/import
  * ([BackupRepository]) rather than any cloud sync, matching this app's no-

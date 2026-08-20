@@ -106,7 +106,7 @@ import evola.composeapp.generated.resources.lessons_sort_progress
 import evola.composeapp.generated.resources.lessons_vocab_title
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** The vocabulary list screen's own sub-screens live in sibling files in this package -
  * [VocabularyWordDetailScreen.kt] (word detail, also home to the shared `vocabularyStatusStyle`

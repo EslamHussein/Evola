@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Static version of the splash/loading indicator's 3-square mark, for root-tab top bars.
  * Same 72x60 coordinate space and squares as [evola.composeapp.core.common.ChaseLoadingIndicator],

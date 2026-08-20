@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Reword's segmented progress strip - one dash per distinct word in the session (matching the
  * already-shown "Word X of Y" text), filled up to [filled]. Reads at a glance far better than a

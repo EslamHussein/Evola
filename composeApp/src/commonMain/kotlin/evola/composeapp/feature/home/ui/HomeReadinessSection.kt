@@ -37,7 +37,7 @@ import evola.shared.feature.onboarding.domain.DayActivity
 import evola.shared.feature.onboarding.domain.GoalProgress
 import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Colors shared across the mini ring and the activity chart below it, so every "mastered/learning/
  * not started" signal on the dashboard reads as one system. */

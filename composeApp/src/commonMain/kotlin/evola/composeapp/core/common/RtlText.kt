@@ -16,7 +16,7 @@ import evola.composeapp.core.common.LocalNativeLanguage
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.arabicFamily
 import evola.shared.language.NativeLanguage
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Renders text in the learner's chosen native language ([LocalNativeLanguage]): RTL layout,
  * right-alignment, and the dedicated Arabic-script font for RTL languages (Arabic today; neither of

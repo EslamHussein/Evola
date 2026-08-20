@@ -44,7 +44,7 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import kotlin.math.min
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** A selectable, icon+label chip (resource-type grid, wizard single/multi-select options) -
  * recreates the design handoff's outlined/tinted-when-selected chip using EvolaTheme colors

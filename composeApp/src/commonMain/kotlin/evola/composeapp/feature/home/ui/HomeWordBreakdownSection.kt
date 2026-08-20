@@ -52,7 +52,7 @@ import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import evola.shared.feature.vocabulary.domain.WordCategory
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** "Word breakdown" header (with the goal's total word count as a pill) plus three red/yellow/
  * green cards - a re-cut of the same words by how they're actually going, not just SRS status:

@@ -29,7 +29,7 @@ import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.feature.profile.domain.AppSettings
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import evola.shared.feature.vocabulary.domain.VocabularySessionState
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Centers the (single) child like [Arrangement.Center], except the gap ABOVE it is capped at
  * [maxTopGapFraction] of the column's height - any extra leftover space falls below instead. A

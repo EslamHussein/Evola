@@ -33,7 +33,7 @@ import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.inter_variable
 import evola.composeapp.generated.resources.noto_naskh_arabic_variable
 import org.jetbrains.compose.resources.Font
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /**
  * Reword-inspired light palette. The token *names* are kept semantic (unchanged from the earlier

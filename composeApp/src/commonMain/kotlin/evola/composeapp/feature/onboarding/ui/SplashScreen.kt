@@ -38,7 +38,7 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaTheme
 import kotlin.math.sin
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 // Timeline cues (seconds), from SPLASH_SCREEN_HANDOFF.md - Build[0,2.2) Beat[2.2,2.6) Reveal[2.6,3.6) Hold[3.6,...).
 // The Build phase itself is never replayed here - the OS-level system splash (ic_splash_mark)

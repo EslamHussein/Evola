@@ -33,7 +33,7 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Shown once, ever, the first time a learner reaches an in-progress card - Reword's own onboarding
  * has an equivalent swipe walkthrough; this app's content is lesson-scoped rather than pre-loaded

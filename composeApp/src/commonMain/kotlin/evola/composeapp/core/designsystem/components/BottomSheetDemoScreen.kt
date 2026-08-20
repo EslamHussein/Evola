@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Sample data for one "nearby location" row, standing in for whatever real list content a caller
  * would put in [sheetContent] - the point of this screen is exercising [AppBottomSheetScaffold]'s

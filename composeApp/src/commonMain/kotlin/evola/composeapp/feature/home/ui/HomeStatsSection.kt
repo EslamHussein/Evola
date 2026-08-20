@@ -48,7 +48,7 @@ import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Reword's "Stats" section - a day-of-week strip (already built as [WeeklyStreakStrip]), two big
  * Current/Best streak tiles, and a Share row, all in one card, matching the real app's structure

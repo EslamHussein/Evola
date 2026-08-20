@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 internal fun genderBadgeLabel(gender: String?): String? = when (gender?.lowercase()) {
     "der" -> "m"

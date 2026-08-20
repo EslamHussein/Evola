@@ -48,7 +48,7 @@ import evola.composeapp.feature.onboarding.vm.GoalSetupViewModel
 import evola.shared.feature.onboarding.domain.Goal
 import evola.shared.language.NativeLanguage
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 

@@ -28,7 +28,7 @@ import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.feature.profile.domain.ALL_BADGES
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Reword's achievement badges - a fixed grid of every [ALL_BADGES]
  * entry, locked/unlocked styled by [unlockedBadgeIds] rather than only showing what's earned so

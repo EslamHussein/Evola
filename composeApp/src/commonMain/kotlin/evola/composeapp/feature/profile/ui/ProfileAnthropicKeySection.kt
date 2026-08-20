@@ -64,7 +64,7 @@ import evola.composeapp.core.designsystem.EvolaTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** On-device Anthropic API key entry — Evola calls Claude directly (serverless), so the key lives
  * in the device's encrypted store, never on a server. */

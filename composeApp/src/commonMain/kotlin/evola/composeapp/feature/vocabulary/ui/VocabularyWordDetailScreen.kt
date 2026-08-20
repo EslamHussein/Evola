@@ -84,7 +84,7 @@ import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.feature.vocabulary.domain.VocabularyItem
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 /** Maps the raw SRS status (unseen/introduced/learning/review/mastered - see VocabularySrs.STATUSES)
  * onto the same color scale [evola.composeapp.feature.home.ui.HomeScreen]'s word-breakdown cards already use

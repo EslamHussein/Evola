@@ -29,6 +29,7 @@ import evola.shared.core.analytics.EvolaLog
 import evola.shared.core.common.getOrNull
 import evola.shared.feature.onboarding.domain.GoalsRepository
 import org.koin.compose.KoinApplication
+import org.koin.dsl.koinConfiguration
 import org.koin.compose.koinInject
 import org.koin.compose.navigation3.koinEntryProvider
 
@@ -52,7 +53,7 @@ fun App() {
     val fileTextExtractor = rememberFileTextExtractor()
 
     KoinApplication(
-        application = {
+        configuration = koinConfiguration {
             modules(
                 evolaModule(driverFactory, secureStore, fileTextExtractor),
                 appNavigationModule,

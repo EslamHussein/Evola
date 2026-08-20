@@ -53,7 +53,7 @@ import evola.composeapp.generated.resources.lessons_handsfree_empty
 import evola.composeapp.generated.resources.lessons_handsfree_title
 import evola.composeapp.generated.resources.lessons_nav_close
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import evola.shared.feature.vocabulary.domain.VocabularySessionState
 import evola.shared.feature.vocabulary.domain.VocabularySessionSummary

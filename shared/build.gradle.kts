@@ -8,6 +8,13 @@ plugins {
 kotlin {
     jvmToolchain(21)
 
+    // expect/actual classes (DatabaseDriverFactory, LogFileWriterFactory, etc.) are a stable,
+    // intentional part of this project's platform-bridge pattern - silences the per-declaration
+    // "in Beta" warning rather than suppressing it per-file.
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     jvm()
     androidTarget()
     iosX64()
