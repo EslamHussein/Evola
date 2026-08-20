@@ -14,21 +14,15 @@ import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.FileTextExtractor
 import evola.shared.achievements.AchievementsRepository
 import evola.shared.goals.GoalsRepository
-import evola.shared.grammar.GrammarRepository
-import evola.shared.lessons.LessonsRepository
 import evola.shared.local.BackupRepository
 import evola.shared.local.LocalAchievementsRepository
 import evola.shared.local.LocalBackupRepository
 import evola.shared.local.LocalGoalsRepository
-import evola.shared.local.LocalGrammarRepository
-import evola.shared.local.LocalLessonsRepository
 import evola.shared.local.LocalMaterialsRepository
 import evola.shared.local.LocalSettingsRepository
 import evola.shared.local.SettingsRepository
+import evola.composeapp.feature.learning.vm.learningModule
 import evola.composeapp.feature.vocabulary.vm.vocabularyModule
-import evola.composeapp.lessons.GrammarExerciseSessionViewModel
-import evola.composeapp.lessons.GrammarTopicListViewModel
-import evola.composeapp.lessons.LessonDetailViewModel
 import evola.composeapp.main.HomeViewModel
 import evola.composeapp.main.ProcessingStatusViewModel
 import evola.composeapp.main.ProfileViewModel
@@ -87,7 +81,7 @@ fun evolaModule(
     secureStore: SecureStore,
     fileTextExtractor: FileTextExtractor,
 ): Module = module {
-    includes(vocabularyModule)
+    includes(vocabularyModule, learningModule)
 
     single { EvolaDatabase(driverFactory.create()) }
     single { platformHttpEngine() }
@@ -104,8 +98,6 @@ fun evolaModule(
     single<BackupRepository> { LocalBackupRepository(get()) }
     single<AchievementsRepository> { LocalAchievementsRepository(get()) }
     single<GoalsRepository> { LocalGoalsRepository(get(), get<SettingsRepository>(), get<AchievementsRepository>()) }
-    single<LessonsRepository> { LocalLessonsRepository(get()) }
-    single<GrammarRepository> { LocalGrammarRepository(get()) }
     single<MaterialsRepository> {
         LocalMaterialsRepository(
             db = get(),
@@ -119,9 +111,6 @@ fun evolaModule(
     }
 
     viewModel { AddMaterialViewModel() }
-    viewModel { (topicId: String) -> GrammarExerciseSessionViewModel(topicId, get()) }
-    viewModel { (lessonId: String) -> GrammarTopicListViewModel(lessonId, get()) }
-    viewModel { (lessonId: String) -> LessonDetailViewModel(lessonId, get()) }
     viewModel { (goalId: String) -> HomeViewModel(goalId, get()) }
     viewModel { ProcessingStatusViewModel(get()) }
     viewModel { (goalId: String) -> ProfileViewModel(goalId, get(), get(), get()) }

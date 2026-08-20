@@ -1,10 +1,10 @@
-package evola.composeapp.lessons
+package evola.composeapp.feature.learning.vm
 
 import androidx.lifecycle.ViewModel
 import evola.composeapp.core.common.toUserMessage
 import evola.shared.core.common.ApiResult
 import evola.shared.core.analytics.EvolaLog
-import evola.shared.grammar.GrammarRepository
+import evola.shared.feature.learning.domain.GrammarRepository
 import evola.shared.todayLocalDate
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax

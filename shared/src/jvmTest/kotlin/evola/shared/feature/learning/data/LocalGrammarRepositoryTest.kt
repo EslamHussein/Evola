@@ -1,4 +1,4 @@
-package evola.shared.local
+package evola.shared.feature.learning.data
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.shared.core.common.ApiResult

@@ -1,4 +1,4 @@
-package evola.shared.local
+package evola.shared.feature.learning.data
 
 import evola.shared.core.common.ApiResult
 import evola.shared.core.common.DataError
@@ -6,9 +6,9 @@ import evola.shared.core.analytics.EvolaLog
 import evola.shared.core.common.lessonVocabProgress
 import evola.shared.core.common.vocabItemCount
 import evola.shared.db.EvolaDatabase
-import evola.shared.lessons.LessonDetail
-import evola.shared.lessons.LessonSection
-import evola.shared.lessons.LessonsRepository
+import evola.shared.feature.learning.domain.LessonDetail
+import evola.shared.feature.learning.domain.LessonSection
+import evola.shared.feature.learning.domain.LessonsRepository
 
 /** On-device Lesson Details hub — ports the retired server `MaterialService.getLessonDetail`. Only
  * Vocabulary and Grammar are real; every other section is honestly locked. */

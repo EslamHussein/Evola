@@ -1,9 +1,9 @@
-package evola.composeapp.lessons
+package evola.composeapp.feature.learning.vm
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.LOCAL_USER
-import evola.shared.local.LocalGrammarRepository
+import evola.shared.feature.learning.data.LocalGrammarRepository
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
 import kotlin.test.Test

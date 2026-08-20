@@ -1,4 +1,4 @@
-package evola.shared.grammar
+package evola.shared.feature.learning.domain
 
 import evola.shared.core.common.ApiResult
 import evola.shared.feature.vocabulary.domain.isTolerantMatch

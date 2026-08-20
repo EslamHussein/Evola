@@ -4,12 +4,6 @@ package evola.composeapp.main
 
 import androidx.compose.runtime.remember
 import evola.composeapp.core.navigation.MaterialsNavContext
-import evola.composeapp.lessons.GrammarExerciseSessionScreen
-import evola.composeapp.lessons.GrammarExerciseSessionViewModel
-import evola.composeapp.lessons.GrammarTopicListScreen
-import evola.composeapp.lessons.GrammarTopicListViewModel
-import evola.composeapp.lessons.LessonDetailScreen
-import evola.composeapp.lessons.LessonDetailViewModel
 import evola.composeapp.materials.AddMaterialScreen
 import evola.composeapp.materials.AddMaterialViewModel
 import evola.composeapp.materials.MaterialDetailScreen
@@ -111,48 +105,4 @@ val materialsNavigationModule = module {
         )
     }
 
-    navigation<MaterialsRoute.LessonDetail> { route ->
-        val context = koinInject<MaterialsNavContext>()
-        val viewModel = koinViewModel<LessonDetailViewModel>(key = route.lessonId) {
-            parametersOf(route.lessonId)
-        }
-        LessonDetailScreen(
-            viewModel = viewModel,
-            onBack = { context.backStack.removeLastOrNull() },
-            onOpenSection = { key ->
-                when (key) {
-                    "vocabulary" -> context.backStack.add(MaterialsRoute.Session(route.lessonId, route.materialId))
-                    "grammar" -> context.backStack.add(MaterialsRoute.GrammarTopics(route.lessonId, route.materialId))
-                }
-            },
-            onViewVocabularyList = {
-                context.backStack.add(MaterialsRoute.VocabularyList(route.lessonId, route.materialId))
-            },
-        )
-    }
-
-    navigation<MaterialsRoute.GrammarTopics> { route ->
-        val context = koinInject<MaterialsNavContext>()
-        val viewModel = koinViewModel<GrammarTopicListViewModel>(key = route.lessonId) {
-            parametersOf(route.lessonId)
-        }
-        GrammarTopicListScreen(
-            viewModel = viewModel,
-            onOpenTopic = { topicId ->
-                context.backStack.add(MaterialsRoute.GrammarSession(route.lessonId, topicId, route.materialId))
-            },
-            onBack = { context.backStack.removeLastOrNull() },
-        )
-    }
-
-    navigation<MaterialsRoute.GrammarSession> { route ->
-        val context = koinInject<MaterialsNavContext>()
-        val viewModel = koinViewModel<GrammarExerciseSessionViewModel>(key = route.topicId) {
-            parametersOf(route.topicId)
-        }
-        GrammarExerciseSessionScreen(
-            viewModel = viewModel,
-            onDone = { context.backStack.removeLastOrNull() },
-        )
-    }
 }

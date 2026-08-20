@@ -1,6 +1,6 @@
-package evola.composeapp.lessons
+package evola.composeapp.feature.learning.vm
 
-import evola.shared.grammar.GrammarExercise
+import evola.shared.feature.learning.domain.GrammarExercise
 
 sealed interface GrammarExerciseSessionState {
     data object Loading : GrammarExerciseSessionState

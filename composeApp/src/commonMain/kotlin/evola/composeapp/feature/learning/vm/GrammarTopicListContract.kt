@@ -1,6 +1,6 @@
-package evola.composeapp.lessons
+package evola.composeapp.feature.learning.vm
 
-import evola.shared.grammar.GrammarTopic
+import evola.shared.feature.learning.domain.GrammarTopic
 
 sealed interface GrammarTopicListState {
     data object Loading : GrammarTopicListState

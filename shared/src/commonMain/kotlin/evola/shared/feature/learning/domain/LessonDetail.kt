@@ -1,4 +1,4 @@
-package evola.shared.lessons
+package evola.shared.feature.learning.domain
 
 import evola.shared.core.common.ApiResult
 

@@ -1,9 +1,9 @@
-package evola.composeapp.lessons
+package evola.composeapp.feature.learning.vm
 
 import androidx.lifecycle.ViewModel
 import evola.composeapp.core.common.toUserMessage
 import evola.shared.core.common.ApiResult
-import evola.shared.lessons.LessonsRepository
+import evola.shared.feature.learning.domain.LessonsRepository
 import kotlinx.coroutines.delay
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer

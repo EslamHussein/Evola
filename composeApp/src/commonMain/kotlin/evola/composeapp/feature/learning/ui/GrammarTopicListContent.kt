@@ -1,22 +1,15 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
-package evola.composeapp.lessons
+package evola.composeapp.feature.learning.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Card
-import evola.composeapp.core.common.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,33 +19,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
-import org.orbitmvi.orbit.compose.collectAsState
-import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.common.ChaseLoadingIndicator
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.feature.learning.vm.GrammarTopicListState
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_grammar_topics_empty
 import evola.composeapp.generated.resources.lessons_grammar_topics_title
 import evola.composeapp.generated.resources.lessons_nav_back
+import evola.shared.feature.learning.domain.GrammarTopic
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import evola.shared.grammar.GrammarTopic
-
-/** A lesson's grammar topics (01_PRODUCT_SPEC.md §1.9) - honest empty state when 0 topics were
- * extracted (a valid, non-error outcome), not an error message. */
-@Composable
-fun GrammarTopicListScreen(viewModel: GrammarTopicListViewModel, onOpenTopic: (String) -> Unit, onBack: () -> Unit) {
-    val state by viewModel.collectAsState()
-    GrammarTopicListContent(state = state, onOpenTopic = onOpenTopic, onBack = onBack)
-}
 
 @Composable
-private fun GrammarTopicListContent(
+internal fun GrammarTopicListContent(
     state: GrammarTopicListState,
     onOpenTopic: (String) -> Unit,
     onBack: () -> Unit,
@@ -103,24 +87,6 @@ private fun GrammarTopicListContent(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun TopicRow(topic: GrammarTopic, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(topic.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                Text(
-                    topic.masteryState.replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.tertiary,
-                )
-            }
-            Spacer(Modifier.height(EvolaSpacing.xs))
-            Text(topic.explanation, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
         }
     }
 }

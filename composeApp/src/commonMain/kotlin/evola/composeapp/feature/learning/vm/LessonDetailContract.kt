@@ -1,6 +1,6 @@
-package evola.composeapp.lessons
+package evola.composeapp.feature.learning.vm
 
-import evola.shared.lessons.LessonDetail
+import evola.shared.feature.learning.domain.LessonDetail
 
 sealed interface LessonDetailState {
     data object Loading : LessonDetailState

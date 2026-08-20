@@ -19,6 +19,7 @@ import evola.composeapp.core.navigation.AppRoute
 import evola.composeapp.core.navigation.appNavigationModule
 import evola.composeapp.core.analytics.rememberLogFileWriterFactory
 import evola.composeapp.di.rememberFileTextExtractor
+import evola.composeapp.feature.learning.ui.learningNavigationModule
 import evola.composeapp.feature.vocabulary.ui.vocabularyNavigationModule
 import evola.composeapp.main.materialsNavigationModule
 import evola.composeapp.main.profileNavigationModule
@@ -57,6 +58,7 @@ fun App() {
                 appNavigationModule,
                 materialsNavigationModule,
                 vocabularyNavigationModule,
+                learningNavigationModule,
                 profileNavigationModule,
             )
         },

@@ -1,4 +1,4 @@
-package evola.shared.local
+package evola.shared.feature.learning.data
 
 import evola.shared.core.common.ApiResult
 import evola.shared.core.common.DataError
@@ -8,12 +8,12 @@ import evola.shared.core.common.decodeStringList
 import evola.shared.core.common.newId
 import evola.shared.core.common.nowMillis
 import evola.shared.db.EvolaDatabase
-import evola.shared.grammar.GrammarAnswerResult
-import evola.shared.grammar.GrammarExercise
-import evola.shared.grammar.GrammarRepository
-import evola.shared.grammar.GrammarSession
-import evola.shared.grammar.GrammarSessionSummary
-import evola.shared.grammar.GrammarTopic
+import evola.shared.feature.learning.domain.GrammarAnswerResult
+import evola.shared.feature.learning.domain.GrammarExercise
+import evola.shared.feature.learning.domain.GrammarRepository
+import evola.shared.feature.learning.domain.GrammarSession
+import evola.shared.feature.learning.domain.GrammarSessionSummary
+import evola.shared.feature.learning.domain.GrammarTopic
 import evola.shared.core.common.srs.MasterySrs
 import kotlin.time.Instant
 import kotlin.random.Random
