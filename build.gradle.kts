@@ -28,7 +28,7 @@ subprojects {
 
         dependencies {
             "testImplementation"("org.junit.jupiter:junit-jupiter:5.11.3")
-            "testImplementation"("org.jetbrains.kotlin:kotlin-test-junit5:2.1.0")
+            "testImplementation"("org.jetbrains.kotlin:kotlin-test-junit5:2.2.20")
             "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
         }
 
