@@ -15,6 +15,7 @@ import evola.composeapp.di.rememberDatabaseDriverFactory
 import evola.composeapp.di.rememberFileTextExtractor
 import evola.composeapp.di.rememberLogFileWriterFactory
 import evola.composeapp.main.MainScreen
+import evola.composeapp.main.materialsNavigationModule
 import evola.composeapp.onboarding.CategoryPickerScreen
 import evola.composeapp.onboarding.DailyGoalPickerScreen
 import evola.composeapp.onboarding.GoalSetupScreen
@@ -67,7 +68,11 @@ fun App() {
     val secureStore = rememberSecureStore()
     val fileTextExtractor = rememberFileTextExtractor()
 
-    KoinApplication(application = { modules(evolaModule(driverFactory, secureStore, fileTextExtractor)) }) {
+    KoinApplication(
+        application = {
+            modules(evolaModule(driverFactory, secureStore, fileTextExtractor), materialsNavigationModule)
+        },
+    ) {
         val settingsRepository = koinInject<SettingsRepository>()
         val settings by settingsRepository.settings.collectAsStateWithLifecycle(initialValue = null)
 
