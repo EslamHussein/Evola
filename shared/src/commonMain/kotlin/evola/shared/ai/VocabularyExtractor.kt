@@ -1,7 +1,9 @@
 package evola.shared.ai
 
-import evola.shared.core.ApiResult
-import evola.shared.core.EvolaLog
+import evola.shared.core.common.ApiResult
+import evola.shared.core.network.AnthropicClient
+import evola.shared.core.network.AnthropicModels
+import evola.shared.core.analytics.EvolaLog
 import evola.shared.language.NativeLanguage
 import evola.shared.vocabulary.GermanNounLexicon
 

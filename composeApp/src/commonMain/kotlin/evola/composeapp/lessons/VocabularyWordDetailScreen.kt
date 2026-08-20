@@ -49,7 +49,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import evola.composeapp.BackHandler
+import evola.composeapp.core.navigation.BackHandler
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_cancel
 import evola.composeapp.generated.resources.lessons_action_copy_personal
@@ -78,10 +78,10 @@ import evola.composeapp.generated.resources.lessons_vocab_status_new_short
 import evola.composeapp.generated.resources.lessons_vocab_status_review
 import evola.composeapp.generated.resources.lessons_vocab_status_review_short
 import evola.composeapp.generated.resources.lessons_word_details_title
-import evola.composeapp.rtl.RtlText
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.common.RtlText
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.vocabulary.VocabularyItem
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

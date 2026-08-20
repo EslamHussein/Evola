@@ -1,7 +1,9 @@
 package evola.shared.ai
 
-import evola.shared.core.ApiResult
-import evola.shared.core.DataError
+import evola.shared.core.common.ApiResult
+import evola.shared.core.network.AnthropicClient
+import evola.shared.core.network.AnthropicModels
+import evola.shared.core.common.DataError
 import evola.shared.segmentation.LessonSegmenter
 import evola.shared.segmentation.RawSegment
 import kotlinx.coroutines.delay

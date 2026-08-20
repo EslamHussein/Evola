@@ -1,8 +1,10 @@
 package evola.shared.local
 
-import evola.shared.core.ApiResult
-import evola.shared.core.DataError
-import evola.shared.core.EvolaLog
+import evola.shared.core.common.ApiResult
+import evola.shared.core.common.DataError
+import evola.shared.core.analytics.EvolaLog
+import evola.shared.core.common.lessonVocabProgress
+import evola.shared.core.common.vocabItemCount
 import evola.shared.db.EvolaDatabase
 import evola.shared.lessons.LessonDetail
 import evola.shared.lessons.LessonSection

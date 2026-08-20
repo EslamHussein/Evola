@@ -1,8 +1,8 @@
 package evola.composeapp.main
 
 import androidx.lifecycle.ViewModel
-import evola.shared.core.EvolaLog
-import evola.shared.core.getOrNull
+import evola.shared.core.analytics.EvolaLog
+import evola.shared.core.common.getOrNull
 import evola.shared.materials.MaterialStatus
 import evola.shared.materials.MaterialsRepository
 import kotlinx.coroutines.CancellationException

@@ -2,10 +2,10 @@ package evola.composeapp.di
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import evola.shared.files.FileTextExtractor
-import evola.shared.files.MIME_PDF
-import evola.shared.files.MIME_TEXT_PLAIN
-import evola.shared.files.PAGE_BREAK
+import evola.shared.core.common.FileTextExtractor
+import evola.shared.core.common.MIME_PDF
+import evola.shared.core.common.MIME_TEXT_PLAIN
+import evola.shared.core.common.PAGE_BREAK
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned

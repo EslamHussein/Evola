@@ -2,6 +2,7 @@ package evola.shared.local
 
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import evola.shared.core.common.LOCAL_USER
 import evola.shared.db.EvolaDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

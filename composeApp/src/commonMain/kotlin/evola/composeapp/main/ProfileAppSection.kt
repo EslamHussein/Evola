@@ -49,11 +49,11 @@ import evola.composeapp.generated.resources.main_profile_share_streak_multi
 import evola.composeapp.generated.resources.main_profile_share_streak_single
 import evola.composeapp.generated.resources.main_profile_share_text_no_progress
 import evola.composeapp.generated.resources.main_profile_share_text_with_progress
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
-import evola.composeapp.theme.components.IconTile
-import evola.shared.core.ApiResult
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.IconTile
+import evola.shared.core.common.ApiResult
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.VocabularyBreakdown
@@ -89,7 +89,7 @@ internal fun AppSection(
             is ApiResult.Failure -> coroutineScope.launch { snackbarHostState.showSnackbar(backupRestoreFailedMessage) }
         }
     }
-    val shareText = evola.composeapp.share.rememberShareText()
+    val shareText = evola.composeapp.core.common.rememberShareText()
 
     // Reword's "Share progress" summary text - built from whatever [latestProgress] is available at
     // share time; a null/never-loaded progress still produces a sensible (if less detailed) message

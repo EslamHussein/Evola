@@ -1,8 +1,10 @@
 package evola.shared.local
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import evola.shared.ai.AnthropicClient
-import evola.shared.core.ApiResult
+import evola.shared.core.network.AnthropicClient
+import evola.shared.core.common.ApiResult
+import evola.shared.core.common.LOCAL_USER
+import evola.shared.core.common.nowMillis
 import evola.shared.db.EvolaDatabase
 import evola.shared.vocabulary.VocabularyCard
 import evola.shared.vocabulary.WordCategory

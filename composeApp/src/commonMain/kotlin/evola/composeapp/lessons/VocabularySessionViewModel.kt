@@ -2,9 +2,9 @@ package evola.composeapp.lessons
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import evola.composeapp.core.toUserMessage
-import evola.shared.core.ApiResult
-import evola.shared.core.getOrNull
+import evola.composeapp.core.common.toUserMessage
+import evola.shared.core.common.ApiResult
+import evola.shared.core.common.getOrNull
 import evola.shared.local.AppSettings
 import evola.shared.local.SettingsRepository
 import evola.shared.todayLocalDate

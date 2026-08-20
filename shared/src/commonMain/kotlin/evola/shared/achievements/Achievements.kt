@@ -1,6 +1,6 @@
 package evola.shared.achievements
 
-import evola.shared.core.ApiResult
+import evola.shared.core.common.ApiResult
 
 /** Reword's achievement badges - a fixed, code-defined set (not user/goal editable). [id] is the
  * stable string persisted in the `achievements` table, so reordering/renaming this list is safe as

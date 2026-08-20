@@ -7,11 +7,11 @@ import androidx.compose.ui.platform.LocalContext
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
-import evola.shared.files.FileTextExtractor
-import evola.shared.files.MIME_DOCX
-import evola.shared.files.MIME_PDF
-import evola.shared.files.MIME_TEXT_PLAIN
-import evola.shared.files.PAGE_BREAK
+import evola.shared.core.common.FileTextExtractor
+import evola.shared.core.common.MIME_DOCX
+import evola.shared.core.common.MIME_PDF
+import evola.shared.core.common.MIME_TEXT_PLAIN
+import evola.shared.core.common.PAGE_BREAK
 import java.io.ByteArrayInputStream
 import java.util.zip.ZipInputStream
 

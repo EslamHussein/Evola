@@ -73,10 +73,10 @@ import evola.composeapp.generated.resources.materials_add_title
 import evola.composeapp.generated.resources.materials_add_type_image
 import evola.composeapp.generated.resources.materials_add_type_pdf
 import evola.composeapp.generated.resources.materials_add_type_text
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
-import evola.composeapp.theme.components.SelectableChip
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.SelectableChip
 import evola.shared.materials.MIN_EXTRACTABLE_TEXT_LENGTH
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

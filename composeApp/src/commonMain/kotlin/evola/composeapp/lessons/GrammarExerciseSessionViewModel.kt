@@ -1,9 +1,9 @@
 package evola.composeapp.lessons
 
 import androidx.lifecycle.ViewModel
-import evola.composeapp.core.toUserMessage
-import evola.shared.core.ApiResult
-import evola.shared.core.EvolaLog
+import evola.composeapp.core.common.toUserMessage
+import evola.shared.core.common.ApiResult
+import evola.shared.core.analytics.EvolaLog
 import evola.shared.grammar.GrammarRepository
 import evola.shared.todayLocalDate
 import org.orbitmvi.orbit.OrbitContainerHost

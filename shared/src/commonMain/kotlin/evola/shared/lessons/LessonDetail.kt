@@ -1,6 +1,6 @@
 package evola.shared.lessons
 
-import evola.shared.core.ApiResult
+import evola.shared.core.common.ApiResult
 
 /** One row in the Lesson Details hub (Phase 6). Only "vocabulary" is ever unlocked today; every
  * other section is honestly locked until M7/M8 back it with real content. */

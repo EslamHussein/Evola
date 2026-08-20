@@ -28,8 +28,8 @@ import evola.composeapp.generated.resources.misc_vocab_import_percent
 import evola.composeapp.generated.resources.misc_vocab_import_progress
 import evola.composeapp.generated.resources.misc_vocab_import_subtitle
 import evola.composeapp.generated.resources.misc_vocab_import_title
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.vocabulary.GermanNounImportState
 import evola.shared.vocabulary.GermanNounImporter
 import org.jetbrains.compose.resources.stringResource

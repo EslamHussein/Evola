@@ -1,6 +1,8 @@
 package evola.shared.ai
 
-import evola.shared.core.ApiResult
+import evola.shared.core.common.ApiResult
+import evola.shared.core.network.AnthropicClient
+import evola.shared.core.network.AnthropicModels
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

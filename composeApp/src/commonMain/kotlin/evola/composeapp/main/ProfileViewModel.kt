@@ -2,8 +2,8 @@ package evola.composeapp.main
 
 import androidx.lifecycle.ViewModel
 import evola.shared.achievements.AchievementsRepository
-import evola.shared.core.fold
-import evola.shared.core.getOrNull
+import evola.shared.core.common.fold
+import evola.shared.core.common.getOrNull
 import evola.shared.goals.GoalsRepository
 import evola.shared.goals.UpdateGoalResult
 import evola.shared.language.NativeLanguage

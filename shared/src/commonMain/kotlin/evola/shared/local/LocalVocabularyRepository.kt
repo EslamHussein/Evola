@@ -1,10 +1,15 @@
 package evola.shared.local
 
-import evola.shared.ai.AnthropicClient
-import evola.shared.ai.AnthropicModels
-import evola.shared.core.ApiResult
-import evola.shared.core.DataError
-import evola.shared.core.EvolaLog
+import evola.shared.core.network.AnthropicClient
+import evola.shared.core.network.AnthropicModels
+import evola.shared.core.common.ApiResult
+import evola.shared.core.common.DataError
+import evola.shared.core.analytics.EvolaLog
+import evola.shared.core.common.LOCAL_USER
+import evola.shared.core.common.decodeStringList
+import evola.shared.core.common.encodeStringList
+import evola.shared.core.common.newId
+import evola.shared.core.common.nowMillis
 import evola.shared.db.EvolaDatabase
 import evola.shared.db.Vocabulary_progress
 import evola.shared.vocabulary.VocabularyAnswerResult

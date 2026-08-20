@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import evola.composeapp.loading.ChaseLoadingIndicator
+import evola.composeapp.core.common.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -40,10 +40,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.orbitmvi.orbit.compose.collectAsState
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
-import evola.composeapp.theme.components.RootTopBarTitle
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.RootTopBarTitle
 import evola.shared.goals.Goal
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.Lesson

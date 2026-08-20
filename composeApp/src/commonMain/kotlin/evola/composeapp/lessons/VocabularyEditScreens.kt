@@ -31,7 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
-import evola.composeapp.BackHandler
+import evola.composeapp.core.navigation.BackHandler
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_cancel
 import evola.composeapp.generated.resources.lessons_action_save
@@ -40,9 +40,9 @@ import evola.composeapp.generated.resources.lessons_edit_word_title
 import evola.composeapp.generated.resources.lessons_field_native_meaning_optional
 import evola.composeapp.generated.resources.lessons_field_term
 import evola.composeapp.generated.resources.lessons_section_meaning
-import evola.composeapp.language.LocalNativeLanguage
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.common.LocalNativeLanguage
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.vocabulary.VocabularyItem
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

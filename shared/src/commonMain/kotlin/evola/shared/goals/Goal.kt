@@ -1,6 +1,6 @@
 package evola.shared.goals
 
-import evola.shared.core.ApiResult
+import evola.shared.core.common.ApiResult
 import evola.shared.language.NativeLanguage
 
 /** Onboarding + Goal Setup per 01_PRODUCT_SPEC.md §1.3-1.4: exactly one active goal per account. */

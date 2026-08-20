@@ -44,9 +44,9 @@ import evola.composeapp.generated.resources.main_home_review_soon
 import evola.composeapp.generated.resources.main_home_well_done
 import evola.composeapp.generated.resources.main_home_word_breakdown_title
 import evola.composeapp.generated.resources.main_home_words_total
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.goals.NudgeWord
 import evola.shared.goals.VocabularyBreakdown
 import evola.shared.vocabulary.WordCategory

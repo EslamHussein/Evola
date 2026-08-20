@@ -20,8 +20,8 @@ import evola.composeapp.generated.resources.misc_continue
 import evola.composeapp.generated.resources.misc_welcome_body
 import evola.composeapp.generated.resources.misc_welcome_subtitle
 import evola.composeapp.generated.resources.misc_welcome_title
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 

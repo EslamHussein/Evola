@@ -20,9 +20,9 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import evola.composeapp.di.DatabaseDriverFactory
+import evola.composeapp.core.database.DatabaseDriverFactory
 import evola.shared.db.EvolaDatabase
-import evola.shared.local.LOCAL_USER
+import evola.shared.core.common.LOCAL_USER
 import evola.shared.local.LocalSettingsRepository
 import evola.shared.local.isWithinNotificationFrequencyLimit
 import evola.shared.local.isWithinSilentHours

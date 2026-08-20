@@ -2,7 +2,7 @@ package evola.composeapp.lessons
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.shared.db.EvolaDatabase
-import evola.shared.local.LOCAL_USER
+import evola.shared.core.common.LOCAL_USER
 import evola.shared.local.LocalLessonsRepository
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState

@@ -30,9 +30,9 @@ import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_home_activity_title
 import evola.composeapp.generated.resources.main_home_exam_readiness
 import evola.composeapp.generated.resources.main_home_no_activity
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.goals.DayActivity
 import evola.shared.goals.GoalProgress
 import evola.shared.goals.VocabularyBreakdown

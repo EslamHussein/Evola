@@ -40,8 +40,8 @@ import evola.composeapp.generated.resources.onboarding_goal_saving
 import evola.composeapp.generated.resources.onboarding_goal_start_learning
 import evola.composeapp.generated.resources.onboarding_goal_title_label
 import evola.composeapp.generated.resources.onboarding_goal_title_placeholder
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.goals.Goal
 import evola.shared.language.NativeLanguage
 import org.jetbrains.compose.resources.stringResource

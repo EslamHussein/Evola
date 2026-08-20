@@ -17,7 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import evola.composeapp.loading.ChaseLoadingIndicator
+import evola.composeapp.core.common.ChaseLoadingIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import org.orbitmvi.orbit.compose.collectAsState
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.materials_list_add_material_desc
 import evola.composeapp.generated.resources.materials_list_delete_desc
@@ -44,9 +44,9 @@ import evola.composeapp.generated.resources.materials_list_processing
 import evola.composeapp.generated.resources.materials_list_processing_with_count
 import evola.composeapp.generated.resources.materials_list_retry
 import evola.composeapp.generated.resources.materials_list_title
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.components.RootTopBarTitle
-import evola.composeapp.theme.components.SwipeToRevealDelete
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.components.RootTopBarTitle
+import evola.composeapp.core.designsystem.components.SwipeToRevealDelete
 import evola.shared.materials.Material
 import evola.shared.materials.MaterialStatus
 import org.jetbrains.compose.resources.stringResource

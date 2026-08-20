@@ -30,7 +30,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import evola.composeapp.loading.ChaseLoadingIndicator
+import evola.composeapp.core.common.ChaseLoadingIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -60,12 +60,12 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
-import evola.composeapp.rtl.RtlText
+import evola.composeapp.core.common.RtlText
 import evola.composeapp.speech.SpeechService
 import evola.composeapp.speech.rememberSpeechService
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.vocabulary.rememberCsvFilePicker
 import evola.shared.vocabulary.VocabularyItem
 import evola.shared.vocabulary.parseWordCsv

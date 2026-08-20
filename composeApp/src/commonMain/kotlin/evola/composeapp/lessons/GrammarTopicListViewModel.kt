@@ -1,8 +1,8 @@
 package evola.composeapp.lessons
 
 import androidx.lifecycle.ViewModel
-import evola.composeapp.core.toUserMessage
-import evola.shared.core.fold
+import evola.composeapp.core.common.toUserMessage
+import evola.shared.core.common.fold
 import evola.shared.grammar.GrammarRepository
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer

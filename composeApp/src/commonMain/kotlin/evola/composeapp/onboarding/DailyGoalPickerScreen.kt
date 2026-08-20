@@ -24,10 +24,10 @@ import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.onboarding_daily_goal_continue
 import evola.composeapp.generated.resources.onboarding_daily_goal_description
 import evola.composeapp.generated.resources.onboarding_daily_goal_prompt
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
-import evola.composeapp.theme.components.SelectableChip
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.SelectableChip
 import evola.shared.local.SettingsRepository
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource

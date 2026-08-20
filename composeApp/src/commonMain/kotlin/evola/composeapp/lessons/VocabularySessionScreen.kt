@@ -44,7 +44,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import evola.composeapp.loading.ChaseLoadingIndicator
+import evola.composeapp.core.common.ChaseLoadingIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -88,13 +88,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.orbitmvi.orbit.compose.collectAsState
-import evola.composeapp.BackHandler
-import evola.composeapp.rtl.RtlText
+import evola.composeapp.core.navigation.BackHandler
+import evola.composeapp.core.common.RtlText
 import evola.composeapp.speech.SpeechService
 import evola.composeapp.speech.rememberSpeechService
-import evola.composeapp.theme.EvolaColors
-import evola.composeapp.theme.EvolaSpacing
-import evola.composeapp.theme.EvolaTheme
+import evola.composeapp.core.designsystem.EvolaColors
+import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.widget.rememberWidgetRefresher
 import evola.shared.local.AppSettings
 import evola.shared.vocabulary.VocabularyAnswerResult

@@ -1,6 +1,8 @@
 package evola.shared.ai
 
-import evola.shared.core.ApiResult
+import evola.shared.core.common.ApiResult
+import evola.shared.core.network.AnthropicClient
+import evola.shared.core.network.AnthropicModels
 
 private const val TRANSCRIBE_SYSTEM =
     "You transcribe all readable text from an image exactly as written, preserving line breaks " +
