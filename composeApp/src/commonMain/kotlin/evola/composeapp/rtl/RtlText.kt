@@ -13,7 +13,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
 import evola.composeapp.language.LocalNativeLanguage
+import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.arabicFamily
+import evola.shared.language.NativeLanguage
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Renders text in the learner's chosen native language ([LocalNativeLanguage]): RTL layout,
  * right-alignment, and the dedicated Arabic-script font for RTL languages (Arabic today; neither of
@@ -38,6 +41,26 @@ fun RtlText(
                 style = style.copy(fontFamily = arabicFamily(), textAlign = TextAlign.Right),
                 color = color,
             )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun RtlTextArabicPreview() {
+    EvolaTheme {
+        CompositionLocalProvider(LocalNativeLanguage provides NativeLanguage.ARABIC) {
+            RtlText(text = "بيت كبير وجميل")
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun RtlTextLatinPreview() {
+    EvolaTheme {
+        CompositionLocalProvider(LocalNativeLanguage provides NativeLanguage.entries.first { !it.isRtl }) {
+            RtlText(text = "A big, beautiful house")
         }
     }
 }

@@ -1,16 +1,29 @@
 package evola.composeapp.theme
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import evola.shared.local.AppTheme
 import androidx.compose.ui.text.font.FontFamily
@@ -20,6 +33,7 @@ import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.inter_variable
 import evola.composeapp.generated.resources.noto_naskh_arabic_variable
 import org.jetbrains.compose.resources.Font
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Reword-inspired light palette. The token *names* are kept semantic (unchanged from the earlier
@@ -252,4 +266,47 @@ fun EvolaTheme(appTheme: AppTheme = AppTheme.SYSTEM, content: @Composable () -> 
             content = content,
         )
     }
+}
+
+@Composable
+private fun ColorSwatch(name: String, color: Color) {
+    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Surface(modifier = Modifier.size(28.dp).clip(RoundedCornerShape(6.dp)), color = color) {}
+        Text(name, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 8.dp))
+    }
+}
+
+@Composable
+private fun DesignTokensContent() {
+    val colors = EvolaColors
+    Surface(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Colors", style = MaterialTheme.typography.titleMedium)
+            listOf(
+                "Paper" to colors.Paper, "Surface" to colors.Surface, "SurfaceAlt" to colors.SurfaceAlt, "Border" to colors.Border,
+                "Accent" to colors.Accent, "AccentSoft" to colors.AccentSoft, "Gold" to colors.Gold, "GoldSoft" to colors.GoldSoft,
+                "Teal" to colors.Teal, "TealSoft" to colors.TealSoft, "Rust" to colors.Rust, "RustSoft" to colors.RustSoft,
+                "Amber" to colors.Amber, "AmberSoft" to colors.AmberSoft, "Text" to colors.Text, "Text2" to colors.Text2, "Text3" to colors.Text3,
+            ).forEach { (name, color) -> ColorSwatch(name, color) }
+
+            Text("Typography", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+            Text("Display Medium", style = MaterialTheme.typography.displayMedium)
+            Text("Headline Medium", style = MaterialTheme.typography.headlineMedium)
+            Text("Title Large", style = MaterialTheme.typography.titleLarge)
+            Text("Body Large", style = MaterialTheme.typography.bodyLarge)
+            Text("Label Medium", style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun DesignTokensLightPreview() {
+    EvolaTheme(appTheme = AppTheme.LIGHT) { DesignTokensContent() }
+}
+
+@Preview
+@Composable
+private fun DesignTokensDarkPreview() {
+    EvolaTheme(appTheme = AppTheme.DARK) { DesignTokensContent() }
 }
