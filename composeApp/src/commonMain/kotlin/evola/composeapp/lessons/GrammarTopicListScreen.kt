@@ -110,7 +110,7 @@ private fun GrammarTopicListContent(
 @Composable
 private fun TopicRow(topic: GrammarTopic, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.md)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(topic.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 Text(

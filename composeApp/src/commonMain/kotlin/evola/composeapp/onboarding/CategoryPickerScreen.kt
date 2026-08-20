@@ -227,7 +227,7 @@ private fun LevelCard(
     val isMultiLesson = level.lessons.size > 1
 
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(EvolaSpacing.md)) {
+        Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().clickable(enabled = isMultiLesson) { onToggleExpanded() },

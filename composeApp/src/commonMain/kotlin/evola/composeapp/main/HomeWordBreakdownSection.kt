@@ -130,7 +130,7 @@ private fun MasteryCard(
         enabled = onClick != null,
         colors = CardDefaults.cardColors(containerColor = EvolaColors.SurfaceAlt),
     ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.md), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier.size(52.dp).clip(MaterialTheme.shapes.medium).background(softColor),
                 contentAlignment = Alignment.Center,
