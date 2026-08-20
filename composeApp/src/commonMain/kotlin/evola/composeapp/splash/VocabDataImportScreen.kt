@@ -29,9 +29,11 @@ import evola.composeapp.generated.resources.misc_vocab_import_progress
 import evola.composeapp.generated.resources.misc_vocab_import_subtitle
 import evola.composeapp.generated.resources.misc_vocab_import_title
 import evola.composeapp.theme.EvolaSpacing
+import evola.composeapp.theme.EvolaTheme
 import evola.shared.vocabulary.GermanNounImportState
 import evola.shared.vocabulary.GermanNounImporter
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Shown only during the one-time German-noun-dataset import ([GermanNounImporter]) - every app
  * launch after the first sees [GermanNounImportState.Done] almost immediately (a single row-count
@@ -93,3 +95,19 @@ fun VocabDataImportScreen(state: GermanNounImportState) {
 
 private fun Int.formatThousands(): String =
     toString().reversed().chunked(3).joinToString(",").reversed()
+
+@Preview
+@Composable
+private fun VocabDataImportScreenInProgressPreview() {
+    EvolaTheme {
+        VocabDataImportScreen(state = GermanNounImportState.InProgress(imported = 4200, total = GermanNounImporter.TOTAL_ROWS_HINT))
+    }
+}
+
+@Preview
+@Composable
+private fun VocabDataImportScreenNotStartedPreview() {
+    EvolaTheme {
+        VocabDataImportScreen(state = GermanNounImportState.NotStarted)
+    }
+}

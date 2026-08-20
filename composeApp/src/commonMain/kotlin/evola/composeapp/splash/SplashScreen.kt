@@ -35,8 +35,10 @@ import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.misc_app_name
 import evola.composeapp.generated.resources.misc_splash_tagline
 import evola.composeapp.theme.EvolaColors
+import evola.composeapp.theme.EvolaTheme
 import kotlin.math.sin
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // Timeline cues (seconds), from SPLASH_SCREEN_HANDOFF.md - Build[0,2.2) Beat[2.2,2.6) Reveal[2.6,3.6) Hold[3.6,...).
 // The Build phase itself is never replayed here - the OS-level system splash (ic_splash_mark)
@@ -216,5 +218,13 @@ fun SplashScreen(dataReady: Boolean, onFinished: () -> Unit) {
             Wordmark(t = t, fadeAlpha = fadeAlpha)
             Tagline(t = t, fadeAlpha = fadeAlpha)
         }
+    }
+}
+
+@Preview
+@Composable
+private fun SplashScreenPreview() {
+    EvolaTheme {
+        SplashScreen(dataReady = false, onFinished = {})
     }
 }
