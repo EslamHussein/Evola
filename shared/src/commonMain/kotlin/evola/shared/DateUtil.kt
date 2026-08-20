@@ -1,8 +1,8 @@
 package evola.shared
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import kotlin.time.Clock
 
 /** The device's own local calendar date as an ISO string (e.g. "2026-08-04"). Used on session
  * completion and progress reads so streak/"today completed" are computed against the user's real

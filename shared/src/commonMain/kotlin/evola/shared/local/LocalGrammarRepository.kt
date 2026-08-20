@@ -11,7 +11,7 @@ import evola.shared.grammar.GrammarSession
 import evola.shared.grammar.GrammarSessionSummary
 import evola.shared.grammar.GrammarTopic
 import evola.shared.srs.MasterySrs
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlin.random.Random
 
 private const val MILLIS_PER_DAY = 86_400_000L

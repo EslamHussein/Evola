@@ -28,9 +28,9 @@ import evola.shared.local.isWithinNotificationFrequencyLimit
 import evola.shared.local.isWithinSilentHours
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import java.util.concurrent.TimeUnit
 
 private const val REMINDER_WORK_NAME = "evola_review_reminder"
