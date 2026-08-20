@@ -14,24 +14,15 @@ import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.FileTextExtractor
 import evola.shared.achievements.AchievementsRepository
 import evola.shared.goals.GoalsRepository
-import evola.shared.grammar.GrammarRepository
-import evola.shared.lessons.LessonsRepository
 import evola.shared.local.BackupRepository
 import evola.shared.local.LocalAchievementsRepository
 import evola.shared.local.LocalBackupRepository
 import evola.shared.local.LocalGoalsRepository
-import evola.shared.local.LocalGrammarRepository
-import evola.shared.local.LocalLessonsRepository
 import evola.shared.local.LocalMaterialsRepository
 import evola.shared.local.LocalSettingsRepository
 import evola.shared.local.SettingsRepository
-import evola.composeapp.lessons.BrowseFlashcardsViewModel
-import evola.composeapp.lessons.GrammarExerciseSessionViewModel
-import evola.composeapp.lessons.GrammarTopicListViewModel
-import evola.composeapp.lessons.LessonDetailViewModel
-import evola.composeapp.lessons.VocabSessionSource
-import evola.composeapp.lessons.VocabularyListViewModel
-import evola.composeapp.lessons.VocabularySessionViewModel
+import evola.composeapp.feature.learning.vm.learningModule
+import evola.composeapp.feature.vocabulary.vm.vocabularyModule
 import evola.composeapp.main.HomeViewModel
 import evola.composeapp.main.ProcessingStatusViewModel
 import evola.composeapp.main.ProfileViewModel
@@ -43,12 +34,10 @@ import evola.composeapp.materials.StagedResource
 import evola.composeapp.onboarding.GoalSetupViewModel
 import evola.composeapp.wizard.AiWizardViewModel
 import evola.composeapp.wizard.ProcessingViewModel
-import evola.shared.local.LocalVocabularyRepository
 import evola.shared.materials.MaterialsRepository
-import evola.shared.vocabulary.GermanNounImportState
-import evola.shared.vocabulary.GermanNounImporter
-import evola.shared.vocabulary.GermanNounLexicon
-import evola.shared.vocabulary.VocabularyRepository
+import evola.shared.feature.vocabulary.domain.GermanNounImportState
+import evola.shared.feature.vocabulary.domain.GermanNounImporter
+import evola.shared.feature.vocabulary.domain.GermanNounLexicon
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -92,6 +81,8 @@ fun evolaModule(
     secureStore: SecureStore,
     fileTextExtractor: FileTextExtractor,
 ): Module = module {
+    includes(vocabularyModule, learningModule)
+
     single { EvolaDatabase(driverFactory.create()) }
     single { platformHttpEngine() }
     single { AnthropicClient(get()) { secureStore.get(KEY_ANTHROPIC_API_KEY) } }
@@ -107,9 +98,6 @@ fun evolaModule(
     single<BackupRepository> { LocalBackupRepository(get()) }
     single<AchievementsRepository> { LocalAchievementsRepository(get()) }
     single<GoalsRepository> { LocalGoalsRepository(get(), get<SettingsRepository>(), get<AchievementsRepository>()) }
-    single<LessonsRepository> { LocalLessonsRepository(get()) }
-    single<VocabularyRepository> { LocalVocabularyRepository(get(), get(), get<SettingsRepository>()) }
-    single<GrammarRepository> { LocalGrammarRepository(get()) }
     single<MaterialsRepository> {
         LocalMaterialsRepository(
             db = get(),
@@ -123,12 +111,6 @@ fun evolaModule(
     }
 
     viewModel { AddMaterialViewModel() }
-    viewModel { (lessonId: String) -> BrowseFlashcardsViewModel(lessonId, get()) }
-    viewModel { (topicId: String) -> GrammarExerciseSessionViewModel(topicId, get()) }
-    viewModel { (lessonId: String) -> GrammarTopicListViewModel(lessonId, get()) }
-    viewModel { (lessonId: String) -> LessonDetailViewModel(lessonId, get()) }
-    viewModel { (lessonId: String, goalId: String) -> VocabularyListViewModel(lessonId, goalId, get()) }
-    viewModel { (source: VocabSessionSource) -> VocabularySessionViewModel(source, get(), get()) }
     viewModel { (goalId: String) -> HomeViewModel(goalId, get()) }
     viewModel { ProcessingStatusViewModel(get()) }
     viewModel { (goalId: String) -> ProfileViewModel(goalId, get(), get(), get()) }

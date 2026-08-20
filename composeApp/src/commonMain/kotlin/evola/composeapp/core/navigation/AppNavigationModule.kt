@@ -15,7 +15,7 @@ import evola.composeapp.onboarding.NativeLanguageScreen
 import evola.composeapp.onboarding.WelcomeScreen
 import evola.composeapp.splash.SplashScreen
 import evola.composeapp.splash.VocabDataImportScreen
-import evola.shared.vocabulary.GermanNounImportState
+import evola.shared.feature.vocabulary.domain.GermanNounImportState
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.module

@@ -49,7 +49,7 @@ import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.goals.NudgeWord
 import evola.shared.goals.VocabularyBreakdown
-import evola.shared.vocabulary.WordCategory
+import evola.shared.feature.vocabulary.domain.WordCategory
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

@@ -5,7 +5,7 @@ import evola.shared.core.network.AnthropicClient
 import evola.shared.core.network.AnthropicModels
 import evola.shared.core.analytics.EvolaLog
 import evola.shared.language.NativeLanguage
-import evola.shared.vocabulary.GermanNounLexicon
+import evola.shared.feature.vocabulary.domain.GermanNounLexicon
 
 /** One extracted vocabulary item (parsed from the model; the repository writes it to the local DB).
  * No `grammaticalCase` field - it was extracted but never read anywhere downstream (dead output that

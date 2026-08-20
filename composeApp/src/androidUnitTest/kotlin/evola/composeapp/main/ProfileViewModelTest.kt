@@ -8,7 +8,7 @@ import evola.shared.language.NativeLanguage
 import evola.shared.local.LocalAchievementsRepository
 import evola.shared.local.LocalGoalsRepository
 import evola.shared.local.LocalSettingsRepository
-import evola.shared.local.LocalVocabularyRepository
+import evola.shared.feature.vocabulary.data.LocalVocabularyRepository
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState

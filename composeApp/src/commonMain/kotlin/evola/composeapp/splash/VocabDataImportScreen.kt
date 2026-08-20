@@ -30,8 +30,8 @@ import evola.composeapp.generated.resources.misc_vocab_import_subtitle
 import evola.composeapp.generated.resources.misc_vocab_import_title
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
-import evola.shared.vocabulary.GermanNounImportState
-import evola.shared.vocabulary.GermanNounImporter
+import evola.shared.feature.vocabulary.domain.GermanNounImportState
+import evola.shared.feature.vocabulary.domain.GermanNounImporter
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 

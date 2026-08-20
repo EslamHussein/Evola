@@ -28,7 +28,7 @@ import kotlin.test.assertTrue
  * backed by an in-memory SQLite [EvolaDatabase], driven through [MaterialDetailViewModel] via the
  * official `org.orbit-mvi:orbit-test` DSL. Every seeded material starts in a terminal status
  * (READY/FAILED), so the poll loop resolves after exactly one tick, same convention as
- * [evola.composeapp.lessons.LessonDetailViewModelTest] - except the [retry] test, which
+ * [evola.composeapp.feature.learning.vm.LessonDetailViewModelTest] - except the [retry] test, which
  * deliberately moves the material into the non-terminal PROCESSING status and so must end its
  * `validate` block with `cancelAndIgnoreRemainingItems()` (see the plan's gotcha notes on
  * infinite `onCreate`/poll loops). */

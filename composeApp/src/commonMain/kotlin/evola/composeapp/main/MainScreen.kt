@@ -48,7 +48,7 @@ private enum class MainTab { HOME, MATERIALS, PROFILE }
  * The 3-tab navigation shell: Home / Materials / Profile. Materials doubles as the lesson browser
  * (Material Detail already lists a book's lessons with richer progress stats than a flat list
  * ever could) - the former standalone Study tab was a redundant second way to reach the same
- * [evola.composeapp.lessons.LessonDetailScreen], so it was folded in here; Home's "Continue
+ * [evola.composeapp.feature.learning.ui.LessonDetailScreen], so it was folded in here; Home's "Continue
  * lesson" CTA and Materials' own continue card now both just jump straight into
  * [MaterialsRoute.LessonDetail]. The former standalone Goals tab was removed earlier - Home's
  * progress dashboard (readiness ring, streak, word breakdown) already covers everything it
