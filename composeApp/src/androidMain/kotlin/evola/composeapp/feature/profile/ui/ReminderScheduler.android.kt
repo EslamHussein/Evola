@@ -99,7 +99,7 @@ actual fun rememberNotificationPermissionRequester(onResult: (Boolean) -> Unit):
 
 /** Runs once a day (see [ReminderScheduler.scheduleDaily]) - has no Compose scope, so it opens its
  * own short-lived database connection the same way [evola.composeapp.App]'s composition root does,
- * rather than trying to share [evola.composeapp.di.AppModule]'s long-lived instance across a
+ * rather than trying to share [evola.composeapp.core.di.evolaModule]'s long-lived instance across a
  * process that may not even have the app in memory. */
 class ReviewReminderWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {

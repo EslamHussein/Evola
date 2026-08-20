@@ -30,7 +30,7 @@ import kotlin.test.assertNotNull
  * `org.orbit-mvi:orbit-test` DSL. `startAnalysis` only needs to be asserted on its immediate,
  * synchronous outcome (`UploadResult`) - the background segmentation/extraction job it kicks off
  * runs on a real (non-test-controlled) [CoroutineScope] and is out of scope here, same as the
- * production [evola.composeapp.di.KoinModules] wiring. */
+ * production [evola.composeapp.core.di.KoinModules] wiring. */
 class AiWizardViewModelTest {
 
     private fun repository(): MaterialsRepository {
