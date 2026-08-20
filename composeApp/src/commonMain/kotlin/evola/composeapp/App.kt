@@ -10,8 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.ui.NavDisplay
-import evola.shared.local.AppTheme
-import evola.shared.local.SettingsRepository
+import evola.shared.feature.profile.domain.AppTheme
+import evola.shared.feature.profile.domain.SettingsRepository
 import evola.composeapp.core.di.evolaModule
 import evola.composeapp.core.database.rememberDatabaseDriverFactory
 import evola.composeapp.core.navigation.AppNavContext
@@ -22,7 +22,7 @@ import evola.composeapp.feature.materials.data.rememberFileTextExtractor
 import evola.composeapp.feature.learning.ui.learningNavigationModule
 import evola.composeapp.feature.vocabulary.ui.vocabularyNavigationModule
 import evola.composeapp.feature.materials.ui.materialsNavigationModule
-import evola.composeapp.main.profileNavigationModule
+import evola.composeapp.feature.profile.ui.profileNavigationModule
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.BottomSheetDemoScreen
 import evola.shared.core.analytics.EvolaLog

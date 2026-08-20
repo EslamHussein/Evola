@@ -28,7 +28,7 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.SelectableChip
-import evola.shared.local.SettingsRepository
+import evola.shared.feature.profile.domain.SettingsRepository
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -38,7 +38,7 @@ private val DAILY_GOAL_OPTIONS = listOf(5, 8, 12, 20)
 
 /** Reword's onboarding daily-goal step - no pre-loaded category model exists here to pick from (see
  * this app's own "explicitly not done" note in docs/ROADMAP.md), but the daily new-word target is a
- * real, already-existing setting ([evola.shared.local.LocalSettingsRepository.setDailyNewWordGoal])
+ * real, already-existing setting ([evola.shared.feature.profile.data.LocalSettingsRepository.setDailyNewWordGoal])
  * that's otherwise only reachable from Settings post-onboarding - surfacing it as its own onboarding
  * step, right after the goal itself, matches Reword's flow without inventing new content structure. */
 @Composable

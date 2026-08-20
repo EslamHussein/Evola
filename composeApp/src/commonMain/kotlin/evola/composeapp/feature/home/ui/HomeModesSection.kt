@@ -56,7 +56,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * session across the whole goal (see [evola.shared.feature.vocabulary.domain.SessionMode]) rather than tied to any
  * one lesson. Mirrors Reword's structure - own wording, own icon language. A row with nothing
  * available (0 due, or 0 new against today's daily-goal remainder) is still shown, just non-tappable,
- * same "always visible, disabled when empty" convention [evola.composeapp.main.MasteryCard] already uses. */
+ * same "always visible, disabled when empty" convention [evola.composeapp.feature.home.ui.MasteryCard] already uses. */
 @Composable
 internal fun SessionModesSection(progress: GoalProgress, onStartModeSession: (SessionMode) -> Unit) {
     val newRemaining = (progress.dailyGoal - progress.todayNewWordsLearned).coerceAtLeast(0)

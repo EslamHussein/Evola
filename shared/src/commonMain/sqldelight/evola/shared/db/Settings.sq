@@ -1,7 +1,7 @@
 -- Single-user local settings: a plain key-value table rather than one column per setting, so a new
 -- toggle never needs a schema migration (this app has no versioned migrations at all - see
 -- LocalDatabase's fresh-install-only precedent) - just a new key the typed wrapper
--- (evola.shared.local.LocalSettingsRepository) knows how to default when absent.
+-- (evola.shared.feature.profile.data.LocalSettingsRepository) knows how to default when absent.
 CREATE TABLE user_settings (
     user_id TEXT NOT NULL,
     key TEXT NOT NULL,

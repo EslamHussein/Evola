@@ -36,12 +36,12 @@ import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.core.navigation.BackHandler
 import evola.composeapp.core.common.ChaseLoadingIndicator
 import evola.composeapp.core.common.RtlText
-import evola.composeapp.speech.SpeechService
-import evola.composeapp.speech.rememberSpeechService
+import evola.composeapp.core.utils.SpeechService
+import evola.composeapp.core.utils.rememberSpeechService
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
-import evola.shared.local.AppSettings
+import evola.shared.feature.profile.domain.AppSettings
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_already_know
 import evola.composeapp.generated.resources.lessons_action_got_it

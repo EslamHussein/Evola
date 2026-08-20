@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import evola.composeapp.core.common.toUserMessage
 import evola.shared.core.common.ApiResult
 import evola.shared.core.common.getOrNull
-import evola.shared.local.AppSettings
-import evola.shared.local.SettingsRepository
+import evola.shared.feature.profile.domain.AppSettings
+import evola.shared.feature.profile.domain.SettingsRepository
 import evola.shared.todayLocalDate
 import evola.shared.feature.vocabulary.domain.VocabularyAnswerResult
 import evola.shared.feature.vocabulary.domain.VocabularyCard
@@ -34,7 +34,7 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
  * the session state machine) that the screen consumes alongside the Orbit-driven session state via
  * the ordinary `collectAsStateWithLifecycle()` path. Drives the session screen's invert-swipe
  * direction and which of the two non-swipe checks (typed/multiple-choice) are offered - see
- * [evola.composeapp.main.SettingsScreen].
+ * [evola.composeapp.feature.profile.ui.SettingsScreen].
  */
 class VocabularySessionViewModel(
     private val source: VocabSessionSource,

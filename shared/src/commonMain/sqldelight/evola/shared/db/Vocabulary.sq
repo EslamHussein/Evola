@@ -21,7 +21,7 @@ CREATE TABLE vocabulary_items (
 );
 
 -- Lingvist-style flat-queue engine (replaces the retired pack/7-stage model). status is one of
--- unseen|introduced|learning|review|mastered (evola.shared.vocabulary.VocabularySrs.STATUSES).
+-- unseen|introduced|learning|review|mastered (evola.shared.feature.vocabulary.domain.VocabularySrs.STATUSES).
 CREATE TABLE vocabulary_progress (
     id TEXT NOT NULL PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE vocabulary_sessions (
 -- the first unanswered row by position - the same live-recompute-from-data convention the retired
 -- pack model used for its own current-position lookup, so exiting mid-card is always safe and
 -- resuming lands exactly where the user left off. card_type is one of new|practice
--- (evola.shared.vocabulary.VocabularyCard) - a Reword-style swipe model, not a forced ladder: a
+-- (evola.shared.feature.vocabulary.domain.VocabularyCard) - a Reword-style swipe model, not a forced ladder: a
 -- `new` row is never re-inserted (a word is only ever new once); a `practice` row is re-queued
 -- (never rewritten in place) any time the word isn't done for this session yet - "start learning"
 -- (New swipe-right), "keep showing" (Practice swipe-right, no SRS change), or a wrong/incomplete

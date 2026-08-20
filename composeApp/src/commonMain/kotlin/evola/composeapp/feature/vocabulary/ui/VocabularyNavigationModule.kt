@@ -8,7 +8,7 @@ import evola.composeapp.feature.vocabulary.vm.VocabSessionSource
 import evola.composeapp.feature.vocabulary.vm.VocabularyListViewModel
 import evola.composeapp.feature.vocabulary.vm.VocabularySessionViewModel
 import evola.composeapp.main.MaterialsRoute
-import evola.composeapp.speech.rememberSpeechService
+import evola.composeapp.core.utils.rememberSpeechService
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf

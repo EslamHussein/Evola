@@ -1,6 +1,6 @@
 package evola.shared.feature.onboarding.data
 
-import evola.shared.achievements.AchievementsRepository
+import evola.shared.feature.profile.domain.AchievementsRepository
 import evola.shared.core.common.ApiResult
 import evola.shared.core.analytics.EvolaLog
 import evola.shared.core.common.LOCAL_USER
@@ -20,7 +20,7 @@ import evola.shared.feature.onboarding.domain.NudgeWord
 import evola.shared.feature.onboarding.domain.UpdateGoalResult
 import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import evola.shared.language.NativeLanguage
-import evola.shared.local.SettingsRepository
+import evola.shared.feature.profile.domain.SettingsRepository
 import evola.shared.core.common.srs.computeBestStreak
 import evola.shared.core.common.srs.computeStreak
 import evola.shared.feature.vocabulary.domain.VocabularySrs

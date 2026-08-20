@@ -21,7 +21,7 @@ import evola.shared.feature.vocabulary.domain.VocabularySessionSummary
 import evola.shared.feature.vocabulary.domain.VocabularySrs
 import evola.shared.feature.vocabulary.domain.WordCategory
 import evola.shared.feature.vocabulary.domain.isTolerantMatch
-import evola.shared.local.SettingsRepository
+import evola.shared.feature.profile.domain.SettingsRepository
 
 private const val DUE_REVIEW_CAP = 20L
 private const val PERSONAL_LESSON_TITLE = "Eigene Vokabeln"

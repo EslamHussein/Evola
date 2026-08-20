@@ -2,7 +2,7 @@ package evola.composeapp.feature.vocabulary.vm
 
 import evola.shared.feature.vocabulary.data.LocalVocabularyRepository
 import evola.shared.feature.vocabulary.domain.VocabularyRepository
-import evola.shared.local.SettingsRepository
+import evola.shared.feature.profile.domain.SettingsRepository
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 

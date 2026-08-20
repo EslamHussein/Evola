@@ -21,12 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import evola.composeapp.speech.SpeechService
-import evola.composeapp.speech.rememberSpeechService
+import evola.composeapp.core.utils.SpeechService
+import evola.composeapp.core.utils.rememberSpeechService
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
-import evola.shared.local.AppSettings
+import evola.shared.feature.profile.domain.AppSettings
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import evola.shared.feature.vocabulary.domain.VocabularySessionState
 import org.jetbrains.compose.ui.tooling.preview.Preview

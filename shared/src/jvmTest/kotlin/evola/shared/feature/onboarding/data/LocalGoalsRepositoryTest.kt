@@ -6,8 +6,8 @@ import evola.shared.core.common.LOCAL_USER
 import evola.shared.db.EvolaDatabase
 import evola.shared.feature.onboarding.domain.CreateGoalResult
 import evola.shared.language.NativeLanguage
-import evola.shared.local.LocalAchievementsRepository
-import evola.shared.local.LocalSettingsRepository
+import evola.shared.feature.profile.data.LocalAchievementsRepository
+import evola.shared.feature.profile.data.LocalSettingsRepository
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

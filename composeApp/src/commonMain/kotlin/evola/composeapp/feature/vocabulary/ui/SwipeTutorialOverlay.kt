@@ -39,7 +39,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * has an equivalent swipe walkthrough; this app's content is lesson-scoped rather than pre-loaded
  * decks so there's no separate category-picker step to hang it off, but the gesture itself is
  * identical and just as non-obvious on first use. Dismissed by tapping anywhere, which flips
- * [evola.shared.local.LocalSettingsRepository.setHasSeenSwipeTutorial] so it never shows again. */
+ * [evola.shared.feature.profile.data.LocalSettingsRepository.setHasSeenSwipeTutorial] so it never shows again. */
 @Composable
 internal fun SwipeTutorialOverlay(invertSwipe: Boolean, onDismiss: () -> Unit) {
     val missedItNotYetLabel = stringResource(Res.string.lessons_tutorial_missed_it)

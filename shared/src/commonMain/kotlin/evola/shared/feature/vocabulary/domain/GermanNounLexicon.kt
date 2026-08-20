@@ -4,7 +4,7 @@ import evola.shared.db.EvolaDatabase
 
 /** One row from the local `german_nouns` table (populated once by [GermanNounImporter] from the
  * bundled gambolputty/german-nouns dataset, CC-BY-SA-4.0 - attribution in Profile's Credits
- * section, see [evola.composeapp.main.ProfileScreen]). [rawRow] keeps the full original CSV row
+ * section, see [evola.composeapp.feature.profile.ui.ProfileScreen]). [rawRow] keeps the full original CSV row
  * (all case/number flexion columns) even though only the indexed fields are used today, so a
  * later feature can read a specific flexion column without re-parsing the source file. */
 data class GermanNounEntry(

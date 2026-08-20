@@ -4,7 +4,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.shared.core.network.AnthropicClient
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.LOCAL_USER
-import evola.shared.local.LocalSettingsRepository
+import evola.shared.feature.profile.data.LocalSettingsRepository
 import evola.shared.feature.vocabulary.data.LocalVocabularyRepository
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import io.ktor.client.engine.mock.MockEngine

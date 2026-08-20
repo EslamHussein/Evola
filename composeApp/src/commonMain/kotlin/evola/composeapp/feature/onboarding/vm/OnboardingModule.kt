@@ -1,9 +1,9 @@
 package evola.composeapp.feature.onboarding.vm
 
-import evola.shared.achievements.AchievementsRepository
+import evola.shared.feature.profile.domain.AchievementsRepository
 import evola.shared.feature.onboarding.data.LocalGoalsRepository
 import evola.shared.feature.onboarding.domain.GoalsRepository
-import evola.shared.local.SettingsRepository
+import evola.shared.feature.profile.domain.SettingsRepository
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 

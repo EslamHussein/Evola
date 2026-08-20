@@ -44,14 +44,14 @@ import evola.composeapp.generated.resources.lessons_vocab_title
 import evola.composeapp.generated.resources.lessons_word_mastered
 import evola.composeapp.generated.resources.lessons_word_progress
 import evola.composeapp.core.common.ChaseLoadingIndicator
-import evola.composeapp.speech.SpeechService
-import evola.composeapp.speech.rememberSpeechService
+import evola.composeapp.core.utils.SpeechService
+import evola.composeapp.core.utils.rememberSpeechService
 import evola.composeapp.core.designsystem.CenteredMessage
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.widget.rememberWidgetRefresher
-import evola.shared.local.AppSettings
+import evola.shared.feature.profile.domain.AppSettings
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import evola.shared.feature.vocabulary.domain.VocabularySessionState
 import org.jetbrains.compose.resources.stringResource

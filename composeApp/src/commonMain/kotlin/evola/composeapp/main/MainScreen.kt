@@ -31,6 +31,7 @@ import evola.composeapp.core.navigation.ProfileNavContext
 import evola.composeapp.core.common.LocalNativeLanguage
 import evola.composeapp.feature.home.ui.HomeScreen
 import evola.composeapp.feature.home.vm.HomeViewModel
+import evola.composeapp.feature.profile.ui.ProfileRoute
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.components.GlassNavigationBar
 import org.koin.compose.koinInject

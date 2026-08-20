@@ -8,7 +8,7 @@ import evola.shared.core.common.nowMillis
 import evola.shared.db.EvolaDatabase
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import evola.shared.feature.vocabulary.domain.WordCategory
-import evola.shared.local.LocalSettingsRepository
+import evola.shared.feature.profile.data.LocalSettingsRepository
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode

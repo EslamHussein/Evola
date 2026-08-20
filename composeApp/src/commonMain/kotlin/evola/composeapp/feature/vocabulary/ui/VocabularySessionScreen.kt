@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.core.navigation.BackHandler
-import evola.composeapp.speech.rememberSpeechService
+import evola.composeapp.core.utils.rememberSpeechService
 
 /** Vocabulary session screen: a persisted, priority-ordered SRS queue rendered as swipeable cards,
  * Reword-style. A brand-new word is swiped left ("I already know this") or right ("start learning

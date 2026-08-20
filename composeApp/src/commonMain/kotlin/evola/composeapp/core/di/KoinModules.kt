@@ -8,19 +8,12 @@ import evola.composeapp.generated.resources.Res
 import evola.shared.core.network.AnthropicClient
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.FileTextExtractor
-import evola.shared.achievements.AchievementsRepository
-import evola.shared.local.BackupRepository
-import evola.shared.local.LocalAchievementsRepository
-import evola.shared.local.LocalBackupRepository
-import evola.shared.local.LocalSettingsRepository
-import evola.shared.local.SettingsRepository
 import evola.composeapp.feature.home.vm.homeModule
 import evola.composeapp.feature.learning.vm.learningModule
 import evola.composeapp.feature.materials.vm.materialsModule
 import evola.composeapp.feature.onboarding.vm.onboardingModule
+import evola.composeapp.feature.profile.vm.profileModule
 import evola.composeapp.feature.vocabulary.vm.vocabularyModule
-import evola.composeapp.main.ProfileViewModel
-import evola.composeapp.main.SettingsViewModel
 import evola.shared.feature.vocabulary.domain.GermanNounImportState
 import evola.shared.feature.vocabulary.domain.GermanNounImporter
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +24,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 /**
@@ -66,7 +58,7 @@ fun evolaModule(
     secureStore: SecureStore,
     fileTextExtractor: FileTextExtractor,
 ): Module = module {
-    includes(vocabularyModule, learningModule, materialsModule(fileTextExtractor), onboardingModule, homeModule)
+    includes(vocabularyModule, learningModule, materialsModule(fileTextExtractor), onboardingModule, homeModule, profileModule)
 
     single { EvolaDatabase(driverFactory.create()) }
     single { platformHttpEngine() }
@@ -77,11 +69,4 @@ fun evolaModule(
     single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 
     single(createdAtStart = true) { GermanNounImportCoordinator(get(), get()) }
-
-    single<SettingsRepository> { LocalSettingsRepository(get()) }
-    single<BackupRepository> { LocalBackupRepository(get()) }
-    single<AchievementsRepository> { LocalAchievementsRepository(get()) }
-
-    viewModel { (goalId: String) -> ProfileViewModel(goalId, get(), get(), get()) }
-    viewModel { SettingsViewModel(get()) }
 }

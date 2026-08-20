@@ -1,7 +1,7 @@
 package evola.composeapp.core.navigation
 
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import evola.composeapp.main.ProfileRoute
+import evola.composeapp.feature.profile.ui.ProfileRoute
 import evola.shared.feature.onboarding.domain.Goal
 
 /** Koin-scoped context for the Profile tab's navigation - same rationale as [MaterialsNavContext].

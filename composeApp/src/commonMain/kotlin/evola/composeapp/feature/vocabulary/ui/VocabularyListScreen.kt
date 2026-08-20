@@ -65,8 +65,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
 import evola.composeapp.core.common.RtlText
-import evola.composeapp.speech.SpeechService
-import evola.composeapp.speech.rememberSpeechService
+import evola.composeapp.core.utils.SpeechService
+import evola.composeapp.core.utils.rememberSpeechService
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme

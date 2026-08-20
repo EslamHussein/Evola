@@ -1,5 +1,5 @@
 -- Reword's achievement badges - a fixed, code-defined badge set (see
--- evola.shared.achievements.ALL_BADGES), this table only records which ones this user has
+-- evola.shared.feature.profile.domain.ALL_BADGES), this table only records which ones this user has
 -- unlocked and when. Append-only, tiny (bounded by the fixed badge count).
 CREATE TABLE achievements (
     id TEXT NOT NULL PRIMARY KEY,
