@@ -11,7 +11,7 @@ import org.koin.dsl.module
  * [evola.composeapp.core.di.evolaModule]) - the [VocabularyRepository] singleton plus every
  * vocabulary-feature ViewModel. [evola.shared.feature.vocabulary.domain.GermanNounLexicon] and its
  * one-time import coordinator stay registered in the root module for now since
- * `evola.shared.materials.MaterialsRepository` (not yet moved to a feature package) also depends on
+ * `evola.shared.feature.materials.domain.MaterialsRepository` (not yet moved to a feature package) also depends on
  * the lexicon - hoisting those two into this module is deferred to whichever phase moves materials.
  */
 val vocabularyModule = module {

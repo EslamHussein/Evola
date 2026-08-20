@@ -12,7 +12,7 @@ private const val POLL_INTERVAL_MS = 3000L
 
 /** Polls while the lesson's own vocabulary extraction is still queued ("pending"), so a user who
  * lands here right after Processing/Resource Details sees the word count settle without a manual
- * refresh - mirrors [evola.composeapp.materials.MaterialDetailViewModel]'s poll-until-terminal
+ * refresh - mirrors [evola.composeapp.feature.materials.vm.MaterialDetailViewModel]'s poll-until-terminal
  * pattern, just against a lesson's own status instead of a material's. */
 class LessonDetailViewModel(
     lessonId: String,

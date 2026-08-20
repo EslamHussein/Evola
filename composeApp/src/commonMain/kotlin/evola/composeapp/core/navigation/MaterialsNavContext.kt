@@ -2,7 +2,7 @@ package evola.composeapp.core.navigation
 
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import evola.composeapp.main.MaterialsRoute
-import evola.composeapp.materials.StagedResource
+import evola.composeapp.feature.materials.vm.StagedResource
 
 /** Koin-scoped context for the Materials tab's navigation - a single `single { }` this app fully
  * controls, deliberately used instead of relying on koin-compose-navigation3's own (undocumented,

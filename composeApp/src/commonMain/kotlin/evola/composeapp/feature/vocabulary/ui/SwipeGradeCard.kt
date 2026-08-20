@@ -31,7 +31,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 /** Wraps [content] in a two-direction swipe gesture that fires [onSwipeLeft]/[onSwipeRight] on
  * commit and always snaps back to settled (this screen advances by replacing the card's state, not
  * by animating the row away) - same "swipe reveals/triggers, doesn't remove itself" convention as
- * [evola.composeapp.materials.MaterialsListScreen]'s delete swipe. Below the card, [footer] renders
+ * [evola.composeapp.feature.materials.ui.MaterialsListScreen]'s delete swipe. Below the card, [footer] renders
  * a non-gesture path to the same two actions - it receives the invert-aware label/action pair
  * already resolved, so callers never need to duplicate the invertSwipe logic themselves. The
  * default footer (both actions as equal-weight tappable text) fits [PracticeCard]'s right/wrong

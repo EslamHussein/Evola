@@ -21,7 +21,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.module
 import org.koin.dsl.navigation3.navigation
 
-/** Declares every [AppRoute] once, same rationale as [evola.composeapp.main.materialsNavigationModule].
+/** Declares every [AppRoute] once, same rationale as [evola.composeapp.feature.materials.ui.materialsNavigationModule].
  * Every transition is a full stack replace, not a push - see [AppRoute]'s doc comment for why. */
 val appNavigationModule = module {
     single { AppNavContext() }

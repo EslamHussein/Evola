@@ -16,12 +16,12 @@ import org.koin.dsl.module
 import org.koin.dsl.navigation3.navigation
 
 /** The `feature/vocabulary` subset of the Materials-tab [MaterialsRoute] destinations, split out
- * of [evola.composeapp.main.materialsNavigationModule] (see that module's doc comment for the
+ * of [evola.composeapp.feature.materials.ui.materialsNavigationModule] (see that module's doc comment for the
  * overall back-stack/DI rationale, which still applies unchanged here). [MaterialsRoute] itself
  * stays a single sealed interface shared by every Materials-tab destination - splitting the route
  * TYPE would break the shared Nav3 back stack, so only the route REGISTRATIONS for vocabulary's own
  * screens move here. [MaterialsNavContext] is registered as a `single` in
- * [evola.composeapp.main.materialsNavigationModule], not here - both modules are wired into the
+ * [evola.composeapp.feature.materials.ui.materialsNavigationModule], not here - both modules are wired into the
  * same Koin instance via `modules(...)` in `App.kt`, so `koinInject<MaterialsNavContext>()` below
  * resolves the one shared instance regardless of which module registered it. */
 val vocabularyNavigationModule = module {

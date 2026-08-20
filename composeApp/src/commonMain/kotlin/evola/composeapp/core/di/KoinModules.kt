@@ -6,10 +6,6 @@ import evola.composeapp.core.database.DatabaseDriverFactory
 import evola.composeapp.core.network.platformHttpEngine
 import evola.composeapp.generated.resources.Res
 import evola.shared.core.network.AnthropicClient
-import evola.shared.ai.GrammarExtractor
-import evola.shared.ai.ImageTranscriber
-import evola.shared.ai.SegmentationExtractor
-import evola.shared.ai.VocabularyExtractor
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.FileTextExtractor
 import evola.shared.achievements.AchievementsRepository
@@ -18,26 +14,18 @@ import evola.shared.local.BackupRepository
 import evola.shared.local.LocalAchievementsRepository
 import evola.shared.local.LocalBackupRepository
 import evola.shared.local.LocalGoalsRepository
-import evola.shared.local.LocalMaterialsRepository
 import evola.shared.local.LocalSettingsRepository
 import evola.shared.local.SettingsRepository
 import evola.composeapp.feature.learning.vm.learningModule
+import evola.composeapp.feature.materials.vm.materialsModule
 import evola.composeapp.feature.vocabulary.vm.vocabularyModule
 import evola.composeapp.main.HomeViewModel
 import evola.composeapp.main.ProcessingStatusViewModel
 import evola.composeapp.main.ProfileViewModel
 import evola.composeapp.main.SettingsViewModel
-import evola.composeapp.materials.AddMaterialViewModel
-import evola.composeapp.materials.MaterialDetailViewModel
-import evola.composeapp.materials.MaterialsListViewModel
-import evola.composeapp.materials.StagedResource
 import evola.composeapp.onboarding.GoalSetupViewModel
-import evola.composeapp.wizard.AiWizardViewModel
-import evola.composeapp.wizard.ProcessingViewModel
-import evola.shared.materials.MaterialsRepository
 import evola.shared.feature.vocabulary.domain.GermanNounImportState
 import evola.shared.feature.vocabulary.domain.GermanNounImporter
-import evola.shared.feature.vocabulary.domain.GermanNounLexicon
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -81,7 +69,7 @@ fun evolaModule(
     secureStore: SecureStore,
     fileTextExtractor: FileTextExtractor,
 ): Module = module {
-    includes(vocabularyModule, learningModule)
+    includes(vocabularyModule, learningModule, materialsModule(fileTextExtractor))
 
     single { EvolaDatabase(driverFactory.create()) }
     single { platformHttpEngine() }
@@ -91,33 +79,16 @@ fun evolaModule(
     // the server's job-queue workers.
     single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 
-    single { GermanNounLexicon(get()) }
     single(createdAtStart = true) { GermanNounImportCoordinator(get(), get()) }
 
     single<SettingsRepository> { LocalSettingsRepository(get()) }
     single<BackupRepository> { LocalBackupRepository(get()) }
     single<AchievementsRepository> { LocalAchievementsRepository(get()) }
     single<GoalsRepository> { LocalGoalsRepository(get(), get<SettingsRepository>(), get<AchievementsRepository>()) }
-    single<MaterialsRepository> {
-        LocalMaterialsRepository(
-            db = get(),
-            fileTextExtractor = fileTextExtractor,
-            segmentation = SegmentationExtractor(get()),
-            vocabExtractor = VocabularyExtractor(get(), nounLexicon = get()),
-            grammarExtractor = GrammarExtractor(get()),
-            imageTranscriber = ImageTranscriber(get()),
-            scope = get(),
-        )
-    }
 
-    viewModel { AddMaterialViewModel() }
     viewModel { (goalId: String) -> HomeViewModel(goalId, get()) }
     viewModel { ProcessingStatusViewModel(get()) }
     viewModel { (goalId: String) -> ProfileViewModel(goalId, get(), get(), get()) }
     viewModel { SettingsViewModel(get()) }
-    viewModel { (materialId: String) -> MaterialDetailViewModel(materialId, get()) }
-    viewModel { MaterialsListViewModel(get()) }
     viewModel { GoalSetupViewModel(get()) }
-    viewModel { (goalId: String, staged: StagedResource) -> AiWizardViewModel(goalId, staged, get()) }
-    viewModel { (materialId: String) -> ProcessingViewModel(materialId, get()) }
 }

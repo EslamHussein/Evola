@@ -28,7 +28,7 @@ internal fun genderBadgeLabel(gender: String?): String? = when (gender?.lowercas
 }
 
 /** Some already-extracted rows have the article baked into [term] itself (a pre-existing extraction
- * slip - see [evola.shared.ai.VocabularyExtractor]); guards this render site so it doesn't show up
+ * slip - see [evola.shared.feature.materials.domain.VocabularyExtractor]); guards this render site so it doesn't show up
  * twice ("Der Der Hund") when we prepend [gender] below. */
 internal fun termWithoutDuplicateArticle(term: String, gender: String?): String {
     if (gender.isNullOrBlank()) return term

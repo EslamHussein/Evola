@@ -2,15 +2,15 @@ package evola.composeapp.main
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.shared.core.network.AnthropicClient
-import evola.shared.ai.GrammarExtractor
-import evola.shared.ai.ImageTranscriber
-import evola.shared.ai.SegmentationExtractor
-import evola.shared.ai.VocabularyExtractor
+import evola.shared.feature.materials.domain.GrammarExtractor
+import evola.shared.feature.materials.domain.ImageTranscriber
+import evola.shared.feature.materials.domain.SegmentationExtractor
+import evola.shared.feature.materials.domain.VocabularyExtractor
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.FileTextExtractor
 import evola.shared.core.common.LOCAL_USER
-import evola.shared.local.LocalMaterialsRepository
-import evola.shared.materials.MaterialStatus
+import evola.shared.feature.materials.data.LocalMaterialsRepository
+import evola.shared.feature.materials.domain.MaterialStatus
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,7 +22,7 @@ import kotlin.test.assertEquals
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-/** [ProcessingStatusViewModel] polls [evola.shared.materials.MaterialsRepository.list] in a
+/** [ProcessingStatusViewModel] polls [evola.shared.feature.materials.domain.MaterialsRepository.list] in a
  * `while(true)` loop via `onCreate`, so these tests never try to wait out multiple poll ticks -
  * they only assert on the state produced by the very first tick, which runs immediately (before
  * the loop's own `delay`). A real [LocalMaterialsRepository] backs the test (matching this

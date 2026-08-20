@@ -3,8 +3,8 @@ package evola.composeapp.main
 import androidx.lifecycle.ViewModel
 import evola.shared.core.analytics.EvolaLog
 import evola.shared.core.common.getOrNull
-import evola.shared.materials.MaterialStatus
-import evola.shared.materials.MaterialsRepository
+import evola.shared.feature.materials.domain.MaterialStatus
+import evola.shared.feature.materials.domain.MaterialsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -15,8 +15,8 @@ private const val POLL_INTERVAL_MS = 3000L
 /**
  * App-wide (not screen-scoped) view of materials currently mid-processing, so the persistent
  * bottom sheet in [MainScreen] can show live progress no matter which tab the user is on. Same
- * poll-the-local-DB-every-3s shape as [evola.composeapp.materials.MaterialsListViewModel] and
- * [evola.composeapp.wizard.ProcessingViewModel] - `list()` is a local SQLDelight query, not a
+ * poll-the-local-DB-every-3s shape as [evola.composeapp.feature.materials.vm.MaterialsListViewModel] and
+ * [evola.composeapp.feature.materials.vm.ProcessingViewModel] - `list()` is a local SQLDelight query, not a
  * network call, so continuous polling here is cheap.
  */
 class ProcessingStatusViewModel(

@@ -1,0 +1,22 @@
+package evola.composeapp.feature.materials.vm
+
+import evola.composeapp.feature.materials.ui.PickedFile
+
+/** What the Add Resource screen hands off to the AI Wizard - the picked file or pasted text is
+ * held here, not uploaded yet. The wizard's "Start Analysis" is the real submission point (adds
+ * resource_type/organization_mode/ai_instructions and calls [evola.shared.feature.materials.domain.MaterialsRepository]). */
+sealed interface StagedResource {
+    val title: String
+
+    data class File(val fileName: String, val mimeType: String, val bytes: ByteArray) : StagedResource {
+        override val title: String get() = fileName
+    }
+
+    data class Text(val text: String) : StagedResource {
+        override val title: String get() = "Pasted text"
+    }
+
+    data class Images(val images: List<PickedFile>) : StagedResource {
+        override val title: String get() = if (images.size == 1) images.first().fileName else "${images.size} photos"
+    }
+}
