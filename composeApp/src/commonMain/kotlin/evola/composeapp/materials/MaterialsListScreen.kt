@@ -2,7 +2,6 @@
 
 package evola.composeapp.materials
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,13 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -36,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.theme.EvolaTheme
@@ -51,9 +44,9 @@ import evola.composeapp.generated.resources.materials_list_processing
 import evola.composeapp.generated.resources.materials_list_processing_with_count
 import evola.composeapp.generated.resources.materials_list_retry
 import evola.composeapp.generated.resources.materials_list_title
-import evola.composeapp.theme.EvolaColors
 import evola.composeapp.theme.EvolaSpacing
 import evola.composeapp.theme.components.RootTopBarTitle
+import evola.composeapp.theme.components.SwipeToRevealDelete
 import evola.shared.materials.Material
 import evola.shared.materials.MaterialStatus
 import org.jetbrains.compose.resources.stringResource
@@ -164,11 +157,9 @@ private fun MaterialsListBody(
 
 @Composable
 private fun MaterialRow(material: Material, onClick: () -> Unit, onDelete: () -> Unit) {
-    val dismissState = rememberSwipeToDismissBoxState(confirmValueChange = { it != SwipeToDismissBoxValue.StartToEnd })
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        backgroundContent = { DeleteSwipeBackground(onDelete) },
+    SwipeToRevealDelete(
+        onDelete = onDelete,
+        deleteContentDescription = stringResource(Res.string.materials_list_delete_desc),
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -198,22 +189,6 @@ private fun materialStatusLabel(material: Material): String = when (material.sta
             stringResource(Res.string.materials_list_lessons_count, material.lessonsTotal)
         }
     else -> material.status.name
-}
-
-/** Swiping only reveals this - it doesn't delete by itself (`confirmValueChange` above blocks the
- * dismiss-and-remove animation on drag alone); the row is only actually removed once this button
- * is tapped, matching the two-step "swipe reveals, tap confirms" pattern (same shape as the lesson
- * row's delete swipe in MaterialDetailScreen.kt). */
-@Composable
-private fun DeleteSwipeBackground(onDelete: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize().background(EvolaColors.Rust),
-        contentAlignment = Alignment.CenterEnd,
-    ) {
-        IconButton(onClick = onDelete, modifier = Modifier.padding(horizontal = EvolaSpacing.lg)) {
-            Icon(Icons.Filled.Delete, contentDescription = stringResource(Res.string.materials_list_delete_desc), tint = Color.White)
-        }
-    }
 }
 
 private val fakeMaterialsListItems = listOf(

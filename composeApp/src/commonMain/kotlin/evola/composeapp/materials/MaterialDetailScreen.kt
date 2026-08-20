@@ -21,14 +21,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.Rule
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.Card
 import evola.composeapp.loading.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,7 +39,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -81,6 +76,7 @@ import evola.composeapp.theme.EvolaTheme
 import evola.composeapp.theme.components.CircularProgressRing
 import evola.composeapp.theme.components.StatusTag
 import evola.composeapp.theme.components.StatusTagStyle
+import evola.composeapp.theme.components.SwipeToRevealDelete
 import evola.shared.materials.Lesson
 import evola.shared.materials.Material
 import evola.shared.materials.MaterialDetail
@@ -334,46 +330,40 @@ private fun LessonRow(lesson: Lesson, onClick: () -> Unit, onDelete: () -> Unit)
         lesson.status == "failed" -> stringResource(Res.string.materials_detail_status_failed) to StatusTagStyle.OUTLINE
         else -> stringResource(Res.string.materials_detail_status_waiting) to StatusTagStyle.NEUTRAL // "pending"
     }
-    val dismissState = rememberSwipeToDismissBoxState(confirmValueChange = { it != SwipeToDismissBoxValue.StartToEnd })
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        backgroundContent = {
-            Box(
-                modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.medium).background(EvolaColors.Rust),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                IconButton(onClick = onDelete, modifier = Modifier.padding(horizontal = EvolaSpacing.lg)) {
-                    Icon(Icons.Filled.Delete, contentDescription = stringResource(Res.string.materials_detail_delete_lesson_desc), tint = Color.White)
-                }
-            }
-        },
-    ) {
-        // ElevatedCard, not the flat default Card - on this dark, tightly-stepped tonal palette,
-        // a real drop shadow reads more clearly as "this row is a distinct surface" than the
-        // tonal-color difference alone (M3's guidance for when elevation should carry that job).
-        ElevatedCard(
-            onClick = onClick,
-            enabled = lesson.status == "ready",
-            modifier = Modifier.fillMaxWidth().padding(vertical = EvolaSpacing.xs),
+    // The vertical gap between rows lives here, outside SwipeToRevealDelete, not on the card
+    // itself - the swipe background fills this composable's full bounds, so padding placed on
+    // the card would leave a padding-shaped strip of red visible above and below it.
+    Box(modifier = Modifier.padding(vertical = EvolaSpacing.xs)) {
+        SwipeToRevealDelete(
+            onDelete = onDelete,
+            deleteContentDescription = stringResource(Res.string.materials_detail_delete_lesson_desc),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.md),
-                verticalAlignment = Alignment.CenterVertically,
+            // Flat Card, matching MaterialRow's card style in MaterialsListScreen.kt - keeps the
+            // two rows in the Materials flow visually consistent instead of this one standing out
+            // with its own drop shadow.
+            Card(
+                onClick = onClick,
+                enabled = lesson.status == "ready",
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        stringResource(Res.string.materials_detail_lesson_number_title, lesson.number, lesson.title),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    Spacer(Modifier.height(EvolaSpacing.xs))
-                    Text(
-                        stringResource(Res.string.materials_detail_lesson_words, lesson.vocabCount),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = EvolaColors.Text3,
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(Res.string.materials_detail_lesson_number_title, lesson.number, lesson.title),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Spacer(Modifier.height(EvolaSpacing.xs))
+                        Text(
+                            stringResource(Res.string.materials_detail_lesson_words, lesson.vocabCount),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = EvolaColors.Text3,
+                        )
+                    }
+                    StatusTag(tagLabel, tagStyle)
                 }
-                StatusTag(tagLabel, tagStyle)
             }
         }
     }
