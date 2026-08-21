@@ -130,6 +130,10 @@ fun VocabularyListScreen(viewModel: VocabularyListViewModel, onBack: () -> Unit)
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
+    // Picks up progress writes made by a session that ran on top of this screen and popped back -
+    // this ViewModel instance survives that round trip, so its initial one-shot load never sees them.
+    LaunchedEffect(Unit) { viewModel.refresh() }
+
     // Mirrors the last side effect into a local Compose state (rather than reading it straight
     // from the suspend collectSideEffect callback below) because the imported-word count needs
     // stringResource's plural resolution, which is composable-context-only.

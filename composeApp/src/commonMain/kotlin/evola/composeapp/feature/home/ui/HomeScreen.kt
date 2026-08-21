@@ -89,6 +89,12 @@ fun HomeScreen(
 ) {
     val state by viewModel.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Picks up progress made in the Materials tab (vocabulary grading, lesson completion) -
+    // this ViewModel's one-shot initial load never sees writes made while another tab was showing,
+    // so the screen re-fetches each time this tab is remounted (switched back into).
+    LaunchedEffect(Unit) { viewModel.refresh() }
+
     val newlyUnlockedBadges = (state as? HomeState.Loaded)?.progress?.newlyUnlockedBadges.orEmpty()
     val achievementMessages = newlyUnlockedBadges.map { badge -> stringResource(Res.string.main_home_achievement_unlocked, badge.title) }
     LaunchedEffect(newlyUnlockedBadges) {

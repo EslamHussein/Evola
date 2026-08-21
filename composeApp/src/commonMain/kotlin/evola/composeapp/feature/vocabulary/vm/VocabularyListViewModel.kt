@@ -37,6 +37,11 @@ class VocabularyListViewModel(
         reduce { state.copy(content = content) }
     }
 
+    /** Re-fetches the list. This screen's ViewModel is kept alive on the Materials back stack
+     * while a session runs on top of it, so [loadInitial]'s one-shot fetch never sees the
+     * session's grading writes on its own - the screen calls this on remount to pick them up. */
+    fun refresh() = intent { loadInitial() }
+
     fun updateItem(itemId: String, term: String, meaning: String, nativeMeaning: String?) = intent {
         repository.updateItem(itemId, term, meaning, nativeMeaning).fold(
             onSuccess = { updated ->
