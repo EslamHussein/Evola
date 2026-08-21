@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resources>
     <string name="wizard_duplicate_title">Already uploaded</string>
-    <string name="wizard_duplicate_message">You\'ve already uploaded this content. Would you like to view it instead?</string>
+    <string name="wizard_duplicate_message">You've already uploaded this content. Would you like to view it instead?</string>
     <string name="wizard_view_existing_material">View existing material</string>
     <string name="wizard_cancel">Cancel</string>
     <string name="wizard_back">Back</string>
@@ -19,8 +19,8 @@
     <string name="wizard_focus_writing">Writing</string>
     <string name="wizard_focus_speaking">Speaking</string>
     <string name="wizard_focus_listening">Listening</string>
-    <string name="wizard_instructions_prompt">Anything specific you\'d like the AI to focus on?</string>
-    <string name="wizard_instructions_placeholder">Optional - e.g. \"Focus on food vocabulary\"</string>
+    <string name="wizard_instructions_prompt">Anything specific you'd like the AI to focus on?</string>
+    <string name="wizard_instructions_placeholder">Optional - e.g. "Focus on food vocabulary"</string>
 
     <string name="wizard_processing_analyzing">Analyzing your resource...</string>
     <string name="wizard_processing_error_title">Something went wrong</string>

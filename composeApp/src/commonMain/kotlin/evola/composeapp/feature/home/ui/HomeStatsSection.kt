@@ -1,11 +1,7 @@
 package evola.composeapp.feature.home.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Share
@@ -23,8 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_home_best_streak
@@ -46,15 +39,12 @@ import evola.composeapp.core.designsystem.components.EvolaStatTile
 import evola.shared.feature.onboarding.domain.DayActivity
 import evola.shared.feature.onboarding.domain.GoalProgress
 import evola.shared.feature.onboarding.domain.VocabularyBreakdown
-import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 
-/** Reword's "Stats" section - a day-of-week strip (already built as [WeeklyStreakStrip]), two big
- * Current/Best streak tiles, and a Share row, all in one card, matching the real app's structure
- * (confirmed against a live screenshot). [evola.composeapp.core.common.rememberShareText] is the same
- * platform share sheet Profile's own "Share progress" row uses. */
+/** Reword's "Stats" section - two big Current/Best streak tiles and a Share row, all in one card.
+ * [evola.composeapp.core.common.rememberShareText] is the same platform share sheet Profile's own
+ * "Share progress" row uses. */
 @Composable
 internal fun StatsSection(progress: GoalProgress) {
     val shareText = evola.composeapp.core.common.rememberShareText()
@@ -68,10 +58,6 @@ internal fun StatsSection(progress: GoalProgress) {
         stringResource(Res.string.main_home_streak_freeze_available_plural, progress.streakFreezesAvailable)
     }
     EvolaCard(modifier = Modifier.fillMaxWidth()) {
-        if (progress.weeklyActivity.isNotEmpty()) {
-            WeeklyStreakStrip(progress.weeklyActivity)
-            Spacer(Modifier.height(EvolaSpacing.lg))
-        }
         Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
             StreakTile(stringResource(Res.string.main_home_current_streak), progress.streakDays, modifier = Modifier.weight(1f))
             StreakTile(stringResource(Res.string.main_home_best_streak), progress.bestStreakDays, modifier = Modifier.weight(1f))
@@ -115,51 +101,6 @@ internal fun StatsSection(progress: GoalProgress) {
 private fun StreakTile(label: String, days: Int, modifier: Modifier = Modifier) {
     val dayWord = stringResource(if (days == 1) Res.string.main_home_day_singular else Res.string.main_home_day_plural)
     EvolaStatTile(value = "$days $dayWord", label = label, modifier = modifier)
-}
-
-/** Seven circles, oldest day first, today last - filled + a day-of-week initial when that day had
- * any completed session, outlined otherwise. Same "which days did I show up" signal as Reword's own
- * weekly strip, built from [evola.shared.feature.onboarding.data.LocalGoalsRepository]'s per-day [DayActivity] list
- * rather than a separate calendar widget. */
-@Composable
-private fun WeeklyStreakStrip(days: List<DayActivity>) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        days.forEachIndexed { index, day ->
-            val date = runCatching { LocalDate.parse(day.date) }.getOrNull()
-            val label = date?.dayOfWeek?.let(::dayInitial) ?: "?"
-            // Oldest-first, today last (see this list's own construction) - Reword highlights the
-            // selected day with a filled circle and a small triangle pointer underneath; today is
-            // this strip's equivalent "selected" day, marked the same way regardless of hadActivity
-            // so today is always visually findable, not just days with a completed session.
-            val isToday = index == days.lastIndex
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier.size(28.dp).clip(CircleShape)
-                        .background(if (day.hadActivity || isToday) EvolaColors.AccentButton else EvolaColors.Surface)
-                        .border(1.dp, if (day.hadActivity || isToday) Color.Transparent else EvolaColors.Border, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (day.hadActivity || isToday) EvolaColors.OnAccentButton else EvolaColors.Text3,
-                    )
-                }
-                Spacer(Modifier.height(4.dp))
-                Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(if (isToday) EvolaColors.Accent else Color.Transparent))
-            }
-        }
-    }
-}
-
-private fun dayInitial(day: DayOfWeek): String = when (day) {
-    DayOfWeek.MONDAY -> "M"
-    DayOfWeek.TUESDAY -> "T"
-    DayOfWeek.WEDNESDAY -> "W"
-    DayOfWeek.THURSDAY -> "T"
-    DayOfWeek.FRIDAY -> "F"
-    DayOfWeek.SATURDAY -> "S"
-    DayOfWeek.SUNDAY -> "S"
 }
 
 private val fakeStatsWeeklyActivity = listOf(

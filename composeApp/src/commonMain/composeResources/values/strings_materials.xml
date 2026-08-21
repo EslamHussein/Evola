@@ -11,7 +11,7 @@
     <string name="materials_add_file_hint">PDF or Word document, up to 25MB</string>
     <string name="materials_add_choose_different_file">Choose a different file</string>
     <string name="materials_add_text_placeholder">Paste or type your text here...</string>
-    <string name="materials_add_image_hint">Photograph pages of your book or notes - we\'ll read the text for you.</string>
+    <string name="materials_add_image_hint">Photograph pages of your book or notes - we'll read the text for you.</string>
     <string name="materials_add_photo_sheet_title">Add a photo</string>
     <string name="materials_add_take_photo">Take photo</string>
     <string name="materials_add_choose_from_gallery">Choose from gallery</string>
@@ -22,10 +22,10 @@
     <string name="materials_detail_title">Material</string>
     <string name="materials_detail_back_desc">Back</string>
     <string name="materials_detail_loading">Loading...</string>
-    <string name="materials_detail_splitting">Splitting \"%1$s\" into lessons...</string>
-    <string name="materials_detail_process_failed">We couldn\'t process \"%1$s\".</string>
+    <string name="materials_detail_splitting">Splitting "%1$s" into lessons...</string>
+    <string name="materials_detail_process_failed">We couldn't process "%1$s".</string>
     <string name="materials_detail_retry">Retry</string>
-    <string name="materials_detail_unsupported">\"%1$s\" doesn\'t look like readable text we can use. Try a different file.</string>
+    <string name="materials_detail_unsupported">"%1$s" doesn't look like readable text we can use. Try a different file.</string>
     <string name="materials_detail_lesson_count_singular">1 lesson</string>
     <string name="materials_detail_lesson_count_plural">%1$d lessons</string>
     <string name="materials_detail_vocabulary_label">Vocabulary</string>
@@ -34,7 +34,7 @@
     <string name="materials_detail_exercises_label">Exercises</string>
     <string name="materials_detail_tokens_used">%1$s tokens used</string>
     <string name="materials_detail_ready_of_total">%1$d of %2$d lessons ready</string>
-    <string name="materials_detail_partial_success">We generated %1$s from \"%2$s\", but some of it couldn\'t be processed.</string>
+    <string name="materials_detail_partial_success">We generated %1$s from "%2$s", but some of it couldn't be processed.</string>
     <string name="materials_detail_status_done">Done</string>
     <string name="materials_detail_status_in_progress">In progress</string>
     <string name="materials_detail_status_not_started">Not started</string>

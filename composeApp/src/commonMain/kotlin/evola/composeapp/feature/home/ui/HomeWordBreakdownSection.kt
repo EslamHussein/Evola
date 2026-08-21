@@ -12,9 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.TrackChanges
@@ -27,16 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_home_keep_it_up
 import evola.composeapp.generated.resources.main_home_learning
 import evola.composeapp.generated.resources.main_home_mastered
 import evola.composeapp.generated.resources.main_home_needs_practice
-import evola.composeapp.generated.resources.main_home_nudge_plural
-import evola.composeapp.generated.resources.main_home_nudge_singular
-import evola.composeapp.generated.resources.main_home_progress_updates_caption
 import evola.composeapp.generated.resources.main_home_review_soon
 import evola.composeapp.generated.resources.main_home_well_done
 import evola.composeapp.generated.resources.main_home_word_breakdown_title
@@ -46,7 +40,6 @@ import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaCard
 import evola.composeapp.core.designsystem.components.EvolaTag
-import evola.shared.feature.onboarding.domain.NudgeWord
 import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import evola.shared.feature.vocabulary.domain.WordCategory
 import kotlin.math.roundToInt
@@ -89,14 +82,6 @@ internal fun WordBreakdownSection(vocabulary: VocabularyBreakdown, onStartCatego
             onClick = { onStartCategorySession(WordCategory.MASTERED) }.takeIf { mastered > 0 },
         )
     }
-    Spacer(Modifier.height(EvolaSpacing.sm))
-    Text(
-        stringResource(Res.string.main_home_progress_updates_caption),
-        style = MaterialTheme.typography.labelMedium,
-        color = EvolaColors.Text3,
-        modifier = Modifier.fillMaxWidth(),
-        textAlign = TextAlign.Center,
-    )
 }
 
 /** One card of the red/yellow/green breakdown: an icon avatar, title/subtitle, count + share of
@@ -155,39 +140,6 @@ private fun MasteryCard(
     }
 }
 
-/** Tappable nudge toward the single word closest to mastered - a concrete, low-effort next step
- * rather than the abstract percentage alone. Routes into the current lesson's vocabulary session,
- * same destination as the main CTA, since the session engine doesn't target a single word. */
-@Composable
-internal fun NudgeCard(nudge: NudgeWord, onClick: () -> Unit) {
-    EvolaCard(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(
-                modifier = Modifier.size(40.dp).clip(CircleShape).background(EvolaColors.AccentSoft),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.TrackChanges, contentDescription = null, tint = EvolaColors.Ink2)
-            }
-            Spacer(Modifier.height(EvolaSpacing.sm))
-            val nudgeText = if (nudge.reviewsRemaining == 1) {
-                stringResource(Res.string.main_home_nudge_singular, nudge.reviewsRemaining, nudge.term)
-            } else {
-                stringResource(Res.string.main_home_nudge_plural, nudge.reviewsRemaining, nudge.term)
-            }
-            Text(
-                nudgeText,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(EvolaSpacing.xs))
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = EvolaColors.Accent)
-        }
-    }
-}
-
 @Preview
 @Composable
 private fun WordBreakdownSectionPreview() {
@@ -198,13 +150,5 @@ private fun WordBreakdownSectionPreview() {
                 onStartCategorySession = {},
             )
         }
-    }
-}
-
-@Preview
-@Composable
-private fun NudgeCardPreview() {
-    EvolaTheme {
-        NudgeCard(nudge = NudgeWord(term = "Haus", reviewsRemaining = 2), onClick = {})
     }
 }

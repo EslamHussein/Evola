@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resources>
     <string name="onboarding_goal_prompt">What are you working toward?</string>
-    <string name="onboarding_goal_description">Describe your goal in your own words - we\'ll build lessons around it.</string>
+    <string name="onboarding_goal_description">Describe your goal in your own words - we'll build lessons around it.</string>
     <string name="onboarding_goal_label">Your goal</string>
     <string name="onboarding_goal_placeholder">e.g. Pass the German B1 exam</string>
     <string name="onboarding_goal_char_cap">Goal text is capped at %1$d characters - trimmed to fit.</string>

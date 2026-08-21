@@ -2,28 +2,18 @@
 
 package evola.composeapp.feature.home.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import evola.composeapp.core.common.ChaseLoadingIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -36,7 +26,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.feature.home.vm.HomeState
 import evola.composeapp.feature.home.vm.HomeViewModel
@@ -56,8 +45,6 @@ import evola.shared.feature.vocabulary.domain.WordCategory
 import kotlin.math.roundToInt
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_home_achievement_unlocked
-import evola.composeapp.generated.resources.main_home_all_complete
-import evola.composeapp.generated.resources.main_home_continue_lesson
 import evola.composeapp.generated.resources.main_home_empty_body
 import evola.composeapp.generated.resources.main_home_empty_cta
 import evola.composeapp.generated.resources.main_home_empty_title
@@ -225,40 +212,7 @@ private fun DashboardBody(
         Spacer(Modifier.height(EvolaSpacing.lg))
         TopTilesRow(percent = (progress.overallPct * 100).roundToInt(), vocabulary = progress.vocabulary)
         Spacer(Modifier.height(EvolaSpacing.lg))
-        ActivityChartCard(progress)
-        Spacer(Modifier.height(EvolaSpacing.lg))
         WordBreakdownSection(progress.vocabulary, onStartCategorySession)
-
-        progress.nudgeWord?.let { nudge ->
-            Spacer(Modifier.height(EvolaSpacing.lg))
-            NudgeCard(nudge, onClick = { currentLesson?.let(onContinueLesson) })
-        }
-
-        Spacer(Modifier.height(EvolaSpacing.xxl))
-
-        if (currentLesson != null) {
-            OutlinedButton(
-                onClick = { onContinueLesson(currentLesson) },
-                modifier = Modifier.fillMaxWidth(),
-                border = BorderStroke(1.dp, EvolaColors.Accent),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = EvolaColors.Accent),
-            ) {
-                Text(
-                    stringResource(Res.string.main_home_continue_lesson, currentLesson.number, currentLesson.title),
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                Spacer(Modifier.size(EvolaSpacing.sm))
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
-            }
-        } else {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm),
-            ) {
-                Icon(Icons.Filled.EmojiEvents, contentDescription = null, tint = EvolaColors.Accent)
-                Text(stringResource(Res.string.main_home_all_complete), style = MaterialTheme.typography.titleMedium)
-            }
-        }
     }
 }
 

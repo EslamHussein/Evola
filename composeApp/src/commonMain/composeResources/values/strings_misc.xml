@@ -14,17 +14,17 @@
     <string name="misc_duration_sec">%1$ds</string>
 
     <!-- NativeLanguageScreen -->
-    <string name="misc_native_language_title">What\'s your native language?</string>
-    <string name="misc_native_language_subtitle">We\'ll translate new words into this language for you.</string>
+    <string name="misc_native_language_title">What's your native language?</string>
+    <string name="misc_native_language_subtitle">We'll translate new words into this language for you.</string>
 
     <!-- WelcomeScreen -->
     <string name="misc_welcome_title">Welcome to Evola</string>
-    <string name="misc_welcome_body">Upload a book or study material, and Evola turns it into bite-sized lessons - vocabulary and grammar practice built from what you\'re actually reading.</string>
-    <string name="misc_welcome_subtitle">First, tell us what you\'re working toward.</string>
+    <string name="misc_welcome_body">Upload a book or study material, and Evola turns it into bite-sized lessons - vocabulary and grammar practice built from what you're actually reading.</string>
+    <string name="misc_welcome_subtitle">First, tell us what you're working toward.</string>
 
     <!-- SplashScreen -->
     <string name="misc_app_name">Evola</string>
-    <string name="misc_splash_tagline">Let\'s get things done.</string>
+    <string name="misc_splash_tagline">Let's get things done.</string>
 
     <!-- VocabDataImportScreen -->
     <string name="misc_vocab_import_title">Setting up German vocabulary data</string>
