@@ -38,13 +38,13 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":shared"))
-            api("org.jetbrains.compose.runtime:runtime:${libs.versions.composeMultiplatform.get()}")
-            api("org.jetbrains.compose.foundation:foundation:${libs.versions.composeMultiplatform.get()}")
-            api("org.jetbrains.compose.material3:material3:1.9.0")
-            api("org.jetbrains.compose.material:material-icons-extended:1.7.3")
-            api("org.jetbrains.compose.ui:ui:${libs.versions.composeMultiplatform.get()}")
-            implementation("org.jetbrains.compose.components:components-resources:${libs.versions.composeMultiplatform.get()}")
-            implementation("org.jetbrains.compose.ui:ui-tooling-preview:${libs.versions.composeMultiplatform.get()}")
+            api(libs.compose.runtime)
+            api(libs.compose.foundation)
+            api(libs.compose.material3)
+            api(libs.compose.material.icons.extended)
+            api(libs.compose.ui)
+            implementation(libs.compose.components.resources)
+            implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.haze)
@@ -68,7 +68,7 @@ kotlin {
             implementation(libs.androidx.work.runtime.ktx)
             // Not debug-scoped: the KMP androidMain DSL doesn't expose build-type-specific
             // configurations. Small tooling dependency, acceptable to ship in release too.
-            implementation("org.jetbrains.compose.ui:ui-tooling:${libs.versions.composeMultiplatform.get()}")
+            implementation(libs.compose.ui.tooling)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
