@@ -1,6 +1,7 @@
 package evola.composeapp.feature.vocabulary.vm
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.composeapp.core.database.testAppDatabase
 import evola.shared.core.network.AnthropicClient
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.LOCAL_USER
@@ -10,14 +11,18 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
+import org.junit.runner.RunWith
 import org.orbitmvi.orbit.test.testWithInternalState
+import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
 /** [BrowseFlashcardsViewModel] is a plain local flip-through of [LocalVocabularyRepository.listVocabulary]
  * with no repository writes at all - these tests exercise the local index math (next/previous, clamped
- * at both ends) against a real vocabulary repository, same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]. */
+ * at both ends) against a real vocabulary repository, same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest].
+ * Robolectric only because [LocalSettingsRepository]'s Room database needs a real `Context` on Android. */
+@RunWith(RobolectricTestRunner::class)
 class BrowseFlashcardsViewModelTest {
 
     private fun vocabularyRepository(itemCount: Int, lessonId: String = "l1"): LocalVocabularyRepository {
@@ -36,7 +41,7 @@ class BrowseFlashcardsViewModelTest {
             db.vocabularyQueries.insertProgress("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
         }
         val anthropic = AnthropicClient(MockEngine { respond("{\"content\":[]}", HttpStatusCode.OK) }) { "sk-test" }
-        return LocalVocabularyRepository(db, anthropic, LocalSettingsRepository(db))
+        return LocalVocabularyRepository(db, anthropic, LocalSettingsRepository(testAppDatabase()))
     }
 
     @Test

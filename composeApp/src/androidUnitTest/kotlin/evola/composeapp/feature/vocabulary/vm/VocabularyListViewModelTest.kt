@@ -1,6 +1,7 @@
 package evola.composeapp.feature.vocabulary.vm
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.composeapp.core.database.testAppDatabase
 import evola.shared.core.network.AnthropicClient
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.LOCAL_USER
@@ -10,7 +11,9 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
+import org.junit.runner.RunWith
 import org.orbitmvi.orbit.test.testWithInternalState
+import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -20,7 +23,9 @@ import kotlin.test.assertTrue
 /** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]: a real [LocalVocabularyRepository]
  * backed by an in-memory SQLite [EvolaDatabase], driven through [VocabularyListViewModel] via the
  * official `org.orbit-mvi:orbit-test` DSL - never a mocked repository. Seeding follows
- * `LocalVocabularyRepositoryTest`'s own helper pattern (goal/material/lesson/vocabulary-item inserts). */
+ * `LocalVocabularyRepositoryTest`'s own helper pattern (goal/material/lesson/vocabulary-item inserts).
+ * Robolectric only because [LocalSettingsRepository]'s Room database needs a real `Context` on Android. */
+@RunWith(RobolectricTestRunner::class)
 class VocabularyListViewModelTest {
 
     private fun setup(itemCount: Int = 3): Pair<LocalVocabularyRepository, EvolaDatabase> {
@@ -39,7 +44,7 @@ class VocabularyListViewModelTest {
             db.vocabularyQueries.insertProgress("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
         }
         val anthropic = AnthropicClient(MockEngine { respond("{\"content\":[]}", HttpStatusCode.OK) }) { "sk-test" }
-        val settingsRepository = LocalSettingsRepository(db)
+        val settingsRepository = LocalSettingsRepository(testAppDatabase())
         return LocalVocabularyRepository(db, anthropic, settingsRepository) to db
     }
 

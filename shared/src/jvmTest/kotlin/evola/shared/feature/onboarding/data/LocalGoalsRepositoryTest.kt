@@ -1,8 +1,10 @@
 package evola.shared.feature.onboarding.data
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.database.AppDatabase
 import evola.database.DatabaseFactory
 import evola.database.create
+import evola.database.entity.UserSettingEntity
 import evola.shared.core.common.ApiResult
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.db.EvolaDatabase
@@ -18,12 +20,12 @@ import kotlin.test.assertNull
 
 class LocalGoalsRepositoryTest {
 
-    private fun repo(): Pair<LocalGoalsRepository, EvolaDatabase> {
+    private fun repo(): Triple<LocalGoalsRepository, EvolaDatabase, AppDatabase> {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         EvolaDatabase.Schema.create(driver)
         val db = EvolaDatabase(driver)
         val roomDb = DatabaseFactory().create()
-        return LocalGoalsRepository(db, LocalSettingsRepository(db), LocalAchievementsRepository(roomDb)) to db
+        return Triple(LocalGoalsRepository(db, LocalSettingsRepository(roomDb), LocalAchievementsRepository(roomDb)), db, roomDb)
     }
 
     @Test
@@ -83,11 +85,11 @@ class LocalGoalsRepositoryTest {
 
     @Test
     fun `weekly activity and today's learned count reflect completed sessions`() = runTest {
-        val (r, db) = repo()
+        val (r, db, roomDb) = repo()
         val goal = (r.createGoal("Learn German", null, NativeLanguage.ENGLISH) as CreateGoalResult.Success).goal
         db.materialsQueries.insert("m1", LOCAL_USER, goal.id, "f.pdf", "h", "READY", "application/pdf", 1L, null, "entire", null, null, "txt", 0L)
         db.lessonsQueries.insert("l1", "m1", goal.id, 1L, "Lesson 1", "ready", null, 0L)
-        db.settingsQueries.upsert(LOCAL_USER, "daily_new_word_goal", "9")
+        roomDb.settingsDao().upsert(UserSettingEntity(LOCAL_USER, "daily_new_word_goal", "9"))
 
         db.vocabularyQueries.insertSession("s1", LOCAL_USER, "l1", 1L, 0L, 6L, 2L)
         db.vocabularyQueries.completeSession(0L, "2026-08-05", "s1")

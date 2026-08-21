@@ -1,11 +1,12 @@
 package evola.composeapp.feature.profile.vm
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import evola.shared.db.EvolaDatabase
+import evola.composeapp.core.database.testAppDatabase
 import evola.shared.feature.profile.domain.AppTheme
 import evola.shared.feature.profile.data.LocalSettingsRepository
 import kotlinx.coroutines.test.runTest
+import org.junit.runner.RunWith
 import org.orbitmvi.orbit.test.testWithInternalState
+import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -16,14 +17,13 @@ import kotlin.test.assertTrue
  * ViewModel's own doc comment). That collector never completes on its own, so every test ends
  * with `cancelAndIgnoreRemainingItems()` (see the plan's gotcha notes on infinite `onCreate`
  * loops). Each assertion also confirms the write actually landed in the repository
- * ([LocalSettingsRepository.current]), not just in whatever state the ViewModel happened to publish. */
+ * ([LocalSettingsRepository.current]), not just in whatever state the ViewModel happened to publish.
+ * Robolectric only because [LocalSettingsRepository]'s Room database needs a real `Context` on
+ * Android. */
+@RunWith(RobolectricTestRunner::class)
 class SettingsViewModelTest {
 
-    private fun repository(): LocalSettingsRepository {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        return LocalSettingsRepository(EvolaDatabase(driver))
-    }
+    private fun repository(): LocalSettingsRepository = LocalSettingsRepository(testAppDatabase())
 
     @Test
     fun `state reflects settings already persisted before the store starts`() = runTest {

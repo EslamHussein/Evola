@@ -1,6 +1,7 @@
 package evola.composeapp.feature.vocabulary.vm
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.composeapp.core.database.testAppDatabase
 import evola.shared.core.network.AnthropicClient
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.LOCAL_USER
@@ -11,7 +12,9 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
+import org.junit.runner.RunWith
 import org.orbitmvi.orbit.test.testWithInternalState
+import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -23,7 +26,11 @@ import kotlin.test.assertTrue
  * [VocabularySessionViewModel] via the official `org.orbit-mvi:orbit-test` DSL - never a mocked
  * repository. This is the actual spaced-repetition session state machine (New card -> Practice
  * card -> grading -> next card / session-complete), so assertions follow the real SRS transitions
- * already proven in `LocalVocabularyRepositoryTest`. */
+ * already proven in `LocalVocabularyRepositoryTest`. Robolectric only because [LocalSettingsRepository]'s
+ * Room database needs a real `Context` on Android - no test here mutates settings, so the
+ * repository and the ViewModel's own settings dependency each get an independent in-memory Room
+ * database rather than sharing one. */
+@RunWith(RobolectricTestRunner::class)
 class VocabularySessionViewModelTest {
 
     private fun setup(itemCount: Int = 3): Pair<LocalVocabularyRepository, EvolaDatabase> {
@@ -42,12 +49,12 @@ class VocabularySessionViewModelTest {
             db.vocabularyQueries.insertProgress("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
         }
         val anthropic = AnthropicClient(MockEngine { respond("{\"content\":[]}", HttpStatusCode.OK) }) { "sk-test" }
-        val settingsRepository = LocalSettingsRepository(db)
+        val settingsRepository = LocalSettingsRepository(testAppDatabase())
         return LocalVocabularyRepository(db, anthropic, settingsRepository) to db
     }
 
     private fun viewModel(repository: LocalVocabularyRepository, db: EvolaDatabase, source: VocabSessionSource = VocabSessionSource.Lesson("l1")) =
-        VocabularySessionViewModel(source, repository, LocalSettingsRepository(db))
+        VocabularySessionViewModel(source, repository, LocalSettingsRepository(testAppDatabase()))
 
     @Test
     fun `starting a session shows the first word as a New card with correct content`() = runTest {

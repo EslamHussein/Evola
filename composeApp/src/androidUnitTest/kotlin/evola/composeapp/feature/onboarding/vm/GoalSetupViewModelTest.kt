@@ -28,8 +28,8 @@ class GoalSetupViewModelTest {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         EvolaDatabase.Schema.create(driver)
         val db = EvolaDatabase(driver)
-        val achievements = LocalAchievementsRepository(testAppDatabase())
-        return LocalGoalsRepository(db, LocalSettingsRepository(db), achievements)
+        val roomDb = testAppDatabase()
+        return LocalGoalsRepository(db, LocalSettingsRepository(roomDb), LocalAchievementsRepository(roomDb))
     }
 
     @Test

@@ -1,9 +1,8 @@
 package evola.shared.feature.profile.data
 
-import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToList
+import evola.database.AppDatabase
+import evola.database.entity.UserSettingEntity
 import evola.shared.core.common.LOCAL_USER
-import evola.shared.db.EvolaDatabase
 import evola.shared.feature.profile.domain.AppSettings
 import evola.shared.feature.profile.domain.AppTheme
 import evola.shared.feature.profile.domain.DEFAULT_DAILY_NEW_WORD_GOAL
@@ -14,9 +13,9 @@ import evola.shared.feature.profile.domain.DEFAULT_SILENT_HOURS_START
 import evola.shared.feature.profile.domain.DEFAULT_STREAK_FREEZES_AVAILABLE
 import evola.shared.feature.profile.domain.DEFAULT_TTS_RATE
 import evola.shared.feature.profile.domain.SettingsRepository
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 
 private const val KEY_DAILY_NEW_WORD_GOAL = "daily_new_word_goal"
 private const val KEY_KEYBOARD_EXERCISE_ENABLED = "keyboard_exercise_enabled"
@@ -43,12 +42,10 @@ private const val KEY_STREAK_FREEZES_AVAILABLE = "streak_freezes_available"
  * table rather than one column per setting, so a new toggle never needs a schema migration.
  * Single-user: user is always [LOCAL_USER].
  */
-class LocalSettingsRepository(private val db: EvolaDatabase) : SettingsRepository {
+class LocalSettingsRepository(private val db: AppDatabase) : SettingsRepository {
 
-    override val settings: Flow<AppSettings> = db.settingsQueries.all(LOCAL_USER)
-        .asFlow()
-        .mapToList(Dispatchers.Default)
-        .map { rows -> rows.associate { it.key to it.value_ }.toAppSettings() }
+    override val settings: Flow<AppSettings> = db.settingsDao().all(LOCAL_USER)
+        .map { rows -> rows.associate { it.key to it.value }.toAppSettings() }
 
     override suspend fun setDailyNewWordGoal(value: Int) = set(KEY_DAILY_NEW_WORD_GOAL, value.coerceAtLeast(1).toString())
     override suspend fun setKeyboardExerciseEnabled(value: Boolean) = set(KEY_KEYBOARD_EXERCISE_ENABLED, value.toString())
@@ -58,7 +55,7 @@ class LocalSettingsRepository(private val db: EvolaDatabase) : SettingsRepositor
     override suspend fun setTtsRate(value: Float) = set(KEY_TTS_RATE, value.toString())
 
     override suspend fun setTtsVoiceName(value: String?) {
-        if (value == null) db.settingsQueries.upsert(LOCAL_USER, KEY_TTS_VOICE_NAME, "") else set(KEY_TTS_VOICE_NAME, value)
+        if (value == null) db.settingsDao().upsert(UserSettingEntity(LOCAL_USER, KEY_TTS_VOICE_NAME, "")) else set(KEY_TTS_VOICE_NAME, value)
     }
     override suspend fun setAutoPronounce(value: Boolean) = set(KEY_AUTO_PRONOUNCE, value.toString())
     override suspend fun setShowTranscription(value: Boolean) = set(KEY_SHOW_TRANSCRIPTION, value.toString())
@@ -74,10 +71,10 @@ class LocalSettingsRepository(private val db: EvolaDatabase) : SettingsRepositor
 
     override suspend fun setLastNotificationPostedAtMillis(value: Long) = set(KEY_LAST_NOTIFICATION_POSTED_AT_MILLIS, value.toString())
 
-    override fun current(): AppSettings = db.settingsQueries.all(LOCAL_USER).executeAsList().associate { it.key to it.value_ }.toAppSettings()
+    override fun current(): AppSettings = runBlocking { db.settingsDao().allOnce(LOCAL_USER) }.associate { it.key to it.value }.toAppSettings()
 
-    private fun set(key: String, value: String) {
-        db.settingsQueries.upsert(LOCAL_USER, key, value)
+    private suspend fun set(key: String, value: String) {
+        db.settingsDao().upsert(UserSettingEntity(LOCAL_USER, key, value))
     }
 
     private fun Map<String, String>.toAppSettings() = AppSettings(

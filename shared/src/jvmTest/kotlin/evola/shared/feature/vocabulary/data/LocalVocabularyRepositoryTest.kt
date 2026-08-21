@@ -1,6 +1,8 @@
 package evola.shared.feature.vocabulary.data
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.database.DatabaseFactory
+import evola.database.create
 import evola.shared.core.network.AnthropicClient
 import evola.shared.core.common.ApiResult
 import evola.shared.core.common.LOCAL_USER
@@ -38,7 +40,7 @@ class LocalVocabularyRepositoryTest {
             db.vocabularyQueries.insertProgress("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
         }
         val anthropic = AnthropicClient(MockEngine { respond("{\"content\":[]}", HttpStatusCode.OK) }) { "sk-test" }
-        val settingsRepository = LocalSettingsRepository(db)
+        val settingsRepository = LocalSettingsRepository(DatabaseFactory().create())
         return LocalVocabularyRepository(db, anthropic, settingsRepository) to db
     }
 

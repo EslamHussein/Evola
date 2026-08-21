@@ -1,7 +1,7 @@
 package evola.shared.feature.profile.data
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import evola.shared.db.EvolaDatabase
+import evola.database.DatabaseFactory
+import evola.database.create
 import evola.shared.feature.profile.domain.AppSettings
 import evola.shared.feature.profile.domain.DEFAULT_DAILY_NEW_WORD_GOAL
 import evola.shared.feature.profile.domain.isWithinNotificationFrequencyLimit
@@ -15,11 +15,7 @@ import kotlin.test.assertTrue
 
 class LocalSettingsRepositoryTest {
 
-    private fun repo(): LocalSettingsRepository {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        return LocalSettingsRepository(EvolaDatabase(driver))
-    }
+    private fun repo(): LocalSettingsRepository = LocalSettingsRepository(DatabaseFactory().create())
 
     @Test
     fun `defaults match pre-Settings behavior when nothing has been set`() = runTest {

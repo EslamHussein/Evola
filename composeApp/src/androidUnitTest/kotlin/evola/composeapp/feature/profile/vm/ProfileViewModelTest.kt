@@ -44,8 +44,9 @@ class ProfileViewModelTest {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         EvolaDatabase.Schema.create(driver)
         val db = EvolaDatabase(driver)
-        val settings = LocalSettingsRepository(db)
-        val achievements = LocalAchievementsRepository(testAppDatabase())
+        val roomDb = testAppDatabase()
+        val settings = LocalSettingsRepository(roomDb)
+        val achievements = LocalAchievementsRepository(roomDb)
         val goals = LocalGoalsRepository(db, settings, achievements)
         // resetAllProgress/the vocabulary reads ProfileViewModel touches never call the AI client -
         // a MockEngine that errors on any request makes that an enforced assumption, not a guess.

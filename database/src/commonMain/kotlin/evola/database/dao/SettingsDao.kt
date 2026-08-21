@@ -20,6 +20,12 @@ interface SettingsDao {
     @Query("SELECT key, value FROM user_settings WHERE user_id = :userId")
     fun all(userId: String): Flow<List<SettingKeyValue>>
 
+    /** One-shot (non-Flow) read, for [evola.shared.feature.profile.domain.SettingsRepository.current] -
+     * a synchronous interface method, bridged via `runBlocking` at the repository layer since Room
+     * KMP requires DAO functions on non-Android platforms to be suspend. */
+    @Query("SELECT key, value FROM user_settings WHERE user_id = :userId")
+    suspend fun allOnce(userId: String): List<SettingKeyValue>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(setting: UserSettingEntity)
 

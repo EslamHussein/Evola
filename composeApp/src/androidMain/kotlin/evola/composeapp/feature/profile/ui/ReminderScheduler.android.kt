@@ -21,6 +21,8 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import evola.composeapp.core.database.DatabaseDriverFactory
+import evola.database.DatabaseFactory
+import evola.database.create
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.feature.profile.data.LocalSettingsRepository
@@ -104,7 +106,8 @@ actual fun rememberNotificationPermissionRequester(onResult: (Boolean) -> Unit):
 class ReviewReminderWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val db = EvolaDatabase(DatabaseDriverFactory(applicationContext).create())
-        val settingsRepository = LocalSettingsRepository(db)
+        val roomDb = DatabaseFactory(applicationContext).create()
+        val settingsRepository = LocalSettingsRepository(roomDb)
         val settings = settingsRepository.current()
         val now = Clock.System.now()
         val currentHour = now.toLocalDateTime(TimeZone.currentSystemDefault()).hour
