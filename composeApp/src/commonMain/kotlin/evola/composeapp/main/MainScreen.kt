@@ -5,16 +5,8 @@ package evola.composeapp.main
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -23,7 +15,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.navigation3.ui.NavDisplay
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import evola.composeapp.core.navigation.MaterialsNavContext
@@ -32,20 +23,12 @@ import evola.composeapp.core.common.LocalNativeLanguage
 import evola.composeapp.feature.home.ui.HomeScreen
 import evola.composeapp.feature.home.vm.HomeViewModel
 import evola.composeapp.feature.profile.ui.ProfileRoute
-import evola.composeapp.core.designsystem.EvolaColors
-import evola.composeapp.core.designsystem.components.GlassNavigationBar
 import org.koin.compose.koinInject
-import org.koin.compose.navigation3.koinEntryProvider
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import evola.shared.feature.onboarding.domain.Goal
-import evola.composeapp.generated.resources.Res
-import evola.composeapp.generated.resources.main_nav_home
-import evola.composeapp.generated.resources.main_nav_materials
-import evola.composeapp.generated.resources.main_nav_profile
-import org.jetbrains.compose.resources.stringResource
 
-private enum class MainTab { HOME, MATERIALS, PROFILE }
+internal enum class MainTab { HOME, MATERIALS, PROFILE }
 
 /**
  * The 3-tab navigation shell: Home / Materials / Profile. Materials doubles as the lesson browser
@@ -58,6 +41,11 @@ private enum class MainTab { HOME, MATERIALS, PROFILE }
  * showed, and this app supports exactly one goal per user so a dedicated goals list has nowhere
  * to grow. Modal flows within a tab (add material, material detail) hide the bar, matching the
  * spec's "modal/full-screen flows hide the tab bar" note.
+ *
+ * Split across sibling files in this package: [MainTabBar] (the bottom bar, previewable on its
+ * own), [MaterialsTabHost]/[ProfileTabHost] (each tab's own Navigation 3 host), and
+ * [MainScreenPreview] (a Koin-backed preview of this composable itself) - see MainTabBar.kt,
+ * MainScreenTabHosts.kt, and MainScreenPreview.kt.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,11 +78,6 @@ fun MainScreen(
     val showTabBar = (selectedTab != MainTab.MATERIALS || materialsBackStack.size == 1) &&
         (selectedTab != MainTab.PROFILE || profileBackStack.size == 1)
 
-    // A white-alpha indicator (right for the old dark glass bar) all but disappears against
-    // Reword's light palette's white/near-white blurred surface - the accent at low alpha reads on
-    // both.
-    val glassIndicatorColor = EvolaColors.Accent.copy(alpha = 0.16f)
-    val glassItemColors = NavigationBarItemDefaults.colors(indicatorColor = glassIndicatorColor)
     val hazeState = rememberHazeState()
 
     CompositionLocalProvider(LocalNativeLanguage provides goal.nativeLanguage) {
@@ -107,40 +90,24 @@ fun MainScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showTabBar) {
-                GlassNavigationBar(hazeState = hazeState) {
-                    val homeLabel = stringResource(Res.string.main_nav_home)
-                    val materialsLabel = stringResource(Res.string.main_nav_materials)
-                    val profileLabel = stringResource(Res.string.main_nav_profile)
-                    NavigationBarItem(
-                        selected = selectedTab == MainTab.HOME,
-                        onClick = { selectedTab = MainTab.HOME },
-                        icon = { Icon(Icons.Filled.Home, contentDescription = homeLabel) },
-                        label = { Text(homeLabel) },
-                        colors = glassItemColors,
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == MainTab.MATERIALS,
-                        onClick = {
-                            selectedTab = MainTab.MATERIALS
-                            materialsBackStack.clear()
-                            materialsBackStack.add(MaterialsRoute.List)
-                        },
-                        icon = { Icon(Icons.Filled.Folder, contentDescription = materialsLabel) },
-                        label = { Text(materialsLabel) },
-                        colors = glassItemColors,
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == MainTab.PROFILE,
-                        onClick = {
-                            selectedTab = MainTab.PROFILE
-                            profileBackStack.clear()
-                            profileBackStack.add(ProfileRoute.Main)
-                        },
-                        icon = { Icon(Icons.Filled.Person, contentDescription = profileLabel) },
-                        label = { Text(profileLabel) },
-                        colors = glassItemColors,
-                    )
-                }
+                MainTabBar(
+                    selectedTab = selectedTab,
+                    hazeState = hazeState,
+                    onSelectTab = { tab ->
+                        selectedTab = tab
+                        when (tab) {
+                            MainTab.HOME -> Unit
+                            MainTab.MATERIALS -> {
+                                materialsBackStack.clear()
+                                materialsBackStack.add(MaterialsRoute.List)
+                            }
+                            MainTab.PROFILE -> {
+                                profileBackStack.clear()
+                                profileBackStack.add(ProfileRoute.Main)
+                            }
+                        }
+                    },
+                )
             }
         },
     ) { padding ->
@@ -192,34 +159,4 @@ fun MainScreen(
         }
     }
     }
-}
-
-/** Materials tab's own sub-navigation - a real Navigation 3 back stack (see [MaterialsRoute] and
- * [materialsNavigationModule]) instead of the hand-rolled `when`-on-a-sealed-interface state
- * machine this replaced (see git history for that version). [backStack] is hoisted in [MainScreen],
- * not created here, since [MainScreen] also needs its size to decide whether the tab bar is
- * visible, and Home's cross-tab CTAs need to reset it before switching tabs in.
- *
- * No manual [evola.composeapp.core.navigation.BackHandler] here (unlike the pre-migration version) - [NavDisplay]
- * already registers its own back handling via `androidx.navigationevent`, predictive-back animation
- * included, and only intercepts the system back gesture when there's a previous entry to return to.
- * A redundant `BackHandler` on top would use the older `OnBackPressedCallback` API and risks
- * pre-empting Nav3's own predictive-back gesture instead of just duplicating `removeLastOrNull()`. */
-@Composable
-private fun MaterialsTabHost(backStack: MutableList<MaterialsRoute>) {
-    NavDisplay(
-        backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
-        entryProvider = koinEntryProvider(),
-    )
-}
-
-/** Profile tab's own sub-navigation - same extraction rationale as [MaterialsTabHost]. */
-@Composable
-private fun ProfileTabHost(backStack: MutableList<ProfileRoute>) {
-    NavDisplay(
-        backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
-        entryProvider = koinEntryProvider(),
-    )
 }
