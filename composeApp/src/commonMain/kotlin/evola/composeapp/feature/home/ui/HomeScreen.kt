@@ -7,6 +7,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -118,6 +119,11 @@ private fun HomeContent(
 ) {
     Scaffold(
         modifier = modifier,
+        // MainScreen's own Scaffold already reserves exactly the bottom tab bar's height as
+        // content padding; this screen's TopAppBar handles the top status-bar inset on its own, so
+        // leaving contentWindowInsets at its safeDrawing default would double-reserve bottom space
+        // no bar actually occupies here, showing up as dead gray space above the tab bar.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = { TopAppBar(title = { RootTopBarTitle(stringResource(Res.string.main_home_title)) }) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
