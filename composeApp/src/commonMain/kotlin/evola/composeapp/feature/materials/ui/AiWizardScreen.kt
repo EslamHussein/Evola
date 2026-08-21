@@ -61,6 +61,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import evola.composeapp.core.navigation.BackHandler
 import evola.composeapp.generated.resources.Res
+import evola.composeapp.generated.resources.wizard_add_lesson_range
 import evola.composeapp.generated.resources.wizard_back
 import evola.composeapp.generated.resources.wizard_cancel
 import evola.composeapp.generated.resources.wizard_coming_soon
@@ -296,7 +297,11 @@ private fun OrganizationCard(
         onClick = { onSelect(mode) },
         modifier = Modifier.fillMaxWidth(),
         enabled = enabled,
-        subtitle = if (mode == OrganizationMode.MANUAL) stringResource(Res.string.wizard_coming_soon) else null,
+        subtitle = if (mode == OrganizationMode.MANUAL) {
+            "${stringResource(Res.string.wizard_coming_soon)}\n${stringResource(Res.string.wizard_add_lesson_range)}"
+        } else {
+            null
+        },
     )
 }
 
