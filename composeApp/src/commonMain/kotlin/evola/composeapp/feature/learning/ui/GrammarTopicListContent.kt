@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import evola.composeapp.core.common.ChaseLoadingIndicator
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaEmptyState
 import evola.composeapp.feature.learning.vm.GrammarTopicListState
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_grammar_topics_empty
@@ -70,13 +71,7 @@ internal fun GrammarTopicListContent(
 
                 is GrammarTopicListState.Loaded -> {
                     if (state.topics.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
-                            Text(
-                                stringResource(Res.string.lessons_grammar_topics_empty),
-                                style = MaterialTheme.typography.bodyLarge,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
+                        EvolaEmptyState(message = stringResource(Res.string.lessons_grammar_topics_empty))
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg),

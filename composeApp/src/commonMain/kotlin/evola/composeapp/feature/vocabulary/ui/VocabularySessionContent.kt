@@ -33,7 +33,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_done
-import evola.composeapp.generated.resources.lessons_action_retry
 import evola.composeapp.generated.resources.lessons_nav_close
 import evola.composeapp.generated.resources.lessons_study_empty
 import evola.composeapp.generated.resources.lessons_undo_last_answer
@@ -50,6 +49,7 @@ import evola.composeapp.core.designsystem.CenteredMessage
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaErrorState
 import evola.composeapp.core.designsystem.components.SegmentedProgressBar
 import evola.composeapp.widget.rememberWidgetRefresher
 import evola.shared.feature.profile.domain.AppSettings
@@ -152,11 +152,7 @@ internal fun VocabularySessionContent(
             when (val current = state) {
                 is VocabularySessionUiState.Loading -> CenteredMessage { ChaseLoadingIndicator() }
 
-                is VocabularySessionUiState.Error -> CenteredMessage {
-                    Text(current.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(EvolaSpacing.lg))
-                    Button(onClick = onRetry) { Text(stringResource(Res.string.lessons_action_retry)) }
-                }
+                is VocabularySessionUiState.Error -> EvolaErrorState(message = current.message, onRetry = onRetry)
 
                 is VocabularySessionUiState.Empty -> CenteredMessage {
                     Text(

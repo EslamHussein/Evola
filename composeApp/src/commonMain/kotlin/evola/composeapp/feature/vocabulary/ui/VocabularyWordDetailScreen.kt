@@ -84,6 +84,7 @@ import evola.composeapp.core.designsystem.components.EvolaButtonSize
 import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
 import evola.composeapp.core.designsystem.components.EvolaPrimaryButton
 import evola.composeapp.core.designsystem.components.EvolaSectionHeader
+import evola.composeapp.core.designsystem.components.EvolaTag
 import evola.shared.feature.vocabulary.domain.VocabularyItem
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -119,23 +120,6 @@ private fun VocabularyStatusBadge(status: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
         Text(label, style = MaterialTheme.typography.labelMedium, color = color)
-    }
-}
-
-/** [icon]/[tint] tell difficulty, frequency, and related-word chips apart at a glance - previously
- * all three rendered identically, so a learner had no way to tell what a given pill meant without
- * reading its text and guessing from context. */
-@Composable
-private fun Tag(label: String, icon: ImageVector, tint: Color) {
-    Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.SurfaceAlt) {
-        Row(
-            modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(12.dp))
-            Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text2)
-        }
     }
 }
 
@@ -245,9 +229,9 @@ internal fun VocabularyWordDetailScreen(
             if (item.difficultyRating != null || item.frequencyRating != null || item.relatedWords.isNotEmpty()) {
                 DetailSection(stringResource(Res.string.lessons_section_details)) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs), verticalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
-                        item.difficultyRating?.let { Tag(it, Icons.Filled.Speed, EvolaColors.Gold) }
-                        item.frequencyRating?.let { Tag(it, Icons.AutoMirrored.Filled.TrendingUp, EvolaColors.Ink2) }
-                        item.relatedWords.forEach { Tag(it, Icons.Filled.Link, EvolaColors.Text2) }
+                        item.difficultyRating?.let { EvolaTag(label = it, icon = Icons.Filled.Speed, contentColor = EvolaColors.Gold) }
+                        item.frequencyRating?.let { EvolaTag(label = it, icon = Icons.AutoMirrored.Filled.TrendingUp, contentColor = EvolaColors.Ink2) }
+                        item.relatedWords.forEach { EvolaTag(label = it, icon = Icons.Filled.Link, contentColor = EvolaColors.Text2) }
                     }
                 }
             }

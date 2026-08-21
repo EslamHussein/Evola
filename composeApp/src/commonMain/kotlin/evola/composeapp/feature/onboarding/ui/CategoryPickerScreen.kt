@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -52,6 +51,7 @@ import evola.composeapp.generated.resources.onboarding_category_skip
 import evola.composeapp.generated.resources.onboarding_category_subtitle_words
 import evola.composeapp.generated.resources.onboarding_category_words_count
 import evola.composeapp.generated.resources.onboarding_level_lesson_title
+import evola.composeapp.core.common.ChaseLoadingIndicator
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
@@ -142,7 +142,7 @@ private fun CategoryPickerContent(
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
         if (levels == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { ChaseLoadingIndicator() }
             return@Surface
         }
         // Pre-resolved here (composable context) since it's needed inside the non-composable

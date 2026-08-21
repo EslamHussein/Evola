@@ -70,6 +70,7 @@ import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaButtonSize
 import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
+import evola.composeapp.core.designsystem.components.EvolaEmptyState
 import evola.composeapp.core.designsystem.components.EvolaIconButton
 import evola.composeapp.core.designsystem.components.EvolaPrimaryButton
 import evola.composeapp.feature.vocabulary.ui.rememberCsvFilePicker
@@ -344,13 +345,7 @@ private fun VocabularyListContent(
 
                 is VocabularyListContent.Loaded -> {
                     if (current.items.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
-                            Text(
-                                stringResource(Res.string.lessons_empty_vocabulary),
-                                style = MaterialTheme.typography.bodyLarge,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
+                        EvolaEmptyState(message = stringResource(Res.string.lessons_empty_vocabulary))
                     } else {
                         val filtered = remember(current.items, query, sortMode) {
                             current.items.filter { item ->
@@ -387,9 +382,7 @@ private fun VocabularyListContent(
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = EvolaSpacing.lg, vertical = EvolaSpacing.sm),
                             )
                             if (filtered.isEmpty()) {
-                                Box(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
-                                    Text(stringResource(Res.string.lessons_no_words_match, query), style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
-                                }
+                                EvolaEmptyState(message = stringResource(Res.string.lessons_no_words_match, query))
                             } else {
                                 LazyColumn(
                                     modifier = Modifier.fillMaxSize().padding(horizontal = EvolaSpacing.lg)

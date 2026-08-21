@@ -25,7 +25,6 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.Rule
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Quiz
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,8 +56,6 @@ import evola.composeapp.generated.resources.materials_detail_partial_success
 import evola.composeapp.generated.resources.materials_detail_process_failed
 import evola.composeapp.generated.resources.materials_detail_reading_label
 import evola.composeapp.generated.resources.materials_detail_ready_of_total
-import evola.composeapp.generated.resources.materials_detail_retry
-import evola.composeapp.generated.resources.materials_detail_retry_rest
 import evola.composeapp.generated.resources.materials_detail_splitting
 import evola.composeapp.generated.resources.materials_detail_status_done
 import evola.composeapp.generated.resources.materials_detail_status_extracting
@@ -76,6 +73,8 @@ import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.CircularProgressRing
 import evola.composeapp.core.designsystem.components.EvolaCard
+import evola.composeapp.core.designsystem.components.EvolaErrorState
+import evola.composeapp.core.designsystem.components.EvolaStatTile
 import evola.composeapp.core.designsystem.components.ProgressMessage
 import evola.composeapp.core.designsystem.components.StatusTag
 import evola.composeapp.core.designsystem.components.StatusTagStyle
@@ -127,9 +126,7 @@ private fun MaterialDetailContent(
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (state) {
                 is MaterialDetailState.Loading -> ProgressMessage(stringResource(Res.string.materials_detail_loading))
-                is MaterialDetailState.Error -> CenteredMessage {
-                    Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                }
+                is MaterialDetailState.Error -> EvolaErrorState(message = state.message)
                 is MaterialDetailState.Loaded -> LoadedBody(
                     state.detail,
                     onRetry = onRetry,
@@ -153,16 +150,10 @@ private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit, onOpenLesson
 
         MaterialStatus.FAILED ->
             if (detail.lessons.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            stringResource(Res.string.materials_detail_process_failed, detail.material.filename),
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                        Spacer(Modifier.height(EvolaSpacing.lg))
-                        Button(onClick = onRetry) { Text(stringResource(Res.string.materials_detail_retry)) }
-                    }
-                }
+                EvolaErrorState(
+                    message = stringResource(Res.string.materials_detail_process_failed, detail.material.filename),
+                    onRetry = onRetry,
+                )
             } else {
                 PartialSuccessBody(detail, onRetry, onOpenLesson, onDeleteLesson)
             }
@@ -277,28 +268,21 @@ private fun MetaStatRow(vocab: Int, grammar: Int, reading: Int, exercises: Int) 
 
 @Composable
 private fun MetaStat(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, contentDescription = null, tint = EvolaColors.Text2, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.height(EvolaSpacing.xs))
-        Text(value, style = MaterialTheme.typography.titleSmall)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text3)
-    }
+    EvolaStatTile(value = value, label = label, icon = icon, filled = false)
 }
 
 @Composable
 private fun PartialSuccessBody(detail: MaterialDetail, onRetry: () -> Unit, onOpenLesson: (String) -> Unit, onDeleteLesson: (String) -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {
         item {
-            Text(
-                stringResource(
+            EvolaErrorState(
+                message = stringResource(
                     Res.string.materials_detail_partial_success,
                     lessonCountLabel(detail.lessons.size),
                     detail.material.filename,
                 ),
-                style = MaterialTheme.typography.bodyLarge,
+                onRetry = onRetry,
             )
-            Spacer(Modifier.height(EvolaSpacing.md))
-            Button(onClick = onRetry) { Text(stringResource(Res.string.materials_detail_retry_rest)) }
             Spacer(Modifier.height(EvolaSpacing.lg))
         }
         items(detail.lessons, key = { it.id }) { lesson ->

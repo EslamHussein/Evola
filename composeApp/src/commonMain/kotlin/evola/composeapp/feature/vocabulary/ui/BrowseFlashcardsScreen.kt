@@ -48,6 +48,7 @@ import evola.composeapp.core.common.RtlText
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaEmptyState
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_browse_ipa
 import evola.composeapp.generated.resources.lessons_browse_next_word
@@ -95,9 +96,7 @@ private fun BrowseFlashcardsContent(
                 is BrowseFlashcardsState.Error -> Box(Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
                     Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 }
-                is BrowseFlashcardsState.Empty -> Box(Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
-                    Text(stringResource(Res.string.lessons_empty_vocabulary), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                }
+                is BrowseFlashcardsState.Empty -> EvolaEmptyState(message = stringResource(Res.string.lessons_empty_vocabulary))
                 is BrowseFlashcardsState.Browsing -> BrowsingBody(
                     state,
                     onNext = onNext,

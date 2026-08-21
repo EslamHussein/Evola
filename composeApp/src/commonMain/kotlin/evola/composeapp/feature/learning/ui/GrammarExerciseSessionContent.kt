@@ -25,10 +25,10 @@ import evola.composeapp.core.common.ChaseLoadingIndicator
 import evola.composeapp.core.designsystem.CenteredMessage
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaErrorState
 import evola.composeapp.feature.learning.vm.GrammarExerciseSessionState
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_done
-import evola.composeapp.generated.resources.lessons_action_retry
 import evola.composeapp.generated.resources.lessons_grammar_complete
 import evola.composeapp.generated.resources.lessons_grammar_empty
 import evola.composeapp.generated.resources.lessons_grammar_practice_title
@@ -66,11 +66,7 @@ internal fun GrammarExerciseSessionContent(
             when (state) {
                 is GrammarExerciseSessionState.Loading -> CenteredMessage { ChaseLoadingIndicator() }
 
-                is GrammarExerciseSessionState.Error -> CenteredMessage {
-                    Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(EvolaSpacing.lg))
-                    Button(onClick = onRetry) { Text(stringResource(Res.string.lessons_action_retry)) }
-                }
+                is GrammarExerciseSessionState.Error -> EvolaErrorState(message = state.message, onRetry = onRetry)
 
                 is GrammarExerciseSessionState.Empty -> CenteredMessage {
                     Text(

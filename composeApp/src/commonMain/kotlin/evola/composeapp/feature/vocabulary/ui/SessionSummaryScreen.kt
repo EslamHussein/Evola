@@ -15,7 +15,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,6 +34,7 @@ import evola.composeapp.generated.resources.misc_stat_words
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaStatTile
 import evola.shared.feature.vocabulary.domain.VocabularySessionSummary
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -69,9 +69,9 @@ fun SessionSummaryScreen(
                 stringResource(Res.string.misc_duration_sec, durationSeconds)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-                StatCard("${summary.wordsLearned}", stringResource(Res.string.misc_stat_words))
-                StatCard("${summary.accuracy.toInt()}%", stringResource(Res.string.misc_stat_accuracy))
-                StatCard(durationText, stringResource(Res.string.misc_stat_time))
+                EvolaStatTile(value = "${summary.wordsLearned}", label = stringResource(Res.string.misc_stat_words))
+                EvolaStatTile(value = "${summary.accuracy.toInt()}%", label = stringResource(Res.string.misc_stat_accuracy))
+                EvolaStatTile(value = durationText, label = stringResource(Res.string.misc_stat_time))
             }
             Spacer(Modifier.height(EvolaSpacing.xl))
 
@@ -82,19 +82,6 @@ fun SessionSummaryScreen(
             OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(Res.string.misc_back_to_lesson))
             }
-        }
-    }
-}
-
-@Composable
-private fun StatCard(value: String, label: String) {
-    Surface(color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.small) {
-        Column(
-            modifier = Modifier.padding(horizontal = EvolaSpacing.lg, vertical = EvolaSpacing.md),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(value, style = MaterialTheme.typography.titleLarge)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = EvolaColors.Text3)
         }
     }
 }

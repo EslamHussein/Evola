@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -43,6 +42,7 @@ import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaCard
 import evola.composeapp.core.designsystem.components.EvolaDivider
+import evola.composeapp.core.designsystem.components.EvolaStatTile
 import evola.shared.feature.onboarding.domain.DayActivity
 import evola.shared.feature.onboarding.domain.GoalProgress
 import evola.shared.feature.onboarding.domain.VocabularyBreakdown
@@ -113,21 +113,8 @@ internal fun StatsSection(progress: GoalProgress) {
 
 @Composable
 private fun StreakTile(label: String, days: Int, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier, color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.medium) {
-        Column(modifier = Modifier.padding(EvolaSpacing.md)) {
-            Text(label, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
-            Spacer(Modifier.height(2.dp))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text("$days", style = MaterialTheme.typography.headlineSmall)
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    stringResource(if (days == 1) Res.string.main_home_day_singular else Res.string.main_home_day_plural),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = EvolaColors.Text3,
-                )
-            }
-        }
-    }
+    val dayWord = stringResource(if (days == 1) Res.string.main_home_day_singular else Res.string.main_home_day_plural)
+    EvolaStatTile(value = "$days $dayWord", label = label, modifier = modifier)
 }
 
 /** Seven circles, oldest day first, today last - filled + a day-of-week initial when that day had

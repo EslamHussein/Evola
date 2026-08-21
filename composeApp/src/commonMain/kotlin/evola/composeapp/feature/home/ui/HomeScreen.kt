@@ -36,7 +36,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.feature.home.vm.HomeState
@@ -45,6 +44,7 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaCard
+import evola.composeapp.core.designsystem.components.EvolaErrorState
 import evola.composeapp.core.designsystem.components.RootTopBarTitle
 import evola.shared.feature.onboarding.domain.Goal
 import evola.shared.feature.onboarding.domain.GoalProgress
@@ -61,7 +61,6 @@ import evola.composeapp.generated.resources.main_home_continue_lesson
 import evola.composeapp.generated.resources.main_home_empty_body
 import evola.composeapp.generated.resources.main_home_empty_cta
 import evola.composeapp.generated.resources.main_home_empty_title
-import evola.composeapp.generated.resources.main_home_retry
 import evola.composeapp.generated.resources.main_home_title
 import evola.composeapp.generated.resources.main_home_your_goal_label
 import org.jetbrains.compose.resources.stringResource
@@ -139,11 +138,7 @@ private fun HomeContent(
                 when (state) {
                     is HomeState.Loading -> CenteredBox { ChaseLoadingIndicator() }
 
-                    is HomeState.Error -> CenteredBox {
-                        Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                        Spacer(Modifier.height(EvolaSpacing.md))
-                        Button(onClick = onRetry) { Text(stringResource(Res.string.main_home_retry)) }
-                    }
+                    is HomeState.Error -> EvolaErrorState(message = state.message, onRetry = onRetry)
 
                     is HomeState.Loaded ->
                         if (!state.hasLessons) {

@@ -1,13 +1,9 @@
 package evola.composeapp.feature.profile.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -16,16 +12,12 @@ import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import evola.composeapp.feature.profile.ui.rememberBackupFileLoader
 import evola.composeapp.feature.profile.ui.rememberBackupFileSaver
 import evola.composeapp.generated.resources.Res
@@ -50,6 +42,7 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaDivider
+import evola.composeapp.core.designsystem.components.EvolaListRow
 import evola.composeapp.core.designsystem.components.EvolaSectionHeader
 import evola.composeapp.core.designsystem.components.IconTile
 import evola.shared.core.common.ApiResult
@@ -106,9 +99,9 @@ internal fun AppSection(
     }
 
     // Card left as plain M3 Card (not EvolaCard) - this list has full-bleed dividers between rows
-    // that are each individually padded ([AppRow] applies its own EvolaSpacing.lg), so EvolaCard's
-    // fixed internal padding would both double-pad every row and inset the dividers off the card's
-    // edges, a real visual regression rather than a like-for-like migration.
+    // that are each individually padded ([AppRow]/[EvolaListRow] apply their own padding), so
+    // EvolaCard's fixed internal padding would both double-pad every row and inset the dividers off
+    // the card's edges, a real visual regression rather than a like-for-like migration.
     EvolaSectionHeader(text = stringResource(Res.string.main_profile_app_section_title))
     Spacer(Modifier.height(EvolaSpacing.sm))
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -132,19 +125,13 @@ internal fun AppSection(
 /** Shared icon-tile row layout used by [AppSection] and Profile's danger-zone row. */
 @Composable
 internal fun AppRow(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(EvolaSpacing.lg),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconTile(icon, locked = false)
-        Spacer(Modifier.width(EvolaSpacing.md))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(2.dp))
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
-        }
-        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = EvolaColors.Text3)
-    }
+    EvolaListRow(
+        title = title,
+        subtitle = subtitle,
+        leading = { IconTile(icon, locked = false) },
+        trailing = { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = EvolaColors.Text3) },
+        onClick = onClick,
+    )
 }
 
 private object FakeAppSectionBackupRepository : BackupRepository {

@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -46,6 +45,7 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaCard
+import evola.composeapp.core.designsystem.components.EvolaTag
 import evola.shared.feature.onboarding.domain.NudgeWord
 import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import evola.shared.feature.vocabulary.domain.WordCategory
@@ -69,14 +69,7 @@ internal fun WordBreakdownSection(vocabulary: VocabularyBreakdown, onStartCatego
     val learning = (vocabulary.inProgress - struggling).coerceAtLeast(0)
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(Res.string.main_home_word_breakdown_title), style = MaterialTheme.typography.titleMedium)
-        Surface(color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.extraLarge) {
-            Text(
-                stringResource(Res.string.main_home_words_total, total),
-                style = MaterialTheme.typography.labelMedium,
-                color = EvolaColors.Text2,
-                modifier = Modifier.padding(horizontal = EvolaSpacing.md, vertical = EvolaSpacing.xs),
-            )
-        }
+        EvolaTag(label = stringResource(Res.string.main_home_words_total, total))
     }
     Spacer(Modifier.height(EvolaSpacing.md))
     Column(verticalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {

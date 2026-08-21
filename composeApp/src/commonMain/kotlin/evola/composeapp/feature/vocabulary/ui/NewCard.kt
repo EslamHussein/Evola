@@ -1,6 +1,5 @@
 package evola.composeapp.feature.vocabulary.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -52,6 +51,7 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaIconButton
+import evola.composeapp.core.designsystem.components.EvolaTag
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -104,16 +104,12 @@ internal fun NewCard(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             // "New word" badge - pill shape, accent-tinted background (previously a bare icon+text
             // row with no container, easy to mistake for body copy rather than a status marker).
-            Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.AccentSoft) {
-                Row(
-                    modifier = Modifier.padding(horizontal = EvolaSpacing.md, vertical = EvolaSpacing.xs),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(EvolaSpacing.xs))
-                    Text(stringResource(Res.string.lessons_new_word_label), style = MaterialTheme.typography.labelMedium, color = EvolaColors.Accent)
-                }
-            }
+            EvolaTag(
+                label = stringResource(Res.string.lessons_new_word_label),
+                icon = Icons.Filled.AutoAwesome,
+                containerColor = EvolaColors.AccentSoft,
+                contentColor = EvolaColors.Accent,
+            )
             Spacer(Modifier.height(EvolaSpacing.lg))
 
             // The word - the card's visual anchor, centered and large. The bookmark toggle that
@@ -193,9 +189,7 @@ internal fun NewCard(
             if (card.relatedWords.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
                     card.relatedWords.forEach { related ->
-                        Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.SurfaceAlt) {
-                            Text(related, modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = EvolaSpacing.xs), style = MaterialTheme.typography.labelSmall)
-                        }
+                        EvolaTag(label = related)
                     }
                 }
                 Spacer(Modifier.height(EvolaSpacing.md))
@@ -203,18 +197,10 @@ internal fun NewCard(
 
             Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
                 card.difficultyRating?.let {
-                    Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.GoldSoft) {
-                        Row(modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = EvolaSpacing.xs), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Speed, contentDescription = null, tint = EvolaColors.Gold, modifier = Modifier.size(14.dp))
-                            Spacer(Modifier.width(EvolaSpacing.xs))
-                            Text(it, style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
+                    EvolaTag(label = it, icon = Icons.Filled.Speed, containerColor = EvolaColors.GoldSoft, contentColor = EvolaColors.Gold)
                 }
                 card.frequencyRating?.let {
-                    Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.Surface, border = BorderStroke(1.dp, EvolaColors.Border)) {
-                        Text(it, modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = EvolaSpacing.xs), style = MaterialTheme.typography.labelSmall)
-                    }
+                    EvolaTag(label = it, containerColor = EvolaColors.Surface, border = EvolaColors.Border)
                 }
             }
             Spacer(Modifier.height(EvolaSpacing.md))
@@ -240,13 +226,13 @@ internal fun NewCard(
                         Text(stringResource(Res.string.lessons_ai_explain))
                     }
                 } else {
-                    Surface(color = EvolaColors.SurfaceAlt, shape = MaterialTheme.shapes.small, modifier = Modifier.weight(1f)) {
-                        Row(modifier = Modifier.padding(EvolaSpacing.md)) {
-                            Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = EvolaColors.Accent, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(EvolaSpacing.sm))
-                            Text(aiExplanation, style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
+                    EvolaTag(
+                        label = aiExplanation,
+                        icon = Icons.Filled.AutoAwesome,
+                        containerColor = EvolaColors.SurfaceAlt,
+                        contentColor = EvolaColors.Accent,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
 
                 val markDifficultDesc = if (card.markedDifficult) stringResource(Res.string.lessons_marked_difficult) else stringResource(Res.string.lessons_mark_difficult)

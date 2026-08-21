@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resources>
     <string name="misc_continue">Continue</string>
+    <string name="misc_retry">Retry</string>
 
     <!-- SessionSummaryScreen -->
     <string name="misc_session_complete">Session complete!</string>

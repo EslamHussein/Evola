@@ -4,7 +4,6 @@ package evola.composeapp.feature.materials.ui
 
 import evola.composeapp.feature.materials.vm.MaterialsListState
 import evola.composeapp.feature.materials.vm.MaterialsListViewModel
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Button
 import evola.composeapp.core.common.ChaseLoadingIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -43,10 +41,11 @@ import evola.composeapp.generated.resources.materials_list_loading
 import evola.composeapp.generated.resources.materials_list_one_lesson
 import evola.composeapp.generated.resources.materials_list_processing
 import evola.composeapp.generated.resources.materials_list_processing_with_count
-import evola.composeapp.generated.resources.materials_list_retry
 import evola.composeapp.generated.resources.materials_list_title
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.components.EvolaCard
+import evola.composeapp.core.designsystem.components.EvolaEmptyState
+import evola.composeapp.core.designsystem.components.EvolaErrorState
 import evola.composeapp.core.designsystem.components.RootTopBarTitle
 import evola.composeapp.core.designsystem.components.SwipeToRevealDelete
 import evola.shared.feature.materials.domain.Material
@@ -93,7 +92,7 @@ private fun MaterialsListContent(
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (state) {
                 is MaterialsListState.Loading -> LoadingBody()
-                is MaterialsListState.Error -> ErrorBody(state.message, onRetry = onRetry)
+                is MaterialsListState.Error -> EvolaErrorState(message = state.message, onRetry = onRetry)
                 is MaterialsListState.Loaded -> MaterialsListBody(
                     materials = state.materials,
                     onOpenMaterial = onOpenMaterial,
@@ -116,19 +115,6 @@ private fun LoadingBody() {
 }
 
 @Composable
-private fun ErrorBody(message: String, onRetry: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(message, style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.height(EvolaSpacing.lg))
-        Button(onClick = onRetry) { Text(stringResource(Res.string.materials_list_retry)) }
-    }
-}
-
-@Composable
 private fun MaterialsListBody(
     materials: List<Material>,
     onOpenMaterial: (String) -> Unit,
@@ -136,9 +122,7 @@ private fun MaterialsListBody(
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {
         if (materials.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(stringResource(Res.string.materials_list_empty), style = MaterialTheme.typography.bodyLarge)
-            }
+            EvolaEmptyState(message = stringResource(Res.string.materials_list_empty))
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),

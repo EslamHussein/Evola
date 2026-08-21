@@ -62,6 +62,7 @@ import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaCard
 import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
 import evola.composeapp.core.designsystem.components.EvolaSectionHeader
+import evola.composeapp.core.designsystem.components.EvolaTag
 import evola.composeapp.core.designsystem.components.IconTile
 import evola.composeapp.core.designsystem.components.RootTopBarTitle
 import evola.composeapp.core.designsystem.components.SelectableChip
@@ -310,20 +311,12 @@ private fun ProfileContent(
  * used for lesson word-count/status tags elsewhere, instead of a plain gray caption. */
 @Composable
 private fun LanguageBadge(language: NativeLanguage) {
-    Surface(shape = MaterialTheme.shapes.extraLarge, color = EvolaColors.SurfaceAlt) {
-        Row(
-            modifier = Modifier.padding(horizontal = EvolaSpacing.sm, vertical = EvolaSpacing.xs),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs),
-        ) {
-            Icon(Icons.Filled.Public, contentDescription = null, tint = EvolaColors.Text2, modifier = Modifier.size(14.dp))
-            Text(
-                stringResource(Res.string.main_profile_language_badge, language.englishName, language.nativeName),
-                style = MaterialTheme.typography.labelSmall,
-                color = EvolaColors.Text2,
-            )
-        }
-    }
+    EvolaTag(
+        label = stringResource(Res.string.main_profile_language_badge, language.englishName, language.nativeName),
+        icon = Icons.Filled.Public,
+        containerColor = EvolaColors.SurfaceAlt,
+        contentColor = EvolaColors.Text2,
+    )
 }
 
 private val fakeProfileGoal = Goal(id = "g1", goalText = "Learn German for my trip to Berlin", title = "Berlin Trip", nativeLanguage = NativeLanguage.ENGLISH, isActive = true, createdAt = "2026-01-01")

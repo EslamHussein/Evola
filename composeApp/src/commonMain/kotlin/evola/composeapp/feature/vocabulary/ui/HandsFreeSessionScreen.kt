@@ -41,6 +41,7 @@ import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaButtonSize
 import evola.composeapp.core.designsystem.components.EvolaDestructiveButton
+import evola.composeapp.core.designsystem.components.EvolaEmptyState
 import evola.composeapp.core.designsystem.components.EvolaPositiveButton
 import evola.shared.feature.profile.domain.AppSettings
 import evola.composeapp.generated.resources.Res
@@ -124,9 +125,7 @@ private fun HandsFreeSessionContent(
                     Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 }
 
-                is VocabularySessionUiState.Empty -> Box(Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
-                    Text(stringResource(Res.string.lessons_handsfree_empty), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                }
+                is VocabularySessionUiState.Empty -> EvolaEmptyState(message = stringResource(Res.string.lessons_handsfree_empty))
 
                 is VocabularySessionUiState.Summary -> SessionSummaryScreen(
                     summary = state.summary,

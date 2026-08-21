@@ -44,7 +44,9 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaDivider
+import evola.composeapp.core.designsystem.components.EvolaListRow
 import evola.composeapp.core.designsystem.components.EvolaSectionHeader
+import evola.composeapp.core.designsystem.components.EvolaTag
 import evola.composeapp.core.designsystem.components.SelectableChip
 import evola.composeapp.feature.profile.vm.SettingsViewModel
 import evola.shared.feature.profile.domain.AppSettings
@@ -349,38 +351,30 @@ private fun DividerRow() {
 
 @Composable
 private fun ToggleRow(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(2.dp))
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
-        }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
+    EvolaListRow(
+        title = title,
+        subtitle = subtitle,
+        trailing = { Switch(checked = checked, onCheckedChange = onCheckedChange) },
+    )
 }
 
 @Composable
 private fun StepperRow(title: String, subtitle: String, value: Int, range: IntRange, step: Int, onChange: (Int) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(2.dp))
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
-        }
-        IconButton(onClick = { onChange((value - step).coerceIn(range)) }, enabled = value > range.first) {
-            Icon(Icons.Filled.Remove, contentDescription = stringResource(Res.string.main_settings_decrease_cd))
-        }
-        Text("$value", style = MaterialTheme.typography.titleMedium, modifier = Modifier.width(28.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        IconButton(onClick = { onChange((value + step).coerceIn(range)) }, enabled = value < range.last) {
-            Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.main_settings_increase_cd))
-        }
-    }
+    EvolaListRow(
+        title = title,
+        subtitle = subtitle,
+        trailing = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { onChange((value - step).coerceIn(range)) }, enabled = value > range.first) {
+                    Icon(Icons.Filled.Remove, contentDescription = stringResource(Res.string.main_settings_decrease_cd))
+                }
+                Text("$value", style = MaterialTheme.typography.titleMedium, modifier = Modifier.width(28.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                IconButton(onClick = { onChange((value + step).coerceIn(range)) }, enabled = value < range.last) {
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.main_settings_increase_cd))
+                }
+            }
+        },
+    )
 }
 
 /** Reword's "Robot voice" picker - lists whatever German voices the platform TTS engine currently
@@ -390,37 +384,23 @@ private fun StepperRow(title: String, subtitle: String, value: Int, range: IntRa
 private fun VoicePickerRow(speechService: SpeechService, selected: String?, onSelect: (String?) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val voices = remember { speechService.availableVoiceNames() }
+    val defaultVoiceLabel = stringResource(Res.string.main_settings_voice_default)
 
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(stringResource(Res.string.main_settings_voice_picker_title), style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(2.dp))
-            Text(stringResource(Res.string.main_settings_voice_picker_subtitle), style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text2)
-        }
-        val defaultVoiceLabel = stringResource(Res.string.main_settings_voice_default)
-        Box {
-            Surface(
-                onClick = { expanded = true },
-                shape = MaterialTheme.shapes.extraLarge,
-                color = EvolaColors.SurfaceAlt,
-            ) {
-                Text(
-                    selected ?: defaultVoiceLabel,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(horizontal = EvolaSpacing.md, vertical = EvolaSpacing.sm),
-                )
-            }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                DropdownMenuItem(text = { Text(defaultVoiceLabel) }, onClick = { onSelect(null); expanded = false })
-                voices.forEach { voice ->
-                    DropdownMenuItem(text = { Text(voice) }, onClick = { onSelect(voice); expanded = false })
+    EvolaListRow(
+        title = stringResource(Res.string.main_settings_voice_picker_title),
+        subtitle = stringResource(Res.string.main_settings_voice_picker_subtitle),
+        trailing = {
+            Box {
+                EvolaTag(label = selected ?: defaultVoiceLabel, onClick = { expanded = true })
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenuItem(text = { Text(defaultVoiceLabel) }, onClick = { onSelect(null); expanded = false })
+                    voices.forEach { voice ->
+                        DropdownMenuItem(text = { Text(voice) }, onClick = { onSelect(voice); expanded = false })
+                    }
                 }
             }
-        }
-    }
+        },
+    )
 }
 
 @Composable
