@@ -121,6 +121,7 @@ private fun BrowsingBody(state: BrowseFlashcardsState.Browsing, onNext: () -> Un
         LinearProgressIndicator(
             progress = { (state.index + 1) / state.items.size.toFloat() },
             modifier = Modifier.fillMaxWidth(),
+            color = EvolaColors.Accent,
         )
         Spacer(Modifier.height(EvolaSpacing.xxl))
 

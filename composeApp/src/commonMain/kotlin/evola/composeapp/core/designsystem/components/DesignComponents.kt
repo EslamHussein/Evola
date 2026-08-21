@@ -129,10 +129,16 @@ fun StatusTag(label: String, style: StatusTagStyle, modifier: Modifier = Modifie
     }
 }
 
-/** N-segment header progress bar for the AI Wizard's 4 steps - filled segments in Gold, unfilled
- * in a low-opacity neutral tone. */
+/** N-segment progress strip - filled segments in [filledColor] (the AI Wizard's 4-step header uses
+ * Gold, the vocabulary session's word-progress header uses Accent - see [SegmentedProgressBarPreview]),
+ * unfilled in [EvolaColors.Border]. */
 @Composable
-fun SegmentedProgressBar(segmentCount: Int, filledCount: Int, modifier: Modifier = Modifier) {
+fun SegmentedProgressBar(
+    segmentCount: Int,
+    filledCount: Int,
+    modifier: Modifier = Modifier,
+    filledColor: Color = EvolaColors.Gold,
+) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
         repeat(segmentCount) { index ->
             Box(
@@ -140,7 +146,7 @@ fun SegmentedProgressBar(segmentCount: Int, filledCount: Int, modifier: Modifier
                     .weight(1f)
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(if (index < filledCount) EvolaColors.Gold else EvolaColors.Border),
+                    .background(if (index < filledCount) filledColor else EvolaColors.Border),
             )
         }
     }

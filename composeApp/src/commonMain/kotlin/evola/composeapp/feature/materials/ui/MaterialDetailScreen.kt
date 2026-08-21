@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import evola.composeapp.core.common.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -72,10 +71,12 @@ import evola.composeapp.generated.resources.materials_detail_title
 import evola.composeapp.generated.resources.materials_detail_tokens_used
 import evola.composeapp.generated.resources.materials_detail_unsupported
 import evola.composeapp.generated.resources.materials_detail_vocabulary_label
+import evola.composeapp.core.designsystem.CenteredMessage
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.CircularProgressRing
+import evola.composeapp.core.designsystem.components.ProgressMessage
 import evola.composeapp.core.designsystem.components.StatusTag
 import evola.composeapp.core.designsystem.components.StatusTagStyle
 import evola.composeapp.core.designsystem.components.SwipeToRevealDelete
@@ -126,7 +127,9 @@ private fun MaterialDetailContent(
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (state) {
                 is MaterialDetailState.Loading -> ProgressMessage(stringResource(Res.string.materials_detail_loading))
-                is MaterialDetailState.Error -> CenteredMessage(state.message)
+                is MaterialDetailState.Error -> CenteredMessage {
+                    Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                }
                 is MaterialDetailState.Loaded -> LoadedBody(
                     state.detail,
                     onRetry = onRetry,
@@ -134,26 +137,6 @@ private fun MaterialDetailContent(
                     onDeleteLesson = onDeleteLesson,
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun CenteredMessage(message: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, modifier = Modifier.padding(EvolaSpacing.xl))
-    }
-}
-
-/** Same as [CenteredMessage] but with a visible spinner above it, for states where real work is
- * happening in the background (upload processing, lesson segmentation) rather than just a static wait. */
-@Composable
-private fun ProgressMessage(message: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            ChaseLoadingIndicator()
-            Spacer(Modifier.height(EvolaSpacing.lg))
-            Text(message, style = MaterialTheme.typography.bodyLarge)
         }
     }
 }
@@ -184,8 +167,10 @@ private fun LoadedBody(detail: MaterialDetail, onRetry: () -> Unit, onOpenLesson
                 PartialSuccessBody(detail, onRetry, onOpenLesson, onDeleteLesson)
             }
 
-        MaterialStatus.UNSUPPORTED_CONTENT ->
-            CenteredMessage(stringResource(Res.string.materials_detail_unsupported, detail.material.filename))
+        MaterialStatus.UNSUPPORTED_CONTENT -> {
+            val message = stringResource(Res.string.materials_detail_unsupported, detail.material.filename)
+            CenteredMessage { Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center) }
+        }
 
         MaterialStatus.READY -> ResourceDetailBody(detail, onOpenLesson, onDeleteLesson)
     }

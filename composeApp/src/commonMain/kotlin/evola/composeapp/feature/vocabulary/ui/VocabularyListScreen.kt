@@ -254,6 +254,7 @@ private fun VocabularyListContent(
     if (showResetConfirm) {
         AlertDialog(
             onDismissRequest = { showResetConfirm = false },
+            shape = MaterialTheme.shapes.large,
             title = { Text(stringResource(Res.string.lessons_reset_progress_title)) },
             text = { Text(stringResource(Res.string.lessons_reset_progress_text)) },
             confirmButton = {

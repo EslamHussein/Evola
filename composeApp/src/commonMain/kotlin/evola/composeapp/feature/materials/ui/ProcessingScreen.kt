@@ -30,6 +30,7 @@ import evola.composeapp.generated.resources.wizard_processing_lesson_of_total
 import evola.composeapp.generated.resources.wizard_processing_splitting
 import evola.composeapp.generated.resources.wizard_processing_splitting_description
 import evola.composeapp.core.common.ChaseLoadingIndicator
+import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.feature.materials.domain.Lesson
@@ -135,6 +136,7 @@ private fun InProgressContent(detail: MaterialDetail) {
     LinearProgressIndicator(
         progress = { readyCount / total.toFloat() },
         modifier = Modifier.fillMaxWidth(),
+        color = EvolaColors.Accent,
     )
 }
 

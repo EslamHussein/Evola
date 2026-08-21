@@ -50,6 +50,7 @@ import evola.composeapp.core.designsystem.CenteredMessage
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.SegmentedProgressBar
 import evola.composeapp.widget.rememberWidgetRefresher
 import evola.shared.feature.profile.domain.AppSettings
 import evola.shared.feature.vocabulary.domain.VocabularyCard
@@ -136,9 +137,10 @@ internal fun VocabularySessionContent(
                         modifier = Modifier.padding(horizontal = EvolaSpacing.lg),
                     )
                     Spacer(Modifier.height(EvolaSpacing.xs))
-                    SegmentedProgressDashes(
-                        total = session.totalWords.coerceAtLeast(1),
-                        filled = session.wordIndex - 1,
+                    SegmentedProgressBar(
+                        segmentCount = session.totalWords.coerceAtLeast(1),
+                        filledCount = session.wordIndex - 1,
+                        filledColor = EvolaColors.Accent,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = EvolaSpacing.lg, vertical = EvolaSpacing.xs)
                             .semantics { contentDescription = progressLabel },
                     )

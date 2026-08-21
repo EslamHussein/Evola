@@ -28,6 +28,7 @@ import evola.composeapp.generated.resources.misc_vocab_import_percent
 import evola.composeapp.generated.resources.misc_vocab_import_progress
 import evola.composeapp.generated.resources.misc_vocab_import_subtitle
 import evola.composeapp.generated.resources.misc_vocab_import_title
+import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.feature.vocabulary.domain.GermanNounImportState
@@ -72,7 +73,7 @@ fun VocabDataImportScreen(state: GermanNounImportState) {
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(EvolaSpacing.xxl))
-            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth(), color = EvolaColors.Accent)
             Spacer(Modifier.height(EvolaSpacing.sm))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
