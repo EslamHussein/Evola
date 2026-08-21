@@ -1,15 +1,16 @@
 package evola.shared.feature.onboarding.data
 
+import evola.database.AppDatabase
+import evola.database.entity.GoalEntity
 import evola.shared.feature.profile.domain.AchievementsRepository
 import evola.shared.core.common.ApiResult
 import evola.shared.core.analytics.EvolaLog
 import evola.shared.core.common.LOCAL_USER
-import evola.shared.core.common.grammarTopicCount
-import evola.shared.core.common.lessonGrammarProgress
-import evola.shared.core.common.lessonVocabProgress
+import evola.shared.core.common.grammarTopicCountRoom
+import evola.shared.core.common.lessonGrammarProgressRoom
+import evola.shared.core.common.lessonVocabProgressRoom
 import evola.shared.core.common.newId
 import evola.shared.core.common.nowMillis
-import evola.shared.db.EvolaDatabase
 import evola.shared.feature.onboarding.domain.CreateGoalResult
 import evola.shared.feature.onboarding.domain.DayActivity
 import evola.shared.feature.onboarding.domain.Goal
@@ -31,11 +32,11 @@ import kotlinx.datetime.plus
 
 private const val WEEK_LENGTH = 7
 
-/** Fully local goals/lessons/progress over SQLDelight — no server. Implements the same
+/** Fully local goals/lessons/progress over Room — no server. Implements the same
  * [GoalsRepository] the ViewModels already use, so nothing above it changes. Progress computation
  * mirrors the retired server `GoalService`. */
 class LocalGoalsRepository(
-    private val db: EvolaDatabase,
+    private val db: AppDatabase,
     private val settingsRepository: SettingsRepository,
     private val achievementsRepository: AchievementsRepository,
 ) : GoalsRepository {
@@ -48,46 +49,46 @@ class LocalGoalsRepository(
         }
         val resolvedTitle = title?.trim()?.ifBlank { null } ?: autoTitle(text)
         val now = nowMillis()
-        db.goalsQueries.deactivateAll(LOCAL_USER)
+        db.goalDao().deactivateAll(LOCAL_USER)
         val id = newId()
-        db.goalsQueries.insert(id, LOCAL_USER, text, resolvedTitle, nativeLanguage.code, 1L, now, now)
+        db.goalDao().insert(GoalEntity(id, LOCAL_USER, text, resolvedTitle, nativeLanguage.code, 1L, now, now))
         return CreateGoalResult.Success(Goal(id, text, resolvedTitle, nativeLanguage, isActive = true, createdAt = now.toString()))
     }
 
     override suspend fun updateGoal(goalId: String, goalText: String?, title: String?, nativeLanguage: NativeLanguage?): UpdateGoalResult {
-        val existing = db.goalsQueries.selectById(goalId).executeAsOneOrNull()
+        val existing = db.goalDao().selectById(goalId)
             ?: run {
                 EvolaLog.d("goals", "updateGoal: not found goalId=$goalId")
                 return UpdateGoalResult.NotFound
             }
-        val newText = goalText?.trim() ?: existing.goal_text
+        val newText = goalText?.trim() ?: existing.goalText
         if (newText.length !in 3..200) {
             EvolaLog.d("goals", "updateGoal validation failed: goalId=$goalId length=${newText.length}")
             return UpdateGoalResult.ValidationError("Goal text must be 3-200 characters.")
         }
         val newTitle = title?.trim()?.ifBlank { null } ?: existing.title
-        val newNativeLanguage = nativeLanguage ?: NativeLanguage.fromCode(existing.native_language)
-        db.goalsQueries.update(newText, newTitle, newNativeLanguage.code, nowMillis(), goalId)
-        return UpdateGoalResult.Success(Goal(goalId, newText, newTitle, newNativeLanguage, existing.is_active == 1L, existing.created_at.toString()))
+        val newNativeLanguage = nativeLanguage ?: NativeLanguage.fromCode(existing.nativeLanguage)
+        db.goalDao().update(newText, newTitle, newNativeLanguage.code, nowMillis(), goalId)
+        return UpdateGoalResult.Success(Goal(goalId, newText, newTitle, newNativeLanguage, existing.isActive == 1L, existing.createdAt.toString()))
     }
 
     override suspend fun getActiveGoal(): ApiResult<Goal?> {
-        val row = db.goalsQueries.selectActive(LOCAL_USER).executeAsOneOrNull()
+        val row = db.goalDao().selectActive(LOCAL_USER)
         return ApiResult.Success(
-            row?.let { Goal(it.id, it.goal_text, it.title, NativeLanguage.fromCode(it.native_language), it.is_active == 1L, it.created_at.toString()) },
+            row?.let { Goal(it.id, it.goalText, it.title, NativeLanguage.fromCode(it.nativeLanguage), it.isActive == 1L, it.createdAt.toString()) },
         )
     }
 
     override suspend fun listLessons(goalId: String): ApiResult<List<Lesson>> {
-        val lessons = db.lessonsQueries.selectByGoal(goalId).executeAsList().map { row ->
+        val lessons = db.lessonDao().selectByGoal(goalId).map { row ->
             Lesson(
                 id = row.id,
                 number = row.number.toInt(),
                 title = row.title,
                 status = row.status,
-                vocabProgress = db.lessonVocabProgress(row.id),
-                grammarProgress = db.lessonGrammarProgress(row.id),
-                grammarCount = db.grammarTopicCount(row.id),
+                vocabProgress = db.lessonVocabProgressRoom(row.id),
+                grammarProgress = db.lessonGrammarProgressRoom(row.id),
+                grammarCount = db.grammarTopicCountRoom(row.id),
             )
         }
         return ApiResult.Success(lessons)
@@ -99,10 +100,10 @@ class LocalGoalsRepository(
         val currentLessonId = lessons.firstOrNull { it.completionPct < 1f }?.id
 
         val today = runCatching { LocalDate.parse(localDate) }.getOrNull()
-        val rawActivityDates = db.activityQueries.completedDates(LOCAL_USER).executeAsList()
+        val rawActivityDates = db.activityDao().completedDates(LOCAL_USER)
             .mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }.toSet()
         if (today != null) maybeApplyStreakFreeze(today, rawActivityDates)
-        val frozenDates = db.activityQueries.frozenDates(LOCAL_USER).executeAsList()
+        val frozenDates = db.activityDao().frozenDates(LOCAL_USER)
             .mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }.toSet()
         val activityDates = rawActivityDates + frozenDates
         val streak = if (today != null) computeStreak(activityDates, today) else 0
@@ -116,9 +117,9 @@ class LocalGoalsRepository(
         val settings = settingsRepository.current()
         val dailyGoal = settings.dailyNewWordGoal
         val todayNewWordsLearned = weeklyActivity.lastOrNull()?.newWordsLearned ?: 0
-        val masteredCount = db.vocabularyQueries.masteredCountForUser(LOCAL_USER).executeAsOne().toInt()
+        val masteredCount = db.vocabularyDao().masteredCountForUser(LOCAL_USER).toInt()
         val newlyUnlockedBadges = (achievementsRepository.checkAndUnlock(masteredCount, streak) as? ApiResult.Success)?.data ?: emptyList()
-        val wordsToReviewCount = db.vocabularyQueries.dueCountForGoal(LOCAL_USER, goalId, nowMillis()).executeAsOne().toInt()
+        val wordsToReviewCount = db.vocabularyDao().dueCountForGoal(LOCAL_USER, goalId, nowMillis()).toInt()
 
         return ApiResult.Success(
             GoalProgress(
@@ -138,11 +139,11 @@ class LocalGoalsRepository(
         val yesterday = today.minus(1, DateTimeUnit.DAY)
         val dayBefore = today.minus(2, DateTimeUnit.DAY)
         if (yesterday in activityDates || dayBefore !in activityDates) return
-        val alreadyFrozen = db.activityQueries.frozenDates(LOCAL_USER).executeAsList().contains(yesterday.toString())
+        val alreadyFrozen = db.activityDao().frozenDates(LOCAL_USER).contains(yesterday.toString())
         if (alreadyFrozen) return
         val available = settingsRepository.current().streakFreezesAvailable
         if (available <= 0) return
-        db.activityQueries.insertFreeze(newId(), LOCAL_USER, yesterday.toString())
+        db.activityDao().insertFreeze(evola.database.entity.StreakFreezeDateEntity(newId(), LOCAL_USER, yesterday.toString()))
         settingsRepository.setStreakFreezesAvailable(available - 1)
     }
 
@@ -151,10 +152,10 @@ class LocalGoalsRepository(
      * [computeStreak] uses; per-day new/review counts come from `vocabulary_sessions.dailyCounts`,
      * grouped by each session's own stored local date (see Vocabulary.sq). A day with zero sessions
      * simply doesn't appear in the query result, so it's defaulted to 0/0 below. */
-    private fun weeklyActivity(today: LocalDate, activityDates: Set<LocalDate>): List<DayActivity> {
+    private suspend fun weeklyActivity(today: LocalDate, activityDates: Set<LocalDate>): List<DayActivity> {
         val since = today.minus(WEEK_LENGTH - 1, DateTimeUnit.DAY)
-        val counts = db.vocabularyQueries.dailyCounts(LOCAL_USER, since.toString()).executeAsList()
-            .associateBy({ it.local_date }, { (it.new_words ?: 0L).toInt() to (it.review_words ?: 0L).toInt() })
+        val counts = db.vocabularyDao().dailyCounts(LOCAL_USER, since.toString())
+            .associateBy({ it.localDate }, { (it.newWords ?: 0L).toInt() to (it.reviewWords ?: 0L).toInt() })
         return (0 until WEEK_LENGTH).map { offset ->
             val date = since.plus(offset, DateTimeUnit.DAY)
             val (newWords, reviewed) = counts[date.toString()] ?: (0 to 0)
@@ -162,19 +163,19 @@ class LocalGoalsRepository(
         }
     }
 
-    private fun vocabularyBreakdown(goalId: String): VocabularyBreakdown {
-        val rows = db.vocabularyQueries.wordStatusesByGoal(LOCAL_USER, goalId).executeAsList()
+    private suspend fun vocabularyBreakdown(goalId: String): VocabularyBreakdown {
+        val rows = db.vocabularyDao().wordStatusesByGoal(LOCAL_USER, goalId)
         val mastered = rows.count { it.status == VocabularySrs.STATUSES.last() }
         val notStarted = rows.count { it.status == VocabularySrs.STATUSES.first() }
         val inProgress = rows.size - mastered - notStarted
-        val struggling = rows.count { it.incorrect_streak > 0 }
+        val struggling = rows.count { it.incorrectStreak > 0 }
         return VocabularyBreakdown(notStarted, inProgress, mastered, struggling)
     }
 
     /** The in-progress word closest to "mastered" (highest STATUSES index) - ties broken by
      * whichever the query returns first, since exact tie-breaking isn't meaningful here. */
-    private fun nudgeWord(goalId: String): NudgeWord? {
-        val candidates = db.vocabularyQueries.inProgressWordsByGoal(LOCAL_USER, goalId).executeAsList()
+    private suspend fun nudgeWord(goalId: String): NudgeWord? {
+        val candidates = db.vocabularyDao().inProgressWordsByGoal(LOCAL_USER, goalId)
         val closest = candidates.maxByOrNull { VocabularySrs.STATUSES.indexOf(it.status) } ?: return null
         val reviewsRemaining = VocabularySrs.STATUSES.lastIndex - VocabularySrs.STATUSES.indexOf(closest.status)
         return NudgeWord(closest.term, reviewsRemaining)

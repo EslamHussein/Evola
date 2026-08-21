@@ -10,7 +10,6 @@ androidxSplashscreen = "1.2.0"
 androidxLifecycle = "2.10.0"
 kotlinxDatetime = "0.8.0"
 androidxSecurityCrypto = "1.1.0"
-sqldelight = "2.3.2"
 room = "2.8.4"
 robolectric = "4.16.1"
 androidxSqlite = "2.7.0"
@@ -40,11 +39,6 @@ ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "k
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 
-sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
-sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
-sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
-sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
-sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "androidxSqlite" }
@@ -96,6 +90,5 @@ kotlin-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 androidx-room = { id = "androidx.room", version.ref = "room" }

@@ -1,5 +1,14 @@
 package evola.shared.feature.vocabulary.data
 
+import evola.database.AppDatabase
+import evola.database.entity.LessonEntity
+import evola.database.entity.LessonVocabularyItemEntity
+import evola.database.entity.MaterialEntity
+import evola.database.entity.VocabularyItemEntity
+import evola.database.entity.VocabularyProgressEntity
+import evola.database.entity.VocabularySessionEntity
+import evola.database.entity.VocabularySessionQueueEntity
+import evola.database.entity.DailyActivityEntity
 import evola.shared.core.network.AnthropicClient
 import evola.shared.core.network.AnthropicModels
 import evola.shared.core.common.ApiResult
@@ -10,8 +19,6 @@ import evola.shared.core.common.decodeStringList
 import evola.shared.core.common.encodeStringList
 import evola.shared.core.common.newId
 import evola.shared.core.common.nowMillis
-import evola.shared.db.EvolaDatabase
-import evola.shared.db.Vocabulary_progress
 import evola.shared.feature.vocabulary.domain.VocabularyAnswerResult
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import evola.shared.feature.vocabulary.domain.VocabularyItem
@@ -66,7 +73,7 @@ private data class UndoSnapshot(
  * deterministically (exact match for the multiple-choice check, [isTolerantMatch] for typed).
  */
 class LocalVocabularyRepository(
-    private val db: EvolaDatabase,
+    private val db: AppDatabase,
     private val anthropic: AnthropicClient,
     private val settingsRepository: SettingsRepository,
 ) : VocabularyRepository {
@@ -76,9 +83,9 @@ class LocalVocabularyRepository(
     private val lastUndoBySession = mutableMapOf<String, UndoSnapshot>()
 
     override suspend fun startOrResumeSession(lessonId: String): ApiResult<VocabularySessionState> {
-        db.lessonsQueries.selectById(lessonId).executeAsOneOrNull()
+        db.lessonDao().selectById(lessonId)
             ?: return fail(404, "Lesson not found", "lessonId=$lessonId")
-        val sessionId = db.vocabularyQueries.incompleteSessionForLesson(LOCAL_USER, lessonId).executeAsOneOrNull()?.id
+        val sessionId = db.vocabularyDao().incompleteSessionForLesson(LOCAL_USER, lessonId)?.id
             ?: createSession(lessonId)
             ?: return fail(404, "No vocabulary available", "lessonId=$lessonId")
         return buildSessionState(sessionId)?.let { ApiResult.Success(it) }
@@ -92,23 +99,25 @@ class LocalVocabularyRepository(
      * hasn't actually started them), so a word picked here always lands in the same bucket Home
      * showed it in. */
     override suspend fun startCategorySession(goalId: String, category: WordCategory, limit: Int): ApiResult<VocabularySessionState> {
-        val rows = db.vocabularyQueries.wordStatusesByGoal(LOCAL_USER, goalId).executeAsList()
+        val rows = db.vocabularyDao().wordStatusesByGoal(LOCAL_USER, goalId)
         val picked = rows.filter { row ->
             when (category) {
-                WordCategory.STRUGGLING -> row.incorrect_streak > 0
-                WordCategory.MASTERED -> row.status == VocabularySrs.STATUSES.last() && row.incorrect_streak == 0L
-                WordCategory.LEARNING -> row.incorrect_streak == 0L &&
+                WordCategory.STRUGGLING -> row.incorrectStreak > 0
+                WordCategory.MASTERED -> row.status == VocabularySrs.STATUSES.last() && row.incorrectStreak == 0L
+                WordCategory.LEARNING -> row.incorrectStreak == 0L &&
                     row.status != VocabularySrs.STATUSES.last() &&
                     row.status != VocabularySrs.STATUSES.first()
             }
-        }.map { it.item_id }.take(limit)
+        }.map { it.itemId }.take(limit)
         if (picked.isEmpty()) return fail(404, "No words in this category", "goalId=$goalId category=$category")
 
         val sessionId = newId()
-        db.vocabularyQueries.insertSession(sessionId, LOCAL_USER, null, 1L, nowMillis(), 0L, picked.size.toLong())
+        db.vocabularyDao().insertSession(VocabularySessionEntity(sessionId, LOCAL_USER, null, 1L, nowMillis(), null, null, 0L, picked.size.toLong(), 0L, 0L))
         var position = 0L
         picked.forEach { itemId ->
-            db.vocabularyQueries.insertQueueItem(newId(), sessionId, position, itemId, "practice", "due_review", buildChoicesFor(itemId))
+            db.vocabularyDao().insertQueueItem(
+                VocabularySessionQueueEntity(newId(), sessionId, position, itemId, "practice", "due_review", buildChoicesFor(itemId), null, null, null),
+            )
             position += POSITION_STEP
         }
         return buildSessionState(sessionId)?.let { ApiResult.Success(it) }
@@ -121,26 +130,32 @@ class LocalVocabularyRepository(
         val newIds = if (mode == evola.shared.feature.vocabulary.domain.SessionMode.REVIEW_ONLY) {
             emptyList()
         } else {
-            db.vocabularyQueries.newItemsForGoal(LOCAL_USER, goalId, dailyGoal).executeAsList()
+            db.vocabularyDao().newItemsForGoal(LOCAL_USER, goalId, dailyGoal)
         }
         val dueIds = if (mode == evola.shared.feature.vocabulary.domain.SessionMode.NEW_ONLY) {
             emptyList()
         } else {
-            db.vocabularyQueries.dueItemsForGoal(LOCAL_USER, goalId, now, DUE_REVIEW_CAP).executeAsList()
+            db.vocabularyDao().dueItemsForGoal(LOCAL_USER, goalId, now, DUE_REVIEW_CAP)
         }
         if (newIds.isEmpty() && dueIds.isEmpty()) {
             return fail(404, "Nothing available for this mode", "goalId=$goalId mode=$mode")
         }
 
         val sessionId = newId()
-        db.vocabularyQueries.insertSession(sessionId, LOCAL_USER, null, 1L, now, newIds.size.toLong(), dueIds.size.toLong())
+        db.vocabularyDao().insertSession(
+            VocabularySessionEntity(sessionId, LOCAL_USER, null, 1L, now, null, null, newIds.size.toLong(), dueIds.size.toLong(), 0L, 0L),
+        )
         var position = 0L
         dueIds.forEach { itemId ->
-            db.vocabularyQueries.insertQueueItem(newId(), sessionId, position, itemId, "practice", "due_review", buildChoicesFor(itemId))
+            db.vocabularyDao().insertQueueItem(
+                VocabularySessionQueueEntity(newId(), sessionId, position, itemId, "practice", "due_review", buildChoicesFor(itemId), null, null, null),
+            )
             position += POSITION_STEP
         }
         newIds.forEach { itemId ->
-            db.vocabularyQueries.insertQueueItem(newId(), sessionId, position, itemId, "new", "new", null)
+            db.vocabularyDao().insertQueueItem(
+                VocabularySessionQueueEntity(newId(), sessionId, position, itemId, "new", "new", null, null, null, null),
+            )
             position += POSITION_STEP
         }
         return buildSessionState(sessionId)?.let { ApiResult.Success(it) }
@@ -148,28 +163,28 @@ class LocalVocabularyRepository(
     }
 
     override suspend fun listVocabulary(lessonId: String): ApiResult<List<VocabularyItem>> {
-        db.lessonsQueries.selectById(lessonId).executeAsOneOrNull()
+        db.lessonDao().selectById(lessonId)
             ?: return fail(404, "Lesson not found", "lessonId=$lessonId")
-        val items = db.vocabularyQueries.itemsWithProgressByLesson(lessonId, LOCAL_USER).executeAsList().map { row ->
+        val items = db.vocabularyDao().itemsWithProgressByLesson(lessonId, LOCAL_USER).map { row ->
             VocabularyItem(
                 itemId = row.id,
                 term = row.term,
                 meaning = row.meaning,
                 gender = row.gender,
-                exampleSentence = row.example_sentence,
-                exampleSentenceTranslation = row.example_sentence_translation,
-                partOfSpeech = row.part_of_speech,
+                exampleSentence = row.exampleSentence,
+                exampleSentenceTranslation = row.exampleSentenceTranslation,
+                partOfSpeech = row.partOfSpeech,
                 plural = row.plural,
-                status = row.p_status,
-                nativeMeaning = row.native_meaning,
-                ipaPronunciation = row.ipa_pronunciation,
-                relatedWords = decodeStringList(row.related_words),
-                difficultyRating = row.difficulty_rating,
-                frequencyRating = row.frequency_rating,
-                memoryTip = row.memory_tip,
-                grammarNote = row.grammar_note,
-                isBookmarked = row.p_is_bookmarked == 1L,
-                markedDifficult = row.p_marked_difficult == 1L,
+                status = row.status,
+                nativeMeaning = row.nativeMeaning,
+                ipaPronunciation = row.ipaPronunciation,
+                relatedWords = decodeStringList(row.relatedWords),
+                difficultyRating = row.difficultyRating,
+                frequencyRating = row.frequencyRating,
+                memoryTip = row.memoryTip,
+                grammarNote = row.grammarNote,
+                isBookmarked = row.isBookmarked == 1L,
+                markedDifficult = row.markedDifficult == 1L,
             )
         }
         return ApiResult.Success(items)
@@ -178,13 +193,13 @@ class LocalVocabularyRepository(
     override suspend fun submitAlreadyKnown(sessionId: String, itemId: String): ApiResult<VocabularyAnswerResult> {
         val queueRow = expectQueueRow(sessionId, itemId, "new") ?: return sessionOrOrderError(sessionId, itemId, "new")
         val now = nowMillis()
-        db.vocabularyQueries.answerQueueItem(now, null, null, queueRow.id)
+        db.vocabularyDao().answerQueueItem(now, null, null, queueRow.id)
 
         // Bypasses VocabularySrs on purpose - "I already know this" is a fast-track straight into
         // the review schedule, not a graded practice attempt, so it never touches the pure ladder
         // functions the way every other transition in this file does.
         val nextReviewAt = now + VocabularySrs.intervalDaysFor(0) * MILLIS_PER_DAY
-        db.vocabularyQueries.updateProgress("review", 1L, 0L, 0L, nextReviewAt, now, LOCAL_USER, itemId)
+        db.vocabularyDao().updateProgress("review", 1L, 0L, 0L, nextReviewAt, now, LOCAL_USER, itemId)
 
         // No requeue - the word is done for this session; it'll resurface as a due review later.
         return ApiResult.Success(VocabularyAnswerResult(correct = null, next = buildSessionState(sessionId)))
@@ -193,14 +208,14 @@ class LocalVocabularyRepository(
     override suspend fun submitStartLearning(sessionId: String, itemId: String): ApiResult<VocabularyAnswerResult> {
         val queueRow = expectQueueRow(sessionId, itemId, "new") ?: return sessionOrOrderError(sessionId, itemId, "new")
         val now = nowMillis()
-        db.vocabularyQueries.answerQueueItem(now, null, null, queueRow.id)
+        db.vocabularyDao().answerQueueItem(now, null, null, queueRow.id)
 
-        val progress = db.vocabularyQueries.progressForItem(LOCAL_USER, itemId).executeAsOneOrNull()
+        val progress = db.vocabularyDao().progressForItem(LOCAL_USER, itemId)
             ?: return fail(404, "Item not found", "itemId=$itemId")
         val next = VocabularySrs.introduce(progress.toState())
-        db.vocabularyQueries.updateProgress(
+        db.vocabularyDao().updateProgress(
             next.status, next.correctStreak.toLong(), next.incorrectStreak.toLong(), next.intervalIndex.toLong(),
-            progress.next_review_at, now, LOCAL_USER, itemId,
+            progress.nextReviewAt, now, LOCAL_USER, itemId,
         )
 
         requeueLater(sessionId, itemId, "new")
@@ -217,14 +232,14 @@ class LocalVocabularyRepository(
         val queueRow = expectQueueRow(sessionId, itemId, "practice") ?: return sessionOrOrderError(sessionId, itemId, "practice")
         // Deliberately no VocabularySrs call and no session-counter increment - "keep showing" isn't
         // a miss, it's "not ready to grade yet", so the word's SRS state must be untouched.
-        db.vocabularyQueries.answerQueueItem(nowMillis(), null, null, queueRow.id)
+        db.vocabularyDao().answerQueueItem(nowMillis(), null, null, queueRow.id)
         requeueLater(sessionId, itemId, "repeat")
         return ApiResult.Success(VocabularyAnswerResult(correct = null, next = buildSessionState(sessionId)))
     }
 
     override suspend fun submitChoice(sessionId: String, itemId: String, selectedChoice: String): ApiResult<VocabularyAnswerResult> {
         val queueRow = expectQueueRow(sessionId, itemId, "practice") ?: return sessionOrOrderError(sessionId, itemId, "practice")
-        val item = db.vocabularyQueries.itemById(itemId).executeAsOneOrNull()
+        val item = db.vocabularyDao().itemById(itemId)
             ?: return fail(404, "Item not found", "itemId=$itemId")
         val expected = dictionaryForm(item.term, item.gender)
         val correct = selectedChoice == expected
@@ -234,7 +249,7 @@ class LocalVocabularyRepository(
             VocabularyAnswerResult(
                 correct = correct,
                 correctAnswer = expected,
-                completedSentence = item.example_sentence,
+                completedSentence = item.exampleSentence,
                 next = next,
                 justMastered = justMastered,
             ),
@@ -243,7 +258,7 @@ class LocalVocabularyRepository(
 
     override suspend fun submitTyped(sessionId: String, itemId: String, response: String): ApiResult<VocabularyAnswerResult> {
         val queueRow = expectQueueRow(sessionId, itemId, "practice") ?: return sessionOrOrderError(sessionId, itemId, "practice")
-        val item = db.vocabularyQueries.itemById(itemId).executeAsOneOrNull()
+        val item = db.vocabularyDao().itemById(itemId)
             ?: return fail(404, "Item not found", "itemId=$itemId")
         // Typed recall asks for the word's dictionary form from meaning alone (no sentence to infer
         // grammatical gender from), so a noun's answer must include its article - "der Hund", not
@@ -256,7 +271,7 @@ class LocalVocabularyRepository(
             VocabularyAnswerResult(
                 correct = correct,
                 correctAnswer = expected,
-                completedSentence = item.example_sentence,
+                completedSentence = item.exampleSentence,
                 next = next,
                 justMastered = justMastered,
             ),
@@ -264,83 +279,81 @@ class LocalVocabularyRepository(
     }
 
     override suspend fun complete(sessionId: String, localDate: String): ApiResult<VocabularySessionSummary> {
-        val session = db.vocabularyQueries.sessionById(sessionId, LOCAL_USER).executeAsOneOrNull()
+        val session = db.vocabularyDao().sessionById(sessionId, LOCAL_USER)
             ?: return fail(404, "Session not found", "sessionId=$sessionId")
-        val wordsLearned = db.vocabularyQueries.wordsPracticedInSession(sessionId).executeAsOne().toInt()
-        val totalAnswered = session.correct_count + session.incorrect_count
-        val accuracy = if (totalAnswered > 0) (session.correct_count.toDouble() / totalAnswered) * 100.0 else 0.0
+        val wordsLearned = db.vocabularyDao().wordsPracticedInSession(sessionId).toInt()
+        val totalAnswered = session.correctCount + session.incorrectCount
+        val accuracy = if (totalAnswered > 0) (session.correctCount.toDouble() / totalAnswered) * 100.0 else 0.0
         val now = nowMillis()
 
-        db.vocabularyQueries.completeSession(now, localDate, sessionId)
-        db.activityQueries.upsert(newId(), LOCAL_USER, localDate)
+        db.vocabularyDao().completeSession(now, localDate, sessionId)
+        db.activityDao().upsert(DailyActivityEntity(newId(), LOCAL_USER, localDate, 1L))
 
         return ApiResult.Success(
             VocabularySessionSummary(
-                sessionNumber = session.session_number.toInt(),
+                sessionNumber = session.sessionNumber.toInt(),
                 wordsLearned = wordsLearned,
                 accuracy = accuracy,
-                timeSeconds = (now - session.started_at) / 1000L,
-                newWordsCount = session.new_words_count.toInt(),
-                reviewWordsCount = session.review_words_count.toInt(),
+                timeSeconds = (now - session.startedAt) / 1000L,
+                newWordsCount = session.newWordsCount.toInt(),
+                reviewWordsCount = session.reviewWordsCount.toInt(),
             ),
         )
     }
 
     override suspend fun updateFlags(itemId: String, isBookmarked: Boolean?, markedDifficult: Boolean?): ApiResult<VocabularyItem> {
-        db.vocabularyQueries.progressForItem(LOCAL_USER, itemId).executeAsOneOrNull()
+        db.vocabularyDao().progressForItem(LOCAL_USER, itemId)
             ?: return fail(404, "Item not found", "itemId=$itemId")
-        isBookmarked?.let { db.vocabularyQueries.setBookmarked(if (it) 1L else 0L, LOCAL_USER, itemId) }
-        markedDifficult?.let { db.vocabularyQueries.setMarkedDifficult(if (it) 1L else 0L, LOCAL_USER, itemId) }
+        isBookmarked?.let { db.vocabularyDao().setBookmarked(if (it) 1L else 0L, LOCAL_USER, itemId) }
+        markedDifficult?.let { db.vocabularyDao().setMarkedDifficult(if (it) 1L else 0L, LOCAL_USER, itemId) }
         return ApiResult.Success(loadItemWithProgress(itemId))
     }
 
     override suspend fun updateItem(itemId: String, term: String, meaning: String, nativeMeaning: String?): ApiResult<VocabularyItem> {
-        db.vocabularyQueries.progressForItem(LOCAL_USER, itemId).executeAsOneOrNull()
+        db.vocabularyDao().progressForItem(LOCAL_USER, itemId)
             ?: return fail(404, "Item not found", "itemId=$itemId")
-        db.vocabularyQueries.updateItemContent(term, meaning, nativeMeaning, itemId)
+        db.vocabularyDao().updateItemContent(term, meaning, nativeMeaning, itemId)
         return ApiResult.Success(loadItemWithProgress(itemId))
     }
 
     override suspend fun deleteItem(itemId: String): ApiResult<Unit> {
-        db.vocabularyQueries.itemById(itemId).executeAsOneOrNull()
+        db.vocabularyDao().itemById(itemId)
             ?: return fail(404, "Item not found", "itemId=$itemId")
-        db.vocabularyQueries.deleteItem(itemId)
+        db.vocabularyDao().deleteItem(itemId)
         return ApiResult.Success(Unit)
     }
 
     override suspend fun resetLessonProgress(lessonId: String): ApiResult<Unit> {
-        db.vocabularyQueries.resetLessonProgress(LOCAL_USER, lessonId)
+        db.vocabularyDao().resetLessonProgress(LOCAL_USER, lessonId)
         return ApiResult.Success(Unit)
     }
 
     override suspend fun resetAllProgress(): ApiResult<Unit> {
-        db.vocabularyQueries.resetAllProgress(LOCAL_USER)
+        db.vocabularyDao().resetAllProgress(LOCAL_USER)
         return ApiResult.Success(Unit)
     }
 
     override suspend fun createStarterLesson(goalId: String, lessonTitle: String, words: List<evola.shared.feature.vocabulary.domain.StarterWord>): ApiResult<Unit> {
-        db.goalsQueries.selectById(goalId).executeAsOneOrNull()
+        db.goalDao().selectById(goalId)
             ?: return fail(404, "Goal not found", "goalId=$goalId")
 
         val now = nowMillis()
         val materialId = newId()
-        db.materialsQueries.insert(
-            materialId, LOCAL_USER, goalId, lessonTitle, "starter-${newId()}", "READY",
-            "text/plain", 0L, null, "entire", null, null, null, now,
+        db.materialDao().insert(
+            MaterialEntity(materialId, LOCAL_USER, goalId, lessonTitle, "starter-${newId()}", "READY", "text/plain", 0L, null, "entire", null, null, null, 0L, 0L, now),
         )
         val newLessonId = newId()
-        val nextNumber = (db.lessonsQueries.selectByGoal(goalId).executeAsList().maxOfOrNull { it.number } ?: 0L) + 1L
-        db.lessonsQueries.insert(newLessonId, materialId, goalId, nextNumber, lessonTitle, "ready", null, now)
-        db.transaction {
-            words.forEach { (term, meaning, nativeMeaning) -> insertBareWord(newLessonId, term, meaning, nativeMeaning) }
-        }
+        val nextNumber = (db.lessonDao().selectByGoal(goalId).maxOfOrNull { it.number } ?: 0L) + 1L
+        db.lessonDao().insert(LessonEntity(newLessonId, materialId, goalId, nextNumber, lessonTitle, "ready", "curriculum", null, null, now))
+        val rows = words.mapNotNull { (term, meaning, nativeMeaning) -> buildBareWord(newLessonId, term, meaning, nativeMeaning) }
+        db.vocabularyDao().insertItemsWithProgress(rows)
         return ApiResult.Success(Unit)
     }
 
     override suspend fun explainItem(itemId: String): ApiResult<String> {
-        val item = db.vocabularyQueries.itemById(itemId).executeAsOneOrNull()
+        val item = db.vocabularyDao().itemById(itemId)
             ?: return fail(404, "Item not found", "itemId=$itemId")
-        item.ai_note?.let { return ApiResult.Success(it) }
+        item.aiNote?.let { return ApiResult.Success(it) }
 
         val system = "You explain a single vocabulary word to a language learner in 2-3 short, " +
             "plain-language sentences: what it means, and one concrete usage or memory tip beyond " +
@@ -349,41 +362,43 @@ class LocalVocabularyRepository(
         val user = buildString {
             append("Word: ${item.term}")
             append(" (${item.meaning})")
-            item.example_sentence?.let { append("\nExample: $it") }
+            item.exampleSentence?.let { append("\nExample: $it") }
         }
         return when (val result = anthropic.complete(AnthropicModels.SMALL, 300, system, user)) {
             is ApiResult.Failure -> result
             is ApiResult.Success -> {
                 val note = result.data.trim()
-                db.vocabularyQueries.updateAiNote(note, itemId)
+                db.vocabularyDao().updateAiNote(note, itemId)
                 ApiResult.Success(note)
             }
         }
     }
 
     override suspend fun markAlreadyKnown(itemId: String): ApiResult<VocabularyItem> {
-        db.vocabularyQueries.progressForItem(LOCAL_USER, itemId).executeAsOneOrNull()
+        db.vocabularyDao().progressForItem(LOCAL_USER, itemId)
             ?: return fail(404, "Item not found", "itemId=$itemId")
         val now = nowMillis()
         // Same fast-track as submitAlreadyKnown (see its own comment) - deliberately bypasses
         // VocabularySrs, just reachable outside a session this time.
         val nextReviewAt = now + VocabularySrs.intervalDaysFor(0) * MILLIS_PER_DAY
-        db.vocabularyQueries.updateProgress("review", 1L, 0L, 0L, nextReviewAt, now, LOCAL_USER, itemId)
+        db.vocabularyDao().updateProgress("review", 1L, 0L, 0L, nextReviewAt, now, LOCAL_USER, itemId)
         return ApiResult.Success(loadItemWithProgress(itemId))
     }
 
     override suspend fun copyToPersonalList(goalId: String, itemId: String): ApiResult<VocabularyItem> {
-        val source = db.vocabularyQueries.itemById(itemId).executeAsOneOrNull()
+        val source = db.vocabularyDao().itemById(itemId)
             ?: return fail(404, "Item not found", "itemId=$itemId")
         val personalLessonId = getOrCreatePersonalLesson(goalId)
         val newItemId = newId()
-        db.vocabularyQueries.insertItem(
-            newItemId, personalLessonId, source.term, source.meaning, source.gender, source.example_sentence,
-            source.part_of_speech, source.plural, source.grammatical_case, source.example_sentence_translation,
-            source.native_meaning, source.ipa_pronunciation, source.related_words, source.difficulty_rating,
-            source.frequency_rating, source.memory_tip, source.grammar_note, nowMillis(),
+        db.vocabularyDao().insertItem(
+            VocabularyItemEntity(
+                newItemId, personalLessonId, source.term, source.meaning, source.gender, source.exampleSentence,
+                source.partOfSpeech, source.plural, source.grammaticalCase, source.exampleSentenceTranslation,
+                source.nativeMeaning, source.ipaPronunciation, source.relatedWords, source.difficultyRating,
+                source.frequencyRating, source.memoryTip, source.grammarNote, null, nowMillis(),
+            ),
         )
-        db.vocabularyQueries.insertProgress(newId(), LOCAL_USER, newItemId, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
+        db.vocabularyDao().insertProgress(VocabularyProgressEntity(newId(), LOCAL_USER, newItemId, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L))
         return ApiResult.Success(loadItemWithProgress(newItemId))
     }
 
@@ -391,79 +406,78 @@ class LocalVocabularyRepository(
      * its fixed title) holding every word copied from elsewhere in the goal. Needs its own synthetic
      * `materials` row too (lessons.material_id is NOT NULL) - a minimal READY placeholder, never
      * shown as a real material anywhere since nothing lists materials by content. */
-    private fun getOrCreatePersonalLesson(goalId: String): String {
-        val existing = db.lessonsQueries.selectByGoal(goalId).executeAsList().firstOrNull { it.title == PERSONAL_LESSON_TITLE }
+    private suspend fun getOrCreatePersonalLesson(goalId: String): String {
+        val existing = db.lessonDao().selectByGoal(goalId).firstOrNull { it.title == PERSONAL_LESSON_TITLE }
         if (existing != null) return existing.id
 
         val now = nowMillis()
         val materialId = newId()
-        db.materialsQueries.insert(
-            materialId, LOCAL_USER, goalId, PERSONAL_LESSON_TITLE, "personal-$goalId", "READY",
-            "text/plain", 0L, null, "entire", null, null, null, now,
+        db.materialDao().insert(
+            MaterialEntity(materialId, LOCAL_USER, goalId, PERSONAL_LESSON_TITLE, "personal-$goalId", "READY", "text/plain", 0L, null, "entire", null, null, null, 0L, 0L, now),
         )
         val lessonId = newId()
-        val nextNumber = (db.lessonsQueries.selectByGoal(goalId).executeAsList().maxOfOrNull { it.number } ?: 0L) + 1L
-        db.lessonsQueries.insert(lessonId, materialId, goalId, nextNumber, PERSONAL_LESSON_TITLE, "ready", null, now)
+        val nextNumber = (db.lessonDao().selectByGoal(goalId).maxOfOrNull { it.number } ?: 0L) + 1L
+        db.lessonDao().insert(LessonEntity(lessonId, materialId, goalId, nextNumber, PERSONAL_LESSON_TITLE, "ready", "curriculum", null, null, now))
         return lessonId
     }
 
     override suspend fun addCustomWord(lessonId: String, term: String, meaning: String, nativeMeaning: String?): ApiResult<VocabularyItem> {
-        db.lessonsQueries.selectById(lessonId).executeAsOneOrNull()
+        db.lessonDao().selectById(lessonId)
             ?: return fail(404, "Lesson not found", "lessonId=$lessonId")
-        val itemId = insertBareWord(lessonId, term, meaning, nativeMeaning)
+        val row = buildBareWord(lessonId, term, meaning, nativeMeaning)
             ?: return fail(422, "Term and meaning are required", "lessonId=$lessonId")
-        return ApiResult.Success(loadItemWithProgress(itemId))
+        db.vocabularyDao().insertItem(row.first)
+        db.vocabularyDao().insertProgress(row.second)
+        return ApiResult.Success(loadItemWithProgress(row.first.id))
     }
 
     override suspend fun importWords(lessonId: String, rows: List<Triple<String, String, String?>>): ApiResult<Int> {
-        db.lessonsQueries.selectById(lessonId).executeAsOneOrNull()
+        db.lessonDao().selectById(lessonId)
             ?: return fail(404, "Lesson not found", "lessonId=$lessonId")
-        var inserted = 0
-        db.transaction {
-            rows.forEach { (term, meaning, nativeMeaning) ->
-                if (insertBareWord(lessonId, term, meaning, nativeMeaning) != null) inserted++
-            }
-        }
-        return ApiResult.Success(inserted)
+        val built = rows.mapNotNull { (term, meaning, nativeMeaning) -> buildBareWord(lessonId, term, meaning, nativeMeaning) }
+        db.vocabularyDao().insertItemsWithProgress(built)
+        return ApiResult.Success(built.size)
     }
 
-    /** Shared by [addCustomWord] (one row, reveals the failure reason) and [importWords] (many
-     * rows, silently skips a blank one rather than failing the whole batch) - null means the row
-     * was blank and nothing was inserted. */
-    private fun insertBareWord(lessonId: String, term: String, meaning: String, nativeMeaning: String?): String? {
+    /** Shared by [addCustomWord] (one row, reveals the failure reason) and [importWords]/
+     * [createStarterLesson] (many rows, silently skips a blank one rather than failing the whole
+     * batch) - null means the row was blank and nothing was built. Pure entity construction, no DB
+     * access, so callers can batch the actual writes atomically via
+     * [evola.database.dao.VocabularyDao.insertItemsWithProgress]. */
+    private fun buildBareWord(lessonId: String, term: String, meaning: String, nativeMeaning: String?): Pair<VocabularyItemEntity, VocabularyProgressEntity>? {
         val trimmedTerm = term.trim()
         val trimmedMeaning = meaning.trim()
         if (trimmedTerm.isEmpty() || trimmedMeaning.isEmpty()) return null
         val itemId = newId()
-        db.vocabularyQueries.insertItem(
+        val item = VocabularyItemEntity(
             itemId, lessonId, trimmedTerm, trimmedMeaning, null, null,
-            null, null, null, null, nativeMeaning?.trim()?.ifBlank { null }, null, null, null, null, null, null, nowMillis(),
+            null, null, null, null, nativeMeaning?.trim()?.ifBlank { null }, null, null, null, null, null, null, null, nowMillis(),
         )
-        db.vocabularyQueries.insertProgress(newId(), LOCAL_USER, itemId, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
-        return itemId
+        val progress = VocabularyProgressEntity(newId(), LOCAL_USER, itemId, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
+        return item to progress
     }
 
-    private fun loadItemWithProgress(itemId: String): VocabularyItem {
-        val row = db.vocabularyQueries.itemWithProgress(itemId, LOCAL_USER).executeAsOne()
+    private suspend fun loadItemWithProgress(itemId: String): VocabularyItem {
+        val row = db.vocabularyDao().itemWithProgress(itemId, LOCAL_USER)!!
         return VocabularyItem(
             itemId = row.id,
             term = row.term,
             meaning = row.meaning,
             gender = row.gender,
-            exampleSentence = row.example_sentence,
-            exampleSentenceTranslation = row.example_sentence_translation,
-            partOfSpeech = row.part_of_speech,
+            exampleSentence = row.exampleSentence,
+            exampleSentenceTranslation = row.exampleSentenceTranslation,
+            partOfSpeech = row.partOfSpeech,
             plural = row.plural,
-            status = row.p_status,
-            nativeMeaning = row.native_meaning,
-            ipaPronunciation = row.ipa_pronunciation,
-            relatedWords = decodeStringList(row.related_words),
-            difficultyRating = row.difficulty_rating,
-            frequencyRating = row.frequency_rating,
-            memoryTip = row.memory_tip,
-            grammarNote = row.grammar_note,
-            isBookmarked = row.p_is_bookmarked == 1L,
-            markedDifficult = row.p_marked_difficult == 1L,
+            status = row.status,
+            nativeMeaning = row.nativeMeaning,
+            ipaPronunciation = row.ipaPronunciation,
+            relatedWords = decodeStringList(row.relatedWords),
+            difficultyRating = row.difficultyRating,
+            frequencyRating = row.frequencyRating,
+            memoryTip = row.memoryTip,
+            grammarNote = row.grammarNote,
+            isBookmarked = row.isBookmarked == 1L,
+            markedDifficult = row.markedDifficult == 1L,
         )
     }
 
@@ -476,7 +490,7 @@ class LocalVocabularyRepository(
      * session. On incorrect: always comes back later this session, same as before. */
     /** Second element is true exactly when this answer moves the word's status into "mastered" for
      * the first time - see [VocabularyAnswerResult.justMastered]. */
-    private fun gradePracticeAndAdvance(
+    private suspend fun gradePracticeAndAdvance(
         sessionId: String,
         itemId: String,
         queueRowId: String,
@@ -484,9 +498,9 @@ class LocalVocabularyRepository(
         response: String?,
     ): Pair<VocabularySessionState?, Boolean> {
         val now = nowMillis()
-        db.vocabularyQueries.answerQueueItem(now, if (correct) 1L else 0L, response, queueRowId)
+        db.vocabularyDao().answerQueueItem(now, if (correct) 1L else 0L, response, queueRowId)
 
-        val progress = db.vocabularyQueries.progressForItem(LOCAL_USER, itemId).executeAsOneOrNull()
+        val progress = db.vocabularyDao().progressForItem(LOCAL_USER, itemId)
         var graduated = false
         var justMastered = false
         var insertedRepeatRowId: String? = null
@@ -494,7 +508,7 @@ class LocalVocabularyRepository(
             val state = progress.toState()
             val next = if (correct) VocabularySrs.onCorrect(state) else VocabularySrs.onIncorrect(state)
             val nextReviewAt = now + VocabularySrs.intervalDaysFor(next.intervalIndex) * MILLIS_PER_DAY
-            db.vocabularyQueries.updateProgress(
+            db.vocabularyDao().updateProgress(
                 next.status, next.correctStreak.toLong(), next.incorrectStreak.toLong(), next.intervalIndex.toLong(),
                 nextReviewAt, now, LOCAL_USER, itemId,
             )
@@ -502,7 +516,7 @@ class LocalVocabularyRepository(
             justMastered = progress.status != "mastered" && next.status == "mastered"
         }
 
-        db.vocabularyQueries.incrementSessionCounters(if (correct) 1L else 0L, if (correct) 0L else 1L, sessionId)
+        db.vocabularyDao().incrementSessionCounters(if (correct) 1L else 0L, if (correct) 0L else 1L, sessionId)
 
         if (!correct || !graduated) insertedRepeatRowId = requeueLater(sessionId, itemId, "repeat")
 
@@ -513,11 +527,11 @@ class LocalVocabularyRepository(
             insertedRepeatRowId = insertedRepeatRowId,
             itemId = itemId,
             previousStatus = progress?.status,
-            previousCorrectStreak = progress?.correct_streak,
-            previousIncorrectStreak = progress?.incorrect_streak,
-            previousIntervalIndex = progress?.interval_index,
-            previousNextReviewAt = progress?.next_review_at,
-            previousLastSeenAt = progress?.last_seen_at,
+            previousCorrectStreak = progress?.correctStreak,
+            previousIncorrectStreak = progress?.incorrectStreak,
+            previousIntervalIndex = progress?.intervalIndex,
+            previousNextReviewAt = progress?.nextReviewAt,
+            previousLastSeenAt = progress?.lastSeenAt,
             correctDelta = if (correct) 1L else 0L,
             incorrectDelta = if (correct) 0L else 1L,
         )
@@ -530,134 +544,142 @@ class LocalVocabularyRepository(
      * anything already queued. Used for "start learning", "keep showing", and every re-attempt after
      * a graded answer that isn't done for the session yet. Returns the inserted row's id, so a
      * grading call can undo the insert later (see [undoLastGrade]). */
-    private fun requeueLater(sessionId: String, itemId: String, origin: String): String {
-        val target = (db.vocabularyQueries.maxQueuePosition(sessionId).executeAsOne().MAX ?: 0L) + POSITION_STEP
+    private suspend fun requeueLater(sessionId: String, itemId: String, origin: String): String {
+        val target = (db.vocabularyDao().maxQueuePosition(sessionId) ?: 0L) + POSITION_STEP
         val id = newId()
-        db.vocabularyQueries.insertQueueItem(id, sessionId, target, itemId, "practice", origin, buildChoicesFor(itemId))
+        db.vocabularyDao().insertQueueItem(
+            VocabularySessionQueueEntity(id, sessionId, target, itemId, "practice", origin, buildChoicesFor(itemId), null, null, null),
+        )
         return id
     }
 
     override suspend fun undoLastGrade(sessionId: String): ApiResult<VocabularySessionState?> {
         val snapshot = lastUndoBySession.remove(sessionId) ?: return ApiResult.Success(null)
 
-        snapshot.insertedRepeatRowId?.let { db.vocabularyQueries.deleteQueueItem(it) }
-        db.vocabularyQueries.unanswerQueueItem(snapshot.queueRowId)
+        snapshot.insertedRepeatRowId?.let { db.vocabularyDao().deleteQueueItem(it) }
+        db.vocabularyDao().unanswerQueueItem(snapshot.queueRowId)
         if (snapshot.previousStatus != null) {
-            db.vocabularyQueries.updateProgress(
+            db.vocabularyDao().updateProgress(
                 snapshot.previousStatus, snapshot.previousCorrectStreak ?: 0L, snapshot.previousIncorrectStreak ?: 0L,
                 snapshot.previousIntervalIndex ?: 0L, snapshot.previousNextReviewAt ?: 0L, snapshot.previousLastSeenAt,
                 LOCAL_USER, snapshot.itemId,
             )
         }
-        db.vocabularyQueries.incrementSessionCounters(-snapshot.correctDelta, -snapshot.incorrectDelta, sessionId)
+        db.vocabularyDao().incrementSessionCounters(-snapshot.correctDelta, -snapshot.incorrectDelta, sessionId)
 
         return ApiResult.Success(buildSessionState(sessionId))
     }
 
-    private fun buildChoicesFor(itemId: String): String {
-        val item = db.vocabularyQueries.itemById(itemId).executeAsOne()
+    private suspend fun buildChoicesFor(itemId: String): String {
+        val item = db.vocabularyDao().itemById(itemId)!!
         val correct = dictionaryForm(item.term, item.gender)
-        val pool = db.vocabularyQueries.allUserVocab(LOCAL_USER).executeAsList().filter { it.id != itemId }
+        val pool = db.vocabularyDao().allUserVocab(LOCAL_USER).filter { it.id != itemId }
         val distractors = pool.map { it.term }.shuffled().take(CHOICE_COUNT - 1)
         return encodeStringList((distractors + correct).shuffled())
     }
 
     // --- session queue assembly ----------------------------------------------
 
-    private fun createSession(lessonId: String): String? {
+    private suspend fun createSession(lessonId: String): String? {
         val now = nowMillis()
-        val dueInLesson = db.vocabularyQueries.dueItemsInLesson(lessonId, LOCAL_USER, now, DUE_REVIEW_CAP).executeAsList()
+        val dueInLesson = db.vocabularyDao().dueItemsInLesson(lessonId, LOCAL_USER, now, DUE_REVIEW_CAP)
         val dueElsewhere = if (dueInLesson.size < DUE_REVIEW_CAP) {
-            db.vocabularyQueries.dueItemsElsewhere(lessonId, LOCAL_USER, now, DUE_REVIEW_CAP - dueInLesson.size).executeAsList()
+            db.vocabularyDao().dueItemsElsewhere(lessonId, LOCAL_USER, now, DUE_REVIEW_CAP - dueInLesson.size)
         } else {
             emptyList()
         }
         val dueIds = dueInLesson + dueElsewhere
         val dailyGoal = settingsRepository.current().dailyNewWordGoal.toLong()
-        val newIds = db.vocabularyQueries.newItemsForLesson(LOCAL_USER, lessonId, dailyGoal).executeAsList()
+        val newIds = db.vocabularyDao().newItemsForLesson(LOCAL_USER, lessonId, dailyGoal)
         val fallbackIds = if (dueIds.isEmpty() && newIds.isEmpty()) {
-            db.vocabularyQueries.masteredItems(LOCAL_USER, MASTERED_FALLBACK_CAP).executeAsList()
+            db.vocabularyDao().masteredItems(LOCAL_USER, MASTERED_FALLBACK_CAP)
         } else {
             emptyList()
         }
         if (dueIds.isEmpty() && newIds.isEmpty() && fallbackIds.isEmpty()) return null
 
         val sessionId = newId()
-        val nextSessionNumber = (db.vocabularyQueries.maxSessionNumber(LOCAL_USER, lessonId).executeAsOneOrNull() ?: 0L) + 1L
-        db.vocabularyQueries.insertSession(
-            sessionId, LOCAL_USER, lessonId, nextSessionNumber, now,
-            newIds.size.toLong(), (dueIds.size + fallbackIds.size).toLong(),
+        val nextSessionNumber = (db.vocabularyDao().maxSessionNumber(LOCAL_USER, lessonId) ?: 0L) + 1L
+        db.vocabularyDao().insertSession(
+            VocabularySessionEntity(
+                sessionId, LOCAL_USER, lessonId, nextSessionNumber, now, null, null,
+                newIds.size.toLong(), (dueIds.size + fallbackIds.size).toLong(), 0L, 0L,
+            ),
         )
 
         var position = 0L
         (dueIds + fallbackIds).forEach { itemId ->
-            db.vocabularyQueries.insertQueueItem(newId(), sessionId, position, itemId, "practice", "due_review", buildChoicesFor(itemId))
+            db.vocabularyDao().insertQueueItem(
+                VocabularySessionQueueEntity(newId(), sessionId, position, itemId, "practice", "due_review", buildChoicesFor(itemId), null, null, null),
+            )
             position += POSITION_STEP
         }
         newIds.forEach { itemId ->
-            db.vocabularyQueries.insertQueueItem(newId(), sessionId, position, itemId, "new", "new", null)
+            db.vocabularyDao().insertQueueItem(
+                VocabularySessionQueueEntity(newId(), sessionId, position, itemId, "new", "new", null, null, null, null),
+            )
             position += POSITION_STEP
         }
         return sessionId
     }
 
-    private fun currentQueueRow(sessionId: String) = db.vocabularyQueries.nextQueueItem(sessionId).executeAsOneOrNull()
+    private suspend fun currentQueueRow(sessionId: String) = db.vocabularyDao().nextQueueItem(sessionId)
 
-    private fun expectQueueRow(sessionId: String, itemId: String, expectedCardType: String) =
-        currentQueueRow(sessionId)?.takeIf { it.vocabulary_item_id == itemId && it.card_type == expectedCardType }
+    private suspend fun expectQueueRow(sessionId: String, itemId: String, expectedCardType: String) =
+        currentQueueRow(sessionId)?.takeIf { it.vocabularyItemId == itemId && it.cardType == expectedCardType }
 
-    private fun sessionOrOrderError(sessionId: String, itemId: String, expected: String): ApiResult.Failure {
+    private suspend fun sessionOrOrderError(sessionId: String, itemId: String, expected: String): ApiResult.Failure {
         val queueRow = currentQueueRow(sessionId)
             ?: return fail(409, "Session already complete", "sessionId=$sessionId")
-        return fail(409, "Out of order", "sessionId=$sessionId itemId=$itemId expected=$expected actual=${queueRow.card_type}")
+        return fail(409, "Out of order", "sessionId=$sessionId itemId=$itemId expected=$expected actual=${queueRow.cardType}")
     }
 
     // --- current card view -----------------------------------------------
 
-    private fun buildSessionState(sessionId: String): VocabularySessionState? {
-        val session = db.vocabularyQueries.sessionById(sessionId, LOCAL_USER).executeAsOne()
+    private suspend fun buildSessionState(sessionId: String): VocabularySessionState? {
+        val session = db.vocabularyDao().sessionById(sessionId, LOCAL_USER)!!
         val queueRow = currentQueueRow(sessionId) ?: return null
-        val queue = db.vocabularyQueries.queueForSession(sessionId).executeAsList()
-        val completed = queue.count { it.answered_at != null }
+        val queue = db.vocabularyDao().queueForSession(sessionId)
+        val completed = queue.count { it.answeredAt != null }
         // A word can span several queue rows (requeued after "keep showing" or a wrong answer);
         // count only distinct words reached so far, not rows, so "word 3 of 5" advances once per
         // word, not per re-attempt.
         val wordIndex = queue.filter { it.position <= queueRow.position }
-            .map { it.vocabulary_item_id }.distinct().size
-        val totalWords = (session.new_words_count + session.review_words_count).toInt()
+            .map { it.vocabularyItemId }.distinct().size
+        val totalWords = (session.newWordsCount + session.reviewWordsCount).toInt()
 
-        val item = db.vocabularyQueries.itemById(queueRow.vocabulary_item_id).executeAsOne()
-        val progress = db.vocabularyQueries.progressForItem(LOCAL_USER, queueRow.vocabulary_item_id).executeAsOne()
-        val isBookmarked = progress.is_bookmarked == 1L
-        val isDifficult = progress.marked_difficult == 1L
+        val item = db.vocabularyDao().itemById(queueRow.vocabularyItemId)!!
+        val progress = db.vocabularyDao().progressForItem(LOCAL_USER, queueRow.vocabularyItemId)!!
+        val isBookmarked = progress.isBookmarked == 1L
+        val isDifficult = progress.markedDifficult == 1L
 
-        val card: VocabularyCard = if (queueRow.card_type == "new") {
+        val card: VocabularyCard = if (queueRow.cardType == "new") {
             VocabularyCard.New(
                 itemId = item.id,
                 term = item.term,
                 gender = item.gender,
-                partOfSpeech = item.part_of_speech,
+                partOfSpeech = item.partOfSpeech,
                 plural = item.plural,
-                ipaPronunciation = item.ipa_pronunciation,
+                ipaPronunciation = item.ipaPronunciation,
                 meaning = item.meaning,
-                exampleSentence = item.example_sentence,
-                exampleSentenceTranslation = item.example_sentence_translation,
-                grammarNote = item.grammar_note,
-                relatedWords = decodeStringList(item.related_words),
-                difficultyRating = item.difficulty_rating,
-                frequencyRating = item.frequency_rating,
-                memoryTip = item.memory_tip,
+                exampleSentence = item.exampleSentence,
+                exampleSentenceTranslation = item.exampleSentenceTranslation,
+                grammarNote = item.grammarNote,
+                relatedWords = decodeStringList(item.relatedWords),
+                difficultyRating = item.difficultyRating,
+                frequencyRating = item.frequencyRating,
+                memoryTip = item.memoryTip,
                 isBookmarked = isBookmarked,
                 markedDifficult = isDifficult,
-                aiExplanation = item.ai_note,
+                aiExplanation = item.aiNote,
             )
         } else {
             VocabularyCard.Practice(
                 itemId = item.id,
-                meaning = item.native_meaning ?: item.meaning,
-                grammarNote = item.grammar_note,
-                exampleSentence = item.example_sentence,
-                exampleSentenceTranslation = item.example_sentence_translation,
+                meaning = item.nativeMeaning ?: item.meaning,
+                grammarNote = item.grammarNote,
+                exampleSentence = item.exampleSentence,
+                exampleSentenceTranslation = item.exampleSentenceTranslation,
                 isBookmarked = isBookmarked,
                 markedDifficult = isDifficult,
                 choices = decodeStringList(queueRow.choices),
@@ -666,7 +688,7 @@ class LocalVocabularyRepository(
 
         return VocabularySessionState(
             sessionId = sessionId,
-            sessionNumber = session.session_number.toInt(),
+            sessionNumber = session.sessionNumber.toInt(),
             cardsCompleted = completed,
             cardsRemaining = queue.size - completed,
             card = card,
@@ -683,8 +705,8 @@ class LocalVocabularyRepository(
     private fun dictionaryForm(term: String, gender: String?): String =
         if (gender.isNullOrBlank()) term else "$gender $term"
 
-    private fun Vocabulary_progress.toState() =
-        VocabularySrs.State(status, interval_index.toInt(), correct_streak.toInt(), incorrect_streak.toInt())
+    private fun VocabularyProgressEntity.toState() =
+        VocabularySrs.State(status, intervalIndex.toInt(), correctStreak.toInt(), incorrectStreak.toInt())
 
     private fun fail(code: Int, message: String, context: String): ApiResult.Failure {
         EvolaLog.d("vocabulary", "$message ($context)")

@@ -1,9 +1,13 @@
 package evola.composeapp.feature.vocabulary.vm
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.composeapp.core.database.testAppDatabase
+import evola.database.AppDatabase
+import evola.database.entity.GoalEntity
+import evola.database.entity.LessonEntity
+import evola.database.entity.MaterialEntity
+import evola.database.entity.VocabularyItemEntity
+import evola.database.entity.VocabularyProgressEntity
 import evola.shared.core.network.AnthropicClient
-import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.feature.profile.data.LocalSettingsRepository
 import evola.shared.feature.vocabulary.data.LocalVocabularyRepository
@@ -21,27 +25,24 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]: a real [LocalVocabularyRepository]
- * backed by an in-memory SQLite [EvolaDatabase], driven through [VocabularyListViewModel] via the
+ * backed by an in-memory Room database, driven through [VocabularyListViewModel] via the
  * official `org.orbit-mvi:orbit-test` DSL - never a mocked repository. Seeding follows
  * `LocalVocabularyRepositoryTest`'s own helper pattern (goal/material/lesson/vocabulary-item inserts).
- * Robolectric only because [LocalSettingsRepository]'s Room database needs a real `Context` on Android. */
+ * Robolectric because Room's Android database builder needs a real `Context`. */
 @RunWith(RobolectricTestRunner::class)
 class VocabularyListViewModelTest {
 
-    private fun setup(itemCount: Int = 3): Pair<LocalVocabularyRepository, EvolaDatabase> {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        val db = EvolaDatabase(driver)
-        db.goalsQueries.insert("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L)
-        db.materialsQueries.insert("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L)
-        db.lessonsQueries.insert("l1", "m1", "g1", 1L, "Lesson 1", "ready", null, 0L)
+    private suspend fun setup(itemCount: Int = 3): Pair<LocalVocabularyRepository, AppDatabase> {
+        val db = testAppDatabase()
+        db.goalDao().insert(GoalEntity("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L))
+        db.materialDao().insert(MaterialEntity("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L, 0L, 0L))
+        db.lessonDao().insert(LessonEntity("l1", "m1", "g1", 1L, "Lesson 1", "ready", "curriculum", null, null, 0L))
         repeat(itemCount) { i ->
             val id = "v$i"
-            db.vocabularyQueries.insertItem(
-                id, "l1", "Wort$i", "word$i", "der", "Das Wort$i ist gut.",
-                null, null, null, null, null, null, null, null, null, null, null, 0L,
+            db.vocabularyDao().insertItem(
+                VocabularyItemEntity(id, "l1", "Wort$i", "word$i", "der", "Das Wort$i ist gut.", null, null, null, null, null, null, null, null, null, null, null, null, 0L),
             )
-            db.vocabularyQueries.insertProgress("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
+            db.vocabularyDao().insertProgress(VocabularyProgressEntity("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L))
         }
         val anthropic = AnthropicClient(MockEngine { respond("{\"content\":[]}", HttpStatusCode.OK) }) { "sk-test" }
         val settingsRepository = LocalSettingsRepository(testAppDatabase())
@@ -93,7 +94,7 @@ class VocabularyListViewModelTest {
 
             val effect = assertIs<VocabularyListSideEffect.MarkedAlreadyKnown>(awaitSideEffect())
             assertEquals("v0", effect.item?.itemId)
-            assertEquals("review", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
+            assertEquals("review", db.vocabularyDao().progressForItem(LOCAL_USER, "v0")!!.status)
         }
     }
 
@@ -135,7 +136,7 @@ class VocabularyListViewModelTest {
     @Test
     fun `ResetProgress clears every word's status back to unseen and re-fetches`() = runTest {
         val (repository, db) = setup(itemCount = 2)
-        db.vocabularyQueries.updateProgress("mastered", 3L, 0L, 4L, 0L, 0L, LOCAL_USER, "v0")
+        db.vocabularyDao().updateProgress("mastered", 3L, 0L, 4L, 0L, 0L, LOCAL_USER, "v0")
 
         viewModel(repository).testWithInternalState(this, VocabularyListState()) {
             runOnCreate()

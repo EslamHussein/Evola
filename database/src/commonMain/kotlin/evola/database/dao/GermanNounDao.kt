@@ -3,6 +3,7 @@ package evola.database.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import evola.database.entity.GermanNounEntity
 
 @Dao
@@ -12,6 +13,11 @@ interface GermanNounDao {
 
     @Insert
     suspend fun insert(noun: GermanNounEntity)
+
+    @Transaction
+    suspend fun insertAll(nouns: List<GermanNounEntity>) {
+        nouns.forEach { insert(it) }
+    }
 
     @Query("SELECT * FROM german_nouns WHERE lemma = :lemma COLLATE NOCASE LIMIT 1")
     suspend fun lookup(lemma: String): GermanNounEntity?

@@ -1,32 +1,38 @@
 package evola.composeapp.feature.learning.vm
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import evola.shared.db.EvolaDatabase
+import evola.composeapp.core.database.testAppDatabase
+import evola.database.entity.GrammarProgressEntity
+import evola.database.entity.GrammarTopicEntity
+import evola.database.entity.GoalEntity
+import evola.database.entity.LessonEntity
+import evola.database.entity.MaterialEntity
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.feature.learning.data.LocalGrammarRepository
 import kotlinx.coroutines.test.runTest
+import org.junit.runner.RunWith
 import org.orbitmvi.orbit.test.testWithInternalState
+import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]: a real [LocalGrammarRepository]
- * backed by an in-memory SQLite [EvolaDatabase], driven through [GrammarTopicListViewModel] via
- * the official `org.orbit-mvi:orbit-test` DSL. */
+ * backed by an in-memory Room database, driven through [GrammarTopicListViewModel] via
+ * the official `org.orbit-mvi:orbit-test` DSL. Robolectric only because Room's Android database
+ * builder needs a real `Context`. */
+@RunWith(RobolectricTestRunner::class)
 class GrammarTopicListViewModelTest {
 
-    private fun setup(): LocalGrammarRepository {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        val db = EvolaDatabase(driver)
-        db.goalsQueries.insert("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L)
-        db.materialsQueries.insert("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L)
-        db.lessonsQueries.insert("l1", "m1", "g1", 1L, "Lesson 1", "ready", null, 0L)
-        db.grammarQueries.insertTopic("t1", "l1", "Akkusativ", "The accusative case", 0L)
-        db.grammarQueries.insertTopicProgress("gp1", LOCAL_USER, "t1", "new", 0L, 0L, 0L, null)
-        db.grammarQueries.insertTopic("t2", "l1", "Dativ", "The dative case", 1L)
-        db.grammarQueries.insertTopicProgress("gp2", LOCAL_USER, "t2", "learning", 0L, 0L, 0L, null)
+    private suspend fun setup(): LocalGrammarRepository {
+        val db = testAppDatabase()
+        db.goalDao().insert(GoalEntity("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L))
+        db.materialDao().insert(MaterialEntity("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L, 0L, 0L))
+        db.lessonDao().insert(LessonEntity("l1", "m1", "g1", 1L, "Lesson 1", "ready", "curriculum", null, null, 0L))
+        db.grammarDao().insertTopic(GrammarTopicEntity("t1", "l1", "Akkusativ", "The accusative case", 0L))
+        db.grammarDao().insertTopicProgress(GrammarProgressEntity("gp1", LOCAL_USER, "t1", "new", 0L, 0L, 0L, null))
+        db.grammarDao().insertTopic(GrammarTopicEntity("t2", "l1", "Dativ", "The dative case", 1L))
+        db.grammarDao().insertTopicProgress(GrammarProgressEntity("gp2", LOCAL_USER, "t2", "learning", 0L, 0L, 0L, null))
         return LocalGrammarRepository(db)
     }
 
@@ -45,12 +51,10 @@ class GrammarTopicListViewModelTest {
 
     @Test
     fun `a lesson with no grammar topics still loads as an empty list, not a crash`() = runTest {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        val db = EvolaDatabase(driver)
-        db.goalsQueries.insert("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L)
-        db.materialsQueries.insert("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L)
-        db.lessonsQueries.insert("l1", "m1", "g1", 1L, "Lesson 1", "ready", null, 0L)
+        val db = testAppDatabase()
+        db.goalDao().insert(GoalEntity("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L))
+        db.materialDao().insert(MaterialEntity("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L, 0L, 0L))
+        db.lessonDao().insert(LessonEntity("l1", "m1", "g1", 1L, "Lesson 1", "ready", "curriculum", null, null, 0L))
 
         val viewModel = GrammarTopicListViewModel("l1", LocalGrammarRepository(db))
         viewModel.testWithInternalState(this, GrammarTopicListState.Loading) {

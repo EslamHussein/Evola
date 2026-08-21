@@ -7,8 +7,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.widget.RemoteViews
 import evola.composeapp.R
-import evola.composeapp.core.database.DatabaseDriverFactory
-import evola.shared.db.EvolaDatabase
+import evola.database.DatabaseFactory
+import evola.database.create
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.core.common.srs.computeStreak
 import evola.shared.todayLocalDate
@@ -30,14 +30,14 @@ import kotlinx.datetime.LocalDate
 class HomeWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         CoroutineScope(Dispatchers.IO).launch {
-            val db = EvolaDatabase(DatabaseDriverFactory(context).create())
+            val db = DatabaseFactory(context).create()
             val today = LocalDate.parse(todayLocalDate())
-            val activityDates = db.activityQueries.completedDates(LOCAL_USER).executeAsList()
+            val activityDates = db.activityDao().completedDates(LOCAL_USER)
                 .mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }
-            val frozenDates = db.activityQueries.frozenDates(LOCAL_USER).executeAsList()
+            val frozenDates = db.activityDao().frozenDates(LOCAL_USER)
                 .mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }
             val streak = computeStreak((activityDates + frozenDates).toSet(), today)
-            val dueCount = db.vocabularyQueries.dueCountForUser(LOCAL_USER, System.currentTimeMillis()).executeAsOne()
+            val dueCount = db.vocabularyDao().dueCountForUser(LOCAL_USER, System.currentTimeMillis())
 
             appWidgetIds.forEach { appWidgetId -> updateWidget(context, appWidgetManager, appWidgetId, streak, dueCount) }
         }

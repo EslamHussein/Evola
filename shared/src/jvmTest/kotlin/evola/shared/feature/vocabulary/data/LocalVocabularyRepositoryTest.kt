@@ -1,13 +1,17 @@
 package evola.shared.feature.vocabulary.data
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.database.AppDatabase
 import evola.database.DatabaseFactory
 import evola.database.create
+import evola.database.entity.GoalEntity
+import evola.database.entity.LessonEntity
+import evola.database.entity.MaterialEntity
+import evola.database.entity.VocabularyItemEntity
+import evola.database.entity.VocabularyProgressEntity
 import evola.shared.core.network.AnthropicClient
 import evola.shared.core.common.ApiResult
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.core.common.nowMillis
-import evola.shared.db.EvolaDatabase
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import evola.shared.feature.vocabulary.domain.VocabularySessionState
 import evola.shared.feature.vocabulary.domain.WordCategory
@@ -24,23 +28,20 @@ import kotlin.test.assertTrue
 
 class LocalVocabularyRepositoryTest {
 
-    private fun setup(itemCount: Int = 3): Pair<LocalVocabularyRepository, EvolaDatabase> {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        val db = EvolaDatabase(driver)
-        db.goalsQueries.insert("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L)
-        db.materialsQueries.insert("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L)
-        db.lessonsQueries.insert("l1", "m1", "g1", 1L, "Lesson 1", "ready", null, 0L)
+    private suspend fun setup(itemCount: Int = 3): Pair<LocalVocabularyRepository, AppDatabase> {
+        val db = DatabaseFactory().create()
+        db.goalDao().insert(GoalEntity("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L))
+        db.materialDao().insert(MaterialEntity("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L, 0L, 0L))
+        db.lessonDao().insert(LessonEntity("l1", "m1", "g1", 1L, "Lesson 1", "ready", "curriculum", null, null, 0L))
         repeat(itemCount) { i ->
             val id = "v$i"
-            db.vocabularyQueries.insertItem(
-                id, "l1", "Wort$i", "word$i", "der", "Das Wort$i ist gut.",
-                null, null, null, null, null, null, null, null, null, null, null, 0L,
+            db.vocabularyDao().insertItem(
+                VocabularyItemEntity(id, "l1", "Wort$i", "word$i", "der", "Das Wort$i ist gut.", null, null, null, null, null, null, null, null, null, null, null, null, 0L),
             )
-            db.vocabularyQueries.insertProgress("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
+            db.vocabularyDao().insertProgress(VocabularyProgressEntity("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L))
         }
         val anthropic = AnthropicClient(MockEngine { respond("{\"content\":[]}", HttpStatusCode.OK) }) { "sk-test" }
-        val settingsRepository = LocalSettingsRepository(DatabaseFactory().create())
+        val settingsRepository = LocalSettingsRepository(db)
         return LocalVocabularyRepository(db, anthropic, settingsRepository) to db
     }
 
@@ -59,10 +60,10 @@ class LocalVocabularyRepositoryTest {
         val result = (repo.submitAlreadyKnown(session.sessionId, session.card.itemId) as ApiResult.Success).data
         assertNull(result.correct)
 
-        val progress = db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne()
+        val progress = db.vocabularyDao().progressForItem(LOCAL_USER, "v0")!!
         assertEquals("review", progress.status)
-        assertEquals(1L, progress.correct_streak)
-        assertEquals(0L, progress.incorrect_streak)
+        assertEquals(1L, progress.correctStreak)
+        assertEquals(0L, progress.incorrectStreak)
         // The only word in the lesson is now scheduled for a future review, not shown again this session.
         assertNull(result.next)
     }
@@ -74,7 +75,7 @@ class LocalVocabularyRepositoryTest {
         val result = (repo.submitStartLearning(session.sessionId, session.card.itemId) as ApiResult.Success).data
         assertNull(result.correct)
 
-        assertEquals("introduced", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
+        assertEquals("introduced", db.vocabularyDao().progressForItem(LOCAL_USER, "v0")!!.status)
         val next = result.next!!
         assertIs<VocabularyCard.Practice>(next.card)
         assertEquals("v0", next.card.itemId)
@@ -115,13 +116,13 @@ class LocalVocabularyRepositoryTest {
         // must still come back around as a Practice card.
         var result = (repo.submitSelfGrade(session.sessionId, session.card.itemId, correct = true) as ApiResult.Success).data
         assertEquals(true, result.correct)
-        assertEquals("learning", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
+        assertEquals("learning", db.vocabularyDao().progressForItem(LOCAL_USER, "v0")!!.status)
         assertIs<VocabularyCard.Practice>(result.next!!.card)
 
         // Second correct: learning -> review - graduated, so the session has nothing left to show.
         result = (repo.submitSelfGrade(result.next.sessionId, "v0", correct = true) as ApiResult.Success).data
         assertEquals(true, result.correct)
-        assertEquals("review", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
+        assertEquals("review", db.vocabularyDao().progressForItem(LOCAL_USER, "v0")!!.status)
         assertNull(result.next)
     }
 
@@ -133,8 +134,8 @@ class LocalVocabularyRepositoryTest {
 
         val result = (repo.submitKeepShowing(session.sessionId, session.card.itemId) as ApiResult.Success).data
         assertNull(result.correct)
-        assertEquals("introduced", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
-        assertEquals(0L, db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().correct_streak)
+        assertEquals("introduced", db.vocabularyDao().progressForItem(LOCAL_USER, "v0")!!.status)
+        assertEquals(0L, db.vocabularyDao().progressForItem(LOCAL_USER, "v0")!!.correctStreak)
         assertIs<VocabularyCard.Practice>(result.next!!.card)
         assertEquals("v0", result.next.card.itemId)
     }
@@ -143,7 +144,7 @@ class LocalVocabularyRepositoryTest {
     fun `a wrong self-graded answer on a due review demotes and repeats later, not immediately next`() = runTest {
         val (repo, db) = setup(itemCount = 3)
         // v0 already due for review.
-        db.vocabularyQueries.updateProgress("review", 2L, 0L, 1L, 0L, nowMillis(), LOCAL_USER, "v0")
+        db.vocabularyDao().updateProgress("review", 2L, 0L, 1L, 0L, nowMillis(), LOCAL_USER, "v0")
 
         val session = (repo.startOrResumeSession("l1") as ApiResult.Success).data
         assertIs<VocabularyCard.Practice>(session.card)
@@ -151,8 +152,8 @@ class LocalVocabularyRepositoryTest {
 
         val result = (repo.submitSelfGrade(session.sessionId, "v0", correct = false) as ApiResult.Success).data
         assertEquals(false, result.correct)
-        assertEquals("learning", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
-        assertEquals(0L, db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().interval_index)
+        assertEquals("learning", db.vocabularyDao().progressForItem(LOCAL_USER, "v0")!!.status)
+        assertEquals(0L, db.vocabularyDao().progressForItem(LOCAL_USER, "v0")!!.intervalIndex)
 
         // The very next card must NOT be the repeated word - other words' New cards come first.
         val nextCard = result.next!!.card
@@ -184,11 +185,11 @@ class LocalVocabularyRepositoryTest {
         var result = (repo.submitChoice(session.sessionId, "v0", "der Wort0") as ApiResult.Success).data
         assertEquals(true, result.correct)
         assertEquals("der Wort0", result.correctAnswer)
-        assertEquals("learning", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
+        assertEquals("learning", db.vocabularyDao().progressForItem(LOCAL_USER, "v0")!!.status)
 
         result = (repo.submitTyped(result.next!!.sessionId, "v0", "der Wort0") as ApiResult.Success).data
         assertEquals(true, result.correct)
-        assertEquals("review", db.vocabularyQueries.progressForItem(LOCAL_USER, "v0").executeAsOne().status)
+        assertEquals("review", db.vocabularyDao().progressForItem(LOCAL_USER, "v0")!!.status)
         assertNull(result.next)
     }
 
@@ -203,7 +204,7 @@ class LocalVocabularyRepositoryTest {
         val summary = (repo.complete(session.sessionId, "2026-08-05") as ApiResult.Success).data
         assertEquals(1, summary.wordsLearned)
         assertEquals(100.0, summary.accuracy)
-        assertTrue(db.activityQueries.forDate(LOCAL_USER, "2026-08-05").executeAsOneOrNull() != null)
+        assertTrue(db.activityDao().forDate(LOCAL_USER, "2026-08-05") != null)
     }
 
     @Test
@@ -211,7 +212,7 @@ class LocalVocabularyRepositoryTest {
         val (repo, db) = setup(itemCount = 1)
         // Fast-forward v0 straight to "review" status, due now - simulating a word already seen in
         // an earlier session, rather than walking through New/Learning to get there.
-        db.vocabularyQueries.updateProgress("review", 2L, 0L, 1L, 0L, nowMillis(), LOCAL_USER, "v0")
+        db.vocabularyDao().updateProgress("review", 2L, 0L, 1L, 0L, nowMillis(), LOCAL_USER, "v0")
 
         val session = (repo.startOrResumeSession("l1") as ApiResult.Success).data
         assertIs<VocabularyCard.Practice>(session.card)
@@ -232,9 +233,9 @@ class LocalVocabularyRepositoryTest {
         // v0 struggling (wrong last answer), v1 mastered clean, v2 touched but not struggling/mastered
         // (learning bucket), v3 stays "unseen" (never studied) - the same red/yellow/green split Home
         // shows (see LocalGoalsRepository.vocabularyBreakdown); "unseen" isn't a bucket of its own.
-        db.vocabularyQueries.updateProgress("learning", 0L, 1L, 0L, 0L, nowMillis(), LOCAL_USER, "v0")
-        db.vocabularyQueries.updateProgress("mastered", 3L, 0L, 4L, 0L, nowMillis(), LOCAL_USER, "v1")
-        db.vocabularyQueries.updateProgress("learning", 1L, 0L, 1L, 0L, nowMillis(), LOCAL_USER, "v2")
+        db.vocabularyDao().updateProgress("learning", 0L, 1L, 0L, 0L, nowMillis(), LOCAL_USER, "v0")
+        db.vocabularyDao().updateProgress("mastered", 3L, 0L, 4L, 0L, nowMillis(), LOCAL_USER, "v1")
+        db.vocabularyDao().updateProgress("learning", 1L, 0L, 1L, 0L, nowMillis(), LOCAL_USER, "v2")
 
         val struggling = (repo.startCategorySession("g1", WordCategory.STRUGGLING) as ApiResult.Success).data
         assertIs<VocabularyCard.Practice>(struggling.card)

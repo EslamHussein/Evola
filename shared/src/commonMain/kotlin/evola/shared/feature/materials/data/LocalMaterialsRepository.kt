@@ -1,5 +1,15 @@
 package evola.shared.feature.materials.data
 
+import evola.database.AppDatabase
+import evola.database.entity.GrammarExerciseEntity
+import evola.database.entity.GrammarExtractionJobEntity
+import evola.database.entity.GrammarProgressEntity
+import evola.database.entity.GrammarTopicEntity
+import evola.database.entity.LessonEntity
+import evola.database.entity.LessonVocabularyItemEntity
+import evola.database.entity.MaterialEntity
+import evola.database.entity.VocabularyItemEntity
+import evola.database.entity.VocabularyProgressEntity
 import evola.shared.feature.materials.domain.GrammarExtractor
 import evola.shared.feature.materials.domain.ImageTranscriber
 import evola.shared.feature.materials.domain.SegmentationExtractor
@@ -9,16 +19,15 @@ import evola.shared.core.common.DataError
 import evola.shared.core.analytics.EvolaLog
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.core.common.encodeStringList
-import evola.shared.core.common.grammarTopicCount
-import evola.shared.core.common.lessonGrammarProgress
-import evola.shared.core.common.lessonVocabProgress
+import evola.shared.core.common.grammarTopicCountRoom
+import evola.shared.core.common.lessonGrammarProgressRoom
+import evola.shared.core.common.lessonVocabProgressRoom
 import evola.shared.core.common.newId
 import evola.shared.core.common.nowMillis
-import evola.shared.core.common.vocabItemCount
+import evola.shared.core.common.vocabItemCountRoom
 import evola.shared.core.common.FileTextExtractor
 import evola.shared.core.common.detectMimeType
 import evola.shared.core.common.MIME_TEXT_PLAIN
-import evola.shared.db.EvolaDatabase
 import evola.shared.language.NativeLanguage
 import evola.shared.feature.materials.domain.ImageInput
 import evola.shared.feature.materials.domain.Lesson
@@ -45,7 +54,7 @@ private const val MAX_PASTED_TEXT_LENGTH = 200_000
  * none either) — it's verified with real Anthropic calls on-device.
  */
 class LocalMaterialsRepository(
-    private val db: EvolaDatabase,
+    private val db: AppDatabase,
     private val fileTextExtractor: FileTextExtractor,
     private val segmentation: SegmentationExtractor,
     private val vocabExtractor: VocabularyExtractor,
@@ -113,7 +122,7 @@ class LocalMaterialsRepository(
         )
     }
 
-    private fun finishUpload(
+    private suspend fun finishUpload(
         goalId: String,
         fileName: String,
         mimeType: String,
@@ -125,23 +134,25 @@ class LocalMaterialsRepository(
         initialInputTokens: Long = 0,
         initialOutputTokens: Long = 0,
     ): UploadResult {
-        if (db.goalsQueries.selectById(goalId).executeAsOneOrNull() == null) return UploadResult.GoalNotFound
+        if (db.goalDao().selectById(goalId) == null) return UploadResult.GoalNotFound
 
         val normalized = normalize(rawText)
         if (normalized.length < MIN_EXTRACTABLE_TEXT_LENGTH) return UploadResult.NoExtractableText
 
         val contentHash = contentHash(normalized)
-        db.materialsQueries.selectByContentHash(LOCAL_USER, contentHash).executeAsOneOrNull()?.let {
+        db.materialDao().selectByContentHash(LOCAL_USER, contentHash).firstOrNull()?.let {
             return UploadResult.DuplicateFile(it.id)
         }
 
         val materialId = newId()
-        db.materialsQueries.insert(
-            materialId, LOCAL_USER, goalId, fileName, contentHash, "PROCESSING", mimeType, sizeBytes,
-            null, organizationMode, aiInstructions, resourceType, rawText, nowMillis(),
+        db.materialDao().insert(
+            MaterialEntity(
+                materialId, LOCAL_USER, goalId, fileName, contentHash, "PROCESSING", mimeType, sizeBytes,
+                null, organizationMode, aiInstructions, resourceType, rawText, 0L, 0L, nowMillis(),
+            ),
         )
         if (initialInputTokens > 0 || initialOutputTokens > 0) {
-            db.materialsQueries.addTokenUsage(initialInputTokens, initialOutputTokens, materialId)
+            db.materialDao().addTokenUsage(initialInputTokens, initialOutputTokens, materialId)
         }
 
         launchProcessMaterial(materialId)
@@ -150,29 +161,29 @@ class LocalMaterialsRepository(
 
     override suspend fun list(): ApiResult<List<Material>> =
         ApiResult.Success(
-            db.materialsQueries.selectByUser(LOCAL_USER).executeAsList().map { row ->
+            db.materialDao().selectByUser(LOCAL_USER).map { row ->
                 row.toMaterial(
-                    lessonsTotal = db.lessonsQueries.countByMaterial(row.id).executeAsOne().toInt(),
-                    lessonsReady = db.lessonsQueries.countReadyByMaterial(row.id).executeAsOne().toInt(),
+                    lessonsTotal = db.lessonDao().countByMaterial(row.id).toInt(),
+                    lessonsReady = db.lessonDao().countReadyByMaterial(row.id).toInt(),
                 )
             },
         )
 
     override suspend fun get(materialId: String): ApiResult<MaterialDetail> {
-        val row = db.materialsQueries.selectById(materialId).executeAsOneOrNull()
+        val row = db.materialDao().selectById(materialId)
             ?: return ApiResult.Failure(DataError.Http(404, "Material not found"))
-        val lessons = db.lessonsQueries.selectByMaterial(materialId).executeAsList().map { l ->
+        val lessons = db.lessonDao().selectByMaterial(materialId).map { l ->
             Lesson(
                 id = l.id,
-                materialId = l.material_id,
-                goalId = l.goal_id,
+                materialId = l.materialId,
+                goalId = l.goalId,
                 number = l.number.toInt(),
                 title = l.title,
                 status = l.status,
-                vocabCount = db.vocabItemCount(l.id),
-                vocabProgress = db.lessonVocabProgress(l.id),
-                grammarCount = db.grammarTopicCount(l.id),
-                grammarProgress = db.lessonGrammarProgress(l.id),
+                vocabCount = db.vocabItemCountRoom(l.id),
+                vocabProgress = db.lessonVocabProgressRoom(l.id),
+                grammarCount = db.grammarTopicCountRoom(l.id),
+                grammarProgress = db.lessonGrammarProgressRoom(l.id),
             )
         }
         val material = row.toMaterial(lessonsTotal = lessons.size, lessonsReady = lessons.count { it.status == "ready" })
@@ -180,10 +191,10 @@ class LocalMaterialsRepository(
     }
 
     override suspend fun reprocess(materialId: String): ApiResult<Unit> {
-        val row = db.materialsQueries.selectById(materialId).executeAsOneOrNull()
+        val row = db.materialDao().selectById(materialId)
             ?: return ApiResult.Failure(DataError.Http(404, "Material not found"))
         if (row.status != "FAILED") return ApiResult.Failure(DataError.Http(409, "Not failed"))
-        db.materialsQueries.updateStatus("PROCESSING", materialId)
+        db.materialDao().updateStatus("PROCESSING", materialId)
         launchProcessMaterial(materialId)
         return ApiResult.Success(Unit)
     }
@@ -199,12 +210,12 @@ class LocalMaterialsRepository(
      * resumes it automatically - `reprocess()`'s own guard only fires from FAILED. */
     private fun launchProcessMaterial(materialId: String) {
         scope.launch {
-            runCatching { processMaterial(materialId) }
-                .onFailure {
-                    EvolaLog.d("extract", "material=$materialId processMaterial crashed: $it")
-                    db.lessonsQueries.sweepStuckExtracting(materialId)
-                    db.materialsQueries.updateStatus("FAILED", materialId)
-                }
+            val result = runCatching { processMaterial(materialId) }
+            if (result.isFailure) {
+                EvolaLog.d("extract", "material=$materialId processMaterial crashed: ${result.exceptionOrNull()}")
+                db.lessonDao().sweepStuckExtracting(materialId)
+                db.materialDao().updateStatus("FAILED", materialId)
+            }
         }
     }
 
@@ -215,22 +226,22 @@ class LocalMaterialsRepository(
      * into their real curriculum, along with every lesson it's linked to. A word with no surviving
      * curriculum link is untouched here and cascades away normally. */
     override suspend fun deleteMaterial(materialId: String): ApiResult<Unit> {
-        val documentDerivedLessonIds = db.lessonsQueries.documentDerivedLessonIdsForMaterial(materialId).executeAsList()
+        val documentDerivedLessonIds = db.lessonDao().documentDerivedLessonIdsForMaterial(materialId)
         documentDerivedLessonIds.forEach { lessonId ->
-            db.vocabularyQueries.originatingItemsForLesson(lessonId).executeAsList().forEach { itemId ->
-                val survivingLessonId = db.vocabularyQueries.survivingCurriculumLinkForItem(itemId).executeAsOneOrNull()
+            db.vocabularyDao().originatingItemsForLesson(lessonId).forEach { itemId ->
+                val survivingLessonId = db.vocabularyDao().survivingCurriculumLinkForItem(itemId)
                 if (survivingLessonId != null) {
-                    db.vocabularyQueries.reassignItemOrigin(survivingLessonId, itemId)
-                    db.vocabularyQueries.unlinkItemFromLesson(survivingLessonId, itemId)
+                    db.vocabularyDao().reassignItemOrigin(survivingLessonId, itemId)
+                    db.vocabularyDao().unlinkItemFromLesson(survivingLessonId, itemId)
                 }
             }
         }
-        db.materialsQueries.deleteById(materialId)
+        db.materialDao().deleteById(materialId)
         return ApiResult.Success(Unit)
     }
 
     override suspend fun deleteLesson(lessonId: String): ApiResult<Unit> {
-        db.lessonsQueries.deleteById(lessonId)
+        db.lessonDao().deleteById(lessonId)
         return ApiResult.Success(Unit)
     }
 
@@ -244,20 +255,25 @@ class LocalMaterialsRepository(
      * and that loop only (re-)processes lessons not already `"ready"`. This is what makes a retry
      * cheap in AI tokens instead of repeating already-successful work. */
     suspend fun processMaterial(materialId: String) {
-        val material = db.materialsQueries.selectById(materialId).executeAsOneOrNull() ?: return
-        val text = material.content_text ?: run {
+        val material = db.materialDao().selectById(materialId) ?: return
+        val text = material.contentText ?: run {
             EvolaLog.d("extract", "material=$materialId FAILED: content_text is null")
-            db.materialsQueries.updateStatus("FAILED", materialId)
+            db.materialDao().updateStatus("FAILED", materialId)
             return
         }
-        val goalRow = db.goalsQueries.selectById(material.goal_id).executeAsOneOrNull()
-        val goalText = goalRow?.goal_text ?: ""
-        val nativeLanguage = goalRow?.native_language?.let { NativeLanguage.fromCode(it) } ?: NativeLanguage.ENGLISH
-        val onUsage: (Int, Int) -> Unit = { input, output -> db.materialsQueries.addTokenUsage(input.toLong(), output.toLong(), materialId) }
+        val goalRow = db.goalDao().selectById(material.goalId)
+        val goalText = goalRow?.goalText ?: ""
+        val nativeLanguage = goalRow?.nativeLanguage?.let { NativeLanguage.fromCode(it) } ?: NativeLanguage.ENGLISH
+        // onUsage's signature is a plain, non-suspend callback shared across every AI-calling
+        // extractor (SegmentationExtractor/VocabularyExtractor/ImageTranscriber all the way down
+        // to AnthropicClient.complete) - out of scope to make suspend here. addTokenUsage's own
+        // UPDATE is a commutative increment, so a launched write racing another (or the final
+        // status flip) can't lose data, only transiently lag the displayed token count by a beat.
+        val onUsage: (Int, Int) -> Unit = { input, output -> scope.launch { db.materialDao().addTokenUsage(input.toLong(), output.toLong(), materialId) } }
 
-        if (db.lessonsQueries.countByMaterial(materialId).executeAsOne() == 0L) {
-            EvolaLog.d("extract", "processMaterial start: mode=${material.organization_mode} textChars=${text.length} goalChars=${goalText.length}")
-            val segments: List<RawSegment> = when (material.organization_mode) {
+        if (db.lessonDao().countByMaterial(materialId) == 0L) {
+            EvolaLog.d("extract", "processMaterial start: mode=${material.organizationMode} textChars=${text.length} goalChars=${goalText.length}")
+            val segments: List<RawSegment> = when (material.organizationMode) {
                 "entire" -> listOf(RawSegment(title = material.filename, startOffset = 0, endOffset = text.length, hasRealHeading = true))
                 // No AI call at all - pure text splitting, so it's both free and immune to the
                 // segmentation-prompt truncation/parse-failure modes "auto" can hit.
@@ -266,14 +282,14 @@ class LocalMaterialsRepository(
                     is ApiResult.Success -> {
                         if (r.data.unsupported) {
                             EvolaLog.d("extract", "material=$materialId UNSUPPORTED_CONTENT (segmentation)")
-                            db.materialsQueries.updateStatus("UNSUPPORTED_CONTENT", materialId)
+                            db.materialDao().updateStatus("UNSUPPORTED_CONTENT", materialId)
                             return
                         }
                         r.data.segments
                     }
                     is ApiResult.Failure -> {
                         EvolaLog.d("extract", "material=$materialId FAILED: segmentation error=${r.error}")
-                        db.materialsQueries.updateStatus("FAILED", materialId)
+                        db.materialDao().updateStatus("FAILED", materialId)
                         return
                     }
                 }
@@ -281,34 +297,36 @@ class LocalMaterialsRepository(
             EvolaLog.d("extract", "material=$materialId segmented into ${segments.size} lesson(s)")
             val now = nowMillis()
             segments.forEachIndexed { index, segment ->
-                db.lessonsQueries.insert(
-                    newId(), materialId, material.goal_id, (index + 1).toLong(), segment.title.take(150),
-                    "pending", "${segment.startOffset}:${segment.endOffset}", now,
+                db.lessonDao().insert(
+                    LessonEntity(
+                        newId(), materialId, material.goalId, (index + 1).toLong(), segment.title.take(150),
+                        "pending", "curriculum", null, "${segment.startOffset}:${segment.endOffset}", now,
+                    ),
                 )
             }
         }
 
-        val existingTerms = db.vocabularyQueries.allUserVocab(LOCAL_USER).executeAsList()
+        val existingTerms = db.vocabularyDao().allUserVocab(LOCAL_USER)
             .associateTo(mutableMapOf()) { it.term.lowercase() to it.id }
 
-        val toProcess = db.lessonsQueries.selectByMaterial(materialId).executeAsList().filter { it.status != "ready" }
+        val toProcess = db.lessonDao().selectByMaterial(materialId).filter { it.status != "ready" }
         toProcess.forEach { lesson ->
-            db.lessonsQueries.updateStatus("extracting", lesson.id)
-            val lessonText = sourceTextRefSlice(text, lesson.source_text_ref)
-            val succeeded = extractVocabulary(lesson.id, goalText, lessonText, material.ai_instructions, nativeLanguage, existingTerms, onUsage)
+            db.lessonDao().updateStatus("extracting", lesson.id)
+            val lessonText = sourceTextRefSlice(text, lesson.sourceTextRef)
+            val succeeded = extractVocabulary(lesson.id, goalText, lessonText, material.aiInstructions, nativeLanguage, existingTerms, onUsage)
             // Vocabulary-only scope: grammar extraction is disabled for now (saves the grammar
             // generation + answer-key-validation model calls). Re-enable extractGrammar(...) to
             // bring Grammar back.
-            db.lessonsQueries.updateStatus(if (succeeded) "ready" else "failed", lesson.id)
+            db.lessonDao().updateStatus(if (succeeded) "ready" else "failed", lesson.id)
         }
 
-        val allReady = db.lessonsQueries.selectByMaterial(materialId).executeAsList().all { it.status == "ready" }
+        val allReady = db.lessonDao().selectByMaterial(materialId).all { it.status == "ready" }
         if (allReady) {
             EvolaLog.d("extract", "material=$materialId READY")
-            db.materialsQueries.updateStatus("READY", materialId)
+            db.materialDao().updateStatus("READY", materialId)
         } else {
             EvolaLog.d("extract", "material=$materialId FAILED (partial - some lessons still need extraction)")
-            db.materialsQueries.updateStatus("FAILED", materialId)
+            db.materialDao().updateStatus("FAILED", materialId)
         }
     }
 
@@ -350,18 +368,20 @@ class LocalMaterialsRepository(
                 // Already taught (in this lesson or a previous one) - link rather than duplicate,
                 // so this lesson's vocabulary list still shows the word (see lesson_vocabulary in
                 // Vocabulary.sq) without a second row/progress-tracking split for the same word.
-                db.vocabularyQueries.linkItemToLesson(lessonId, existingItemId)
+                db.vocabularyDao().linkItemToLesson(LessonVocabularyItemEntity(lessonId, existingItemId, null))
                 return@forEach
             }
             val itemId = newId()
             existingTerms[key] = itemId
-            db.vocabularyQueries.insertItem(
-                itemId, lessonId, item.term, item.meaning, item.gender, item.exampleSentence,
-                item.partOfSpeech, item.plural, null, item.exampleSentenceTranslation, item.nativeMeaning,
-                item.ipaPronunciation, encodeStringList(item.relatedWords), item.difficultyRating,
-                item.frequencyRating, item.memoryTip, item.grammarNote, now,
+            db.vocabularyDao().insertItem(
+                VocabularyItemEntity(
+                    itemId, lessonId, item.term, item.meaning, item.gender, item.exampleSentence,
+                    item.partOfSpeech, item.plural, null, item.exampleSentenceTranslation, item.nativeMeaning,
+                    item.ipaPronunciation, encodeStringList(item.relatedWords), item.difficultyRating,
+                    item.frequencyRating, item.memoryTip, item.grammarNote, null, now,
+                ),
             )
-            db.vocabularyQueries.insertProgress(newId(), LOCAL_USER, itemId, "unseen", 0L, 0L, 0L, now, null, 0L, 0L)
+            db.vocabularyDao().insertProgress(VocabularyProgressEntity(newId(), LOCAL_USER, itemId, "unseen", 0L, 0L, 0L, now, null, 0L, 0L))
         }
         return true
     }
@@ -374,32 +394,35 @@ class LocalMaterialsRepository(
         val now = nowMillis()
         topics.forEach { topic ->
             val topicId = newId()
-            db.grammarQueries.insertTopic(topicId, lessonId, topic.name, topic.explanation, now)
-            db.grammarQueries.insertTopicProgress(newId(), LOCAL_USER, topicId, "new", 0L, 0L, now, null)
+            db.grammarDao().insertTopic(GrammarTopicEntity(topicId, lessonId, topic.name, topic.explanation, now))
+            db.grammarDao().insertTopicProgress(GrammarProgressEntity(newId(), LOCAL_USER, topicId, "new", 0L, 0L, now, null))
             topic.exercises.forEach { ex ->
-                db.grammarQueries.insertExercise(
-                    newId(), topicId, ex.type, ex.prompt, ex.answerKey,
-                    ex.distractors.takeIf { it.isNotEmpty() }?.let { encodeStringList(it) }, now,
+                db.grammarDao().insertExercise(
+                    GrammarExerciseEntity(
+                        newId(), topicId, ex.type, ex.prompt, ex.answerKey,
+                        ex.distractors.takeIf { it.isNotEmpty() }?.let { encodeStringList(it) }, now,
+                    ),
                 )
             }
         }
         // A DONE grammar job row is what the Lesson Details hub reads to show the Grammar section as
         // populated (vs "still preparing") — mirrors the server's grammar_extraction_jobs row.
-        db.grammarQueries.insertJob(newId(), lessonId, "DONE", now, now)
+        // error is always null on insert, matching the original .sq's hardcoded VALUES(..., NULL, ...).
+        db.grammarDao().insertJob(GrammarExtractionJobEntity(newId(), lessonId, "DONE", null, now, now))
     }
 
-    private fun evola.shared.db.Materials.toMaterial(lessonsTotal: Int = 0, lessonsReady: Int = 0) = Material(
+    private fun MaterialEntity.toMaterial(lessonsTotal: Int = 0, lessonsReady: Int = 0) = Material(
         id = id,
-        userId = user_id,
-        goalId = goal_id,
+        userId = userId,
+        goalId = goalId,
         filename = filename,
-        contentHash = content_hash,
+        contentHash = contentHash,
         status = runCatching { MaterialStatus.valueOf(status) }.getOrDefault(MaterialStatus.PROCESSING),
-        mimeType = mime_type,
-        sizeBytes = size_bytes,
-        pageCount = page_count?.toInt(),
-        inputTokens = input_tokens,
-        outputTokens = output_tokens,
+        mimeType = mimeType,
+        sizeBytes = sizeBytes,
+        pageCount = pageCount?.toInt(),
+        inputTokens = inputTokens,
+        outputTokens = outputTokens,
         lessonsTotal = lessonsTotal,
         lessonsReady = lessonsReady,
     )

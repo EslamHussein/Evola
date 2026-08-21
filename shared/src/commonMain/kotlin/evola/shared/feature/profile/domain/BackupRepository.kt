@@ -64,7 +64,7 @@ data class BackupDailyActivity(val id: String, val activityDate: String, val com
 data class BackupSetting(val key: String, val value: String)
 
 /**
- * Local backup/restore over a subset of [evola.shared.db.EvolaDatabase] - a JSON snapshot rather
+ * Local backup/restore over a subset of the local database - a JSON snapshot rather
  * than a raw SQLite file copy, covering the data a learner would actually mourn losing: goals,
  * materials, lessons, vocabulary (items + progress), daily activity, and settings. Grammar tables
  * and in-progress session/queue state are deliberately excluded - regenerable/re-derivable, not

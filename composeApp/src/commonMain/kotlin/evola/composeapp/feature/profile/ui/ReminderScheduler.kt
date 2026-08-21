@@ -12,7 +12,7 @@ expect class ReminderScheduler {
     fun cancel()
 }
 
-/** Composable provider mirroring [evola.composeapp.core.database.rememberDatabaseDriverFactory]/
+/** Composable provider mirroring [evola.composeapp.core.database.rememberRoomDatabaseFactory]/
  * [evola.composeapp.core.utils.rememberSpeechService]. */
 @Composable
 expect fun rememberReminderScheduler(): ReminderScheduler

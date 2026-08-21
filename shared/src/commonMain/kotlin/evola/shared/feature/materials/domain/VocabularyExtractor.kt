@@ -189,7 +189,7 @@ class VocabularyExtractor(
         return lastFailure ?: ApiResult.Success(emptyList())
     }
 
-    private fun enrichFromLexicon(items: List<ExtractedVocabItem>): List<ExtractedVocabItem> {
+    private suspend fun enrichFromLexicon(items: List<ExtractedVocabItem>): List<ExtractedVocabItem> {
         val lexicon = nounLexicon ?: return items
         return items.map { item ->
             // A lookup miss covers both "not a noun in this dataset" and "the one-time import

@@ -1,13 +1,13 @@
 package evola.composeapp.feature.materials.vm
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.composeapp.core.database.testAppDatabase
 import evola.composeapp.feature.materials.vm.StagedResource
+import evola.database.entity.GoalEntity
 import evola.shared.feature.materials.domain.GrammarExtractor
 import evola.shared.feature.materials.domain.ImageTranscriber
 import evola.shared.feature.materials.domain.SegmentationExtractor
 import evola.shared.feature.materials.domain.VocabularyExtractor
 import evola.shared.core.network.AnthropicClient
-import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.FileTextExtractor
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.feature.materials.data.LocalMaterialsRepository
@@ -18,25 +18,27 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.runTest
+import org.junit.runner.RunWith
 import org.orbitmvi.orbit.test.testWithInternalState
+import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
 /** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]: a real [LocalMaterialsRepository]
- * backed by an in-memory SQLite [EvolaDatabase] and a [MockEngine] that always returns an empty
+ * backed by an in-memory Room database and a [MockEngine] that always returns an empty
  * Anthropic response, driven through [AiWizardViewModel] via the official
  * `org.orbit-mvi:orbit-test` DSL. `startAnalysis` only needs to be asserted on its immediate,
  * synchronous outcome (`UploadResult`) - the background segmentation/extraction job it kicks off
  * runs on a real (non-test-controlled) [CoroutineScope] and is out of scope here, same as the
- * production [evola.composeapp.core.di.KoinModules] wiring. */
+ * production [evola.composeapp.core.di.KoinModules] wiring. Robolectric only because Room's
+ * Android database builder needs a real `Context`. */
+@RunWith(RobolectricTestRunner::class)
 class AiWizardViewModelTest {
 
     private fun repository(): MaterialsRepository {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        val db = EvolaDatabase(driver)
+        val db = testAppDatabase()
         val client = AnthropicClient(MockEngine { respond("{\"content\":[]}", HttpStatusCode.OK) }) { "sk-test" }
         val fileTextExtractor = object : FileTextExtractor {
             override fun extractText(bytes: ByteArray, mimeType: String): String? = null
@@ -53,10 +55,8 @@ class AiWizardViewModelTest {
     }
 
     private suspend fun withGoal(block: suspend (MaterialsRepository, goalId: String) -> Unit) {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        val db = EvolaDatabase(driver)
-        db.goalsQueries.insert("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L)
+        val db = testAppDatabase()
+        db.goalDao().insert(GoalEntity("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L))
         val client = AnthropicClient(MockEngine { respond("{\"content\":[]}", HttpStatusCode.OK) }) { "sk-test" }
         val fileTextExtractor = object : FileTextExtractor {
             override fun extractText(bytes: ByteArray, mimeType: String): String? = null

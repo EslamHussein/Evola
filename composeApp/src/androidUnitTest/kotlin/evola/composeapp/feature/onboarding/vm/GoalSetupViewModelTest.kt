@@ -1,8 +1,6 @@
 package evola.composeapp.feature.onboarding.vm
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.composeapp.core.database.testAppDatabase
-import evola.shared.db.EvolaDatabase
 import evola.shared.language.NativeLanguage
 import evola.shared.feature.profile.data.LocalAchievementsRepository
 import evola.shared.feature.onboarding.data.LocalGoalsRepository
@@ -25,11 +23,8 @@ import kotlin.test.assertTrue
 class GoalSetupViewModelTest {
 
     private fun goalsRepository(): LocalGoalsRepository {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        val db = EvolaDatabase(driver)
-        val roomDb = testAppDatabase()
-        return LocalGoalsRepository(db, LocalSettingsRepository(roomDb), LocalAchievementsRepository(roomDb))
+        val db = testAppDatabase()
+        return LocalGoalsRepository(db, LocalSettingsRepository(db), LocalAchievementsRepository(db))
     }
 
     @Test

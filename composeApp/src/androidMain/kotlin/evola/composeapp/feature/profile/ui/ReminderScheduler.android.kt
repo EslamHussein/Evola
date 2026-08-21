@@ -20,10 +20,8 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import evola.composeapp.core.database.DatabaseDriverFactory
 import evola.database.DatabaseFactory
 import evola.database.create
-import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.feature.profile.data.LocalSettingsRepository
 import evola.shared.feature.profile.domain.isWithinNotificationFrequencyLimit
@@ -105,7 +103,6 @@ actual fun rememberNotificationPermissionRequester(onResult: (Boolean) -> Unit):
  * process that may not even have the app in memory. */
 class ReviewReminderWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val db = EvolaDatabase(DatabaseDriverFactory(applicationContext).create())
         val roomDb = DatabaseFactory(applicationContext).create()
         val settingsRepository = LocalSettingsRepository(roomDb)
         val settings = settingsRepository.current()
@@ -119,7 +116,7 @@ class ReviewReminderWorker(context: Context, params: WorkerParameters) : Corouti
             return@withContext Result.success()
         }
 
-        val dueCount = db.vocabularyQueries.dueCountForUser(LOCAL_USER, now.toEpochMilliseconds()).executeAsOne()
+        val dueCount = roomDb.vocabularyDao().dueCountForUser(LOCAL_USER, now.toEpochMilliseconds())
         if (dueCount > 0) {
             postNotification(dueCount)
             settingsRepository.setLastNotificationPostedAtMillis(now.toEpochMilliseconds())

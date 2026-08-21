@@ -1,9 +1,8 @@
 package evola.composeapp.feature.profile.vm
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.composeapp.core.database.testAppDatabase
+import evola.database.AppDatabase
 import evola.shared.core.network.AnthropicClient
-import evola.shared.db.EvolaDatabase
 import evola.shared.feature.onboarding.domain.CreateGoalResult
 import evola.shared.language.NativeLanguage
 import evola.shared.feature.profile.data.LocalAchievementsRepository
@@ -27,26 +26,23 @@ import kotlin.test.assertTrue
  * fetched straight from the composable (see the ViewModel's own doc comment) - these tests cover
  * both that `onCreate` load and the two intents, driven through the real [ProfileViewModel] via
  * the `org.orbit-mvi:orbit-test` DSL (same pattern as [evola.composeapp.feature.home.vm.HomeViewModelTest]), backed by real
- * Local*Repository implementations sharing one in-memory SQLite [EvolaDatabase] - never mocks.
+ * Local*Repository implementations sharing one in-memory Room [AppDatabase] - never mocks.
  * Robolectric only because [LocalAchievementsRepository]'s Room database needs a real `Context`
  * on Android. */
 @RunWith(RobolectricTestRunner::class)
 class ProfileViewModelTest {
 
     private class Repos(
-        val db: EvolaDatabase,
+        val db: AppDatabase,
         val goals: LocalGoalsRepository,
         val vocabulary: LocalVocabularyRepository,
         val achievements: LocalAchievementsRepository,
     )
 
     private fun repos(): Repos {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        val db = EvolaDatabase(driver)
-        val roomDb = testAppDatabase()
-        val settings = LocalSettingsRepository(roomDb)
-        val achievements = LocalAchievementsRepository(roomDb)
+        val db = testAppDatabase()
+        val settings = LocalSettingsRepository(db)
+        val achievements = LocalAchievementsRepository(db)
         val goals = LocalGoalsRepository(db, settings, achievements)
         // resetAllProgress/the vocabulary reads ProfileViewModel touches never call the AI client -
         // a MockEngine that errors on any request makes that an enforced assumption, not a guess.

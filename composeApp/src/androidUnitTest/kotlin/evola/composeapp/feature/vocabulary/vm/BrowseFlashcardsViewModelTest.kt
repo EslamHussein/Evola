@@ -1,9 +1,12 @@
 package evola.composeapp.feature.vocabulary.vm
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import evola.composeapp.core.database.testAppDatabase
+import evola.database.entity.GoalEntity
+import evola.database.entity.LessonEntity
+import evola.database.entity.MaterialEntity
+import evola.database.entity.VocabularyItemEntity
+import evola.database.entity.VocabularyProgressEntity
 import evola.shared.core.network.AnthropicClient
-import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.feature.profile.data.LocalSettingsRepository
 import evola.shared.feature.vocabulary.data.LocalVocabularyRepository
@@ -25,20 +28,17 @@ import kotlin.test.assertIs
 @RunWith(RobolectricTestRunner::class)
 class BrowseFlashcardsViewModelTest {
 
-    private fun vocabularyRepository(itemCount: Int, lessonId: String = "l1"): LocalVocabularyRepository {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        val db = EvolaDatabase(driver)
-        db.goalsQueries.insert("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L)
-        db.materialsQueries.insert("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L)
-        db.lessonsQueries.insert(lessonId, "m1", "g1", 1L, "Lesson 1", "ready", null, 0L)
+    private suspend fun vocabularyRepository(itemCount: Int, lessonId: String = "l1"): LocalVocabularyRepository {
+        val db = testAppDatabase()
+        db.goalDao().insert(GoalEntity("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L))
+        db.materialDao().insert(MaterialEntity("m1", LOCAL_USER, "g1", "f.pdf", "h", "READY", "application/pdf", 1L, null, "auto", null, null, "txt", 0L, 0L, 0L))
+        db.lessonDao().insert(LessonEntity(lessonId, "m1", "g1", 1L, "Lesson 1", "ready", "curriculum", null, null, 0L))
         repeat(itemCount) { i ->
             val id = "v$i"
-            db.vocabularyQueries.insertItem(
-                id, lessonId, "Wort$i", "word$i", "der", "Das Wort$i ist gut.",
-                null, null, null, null, null, null, null, null, null, null, null, 0L,
+            db.vocabularyDao().insertItem(
+                VocabularyItemEntity(id, lessonId, "Wort$i", "word$i", "der", "Das Wort$i ist gut.", null, null, null, null, null, null, null, null, null, null, null, null, 0L),
             )
-            db.vocabularyQueries.insertProgress("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L)
+            db.vocabularyDao().insertProgress(VocabularyProgressEntity("p$i", LOCAL_USER, id, "unseen", 0L, 0L, 0L, 0L, null, 0L, 0L))
         }
         val anthropic = AnthropicClient(MockEngine { respond("{\"content\":[]}", HttpStatusCode.OK) }) { "sk-test" }
         return LocalVocabularyRepository(db, anthropic, LocalSettingsRepository(testAppDatabase()))

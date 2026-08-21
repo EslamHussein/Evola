@@ -29,8 +29,9 @@ kotlin {
         target.binaries.framework {
             baseName = "ComposeApp"
             export(project(":shared"))
-            // SQLDelight's native driver (touchlab sqliter) calls into the system SQLite; the
-            // iOS framework must link libsqlite3 or the link fails with undefined _sqlite3_* symbols.
+            // Harmless if unused: kept for any native SQLite symbol resolution Room's toolchain
+            // still expects on this target (previously required by SQLDelight's native driver,
+            // which called into the system SQLite directly).
             linkerOpts("-lsqlite3")
         }
     }
@@ -62,7 +63,6 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
-            implementation(libs.sqldelight.android.driver)
             implementation(libs.pdfbox.android)
             implementation(libs.kermit.io)
             implementation(libs.androidx.work.runtime.ktx)
@@ -72,20 +72,17 @@ kotlin {
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
-            implementation(libs.sqldelight.native.driver)
             implementation(libs.kermit.io)
         }
         // JVM-backed unit tests for the Orbit ViewModels - no emulator needed since ViewModels are
-        // plain Kotlin depending only on :shared. Mirrors :shared's own jvmTest setup (a real
-        // EvolaDatabase + real Local*Repository implementations, not mocks) so a ViewModel test
+        // plain Kotlin depending only on :shared. Mirrors :shared's own jvmTest setup (a real Room
+        // database + real Local*Repository implementations, not mocks) so a ViewModel test
         // exercises the same code path production does. Robolectric is the one Android-framework
         // dependency here, needed only because Room's Android database builder requires a real
-        // Context (unlike SQLDelight's JDBC-driver path, which didn't) - it still runs on the host
-        // JVM, no emulator.
+        // Context - it still runs on the host JVM, no emulator.
         androidUnitTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
-            implementation(libs.sqldelight.sqlite.driver)
             implementation(libs.orbit.test)
             implementation(libs.ktor.client.mock)
             implementation(libs.robolectric)

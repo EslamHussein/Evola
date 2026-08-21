@@ -1,12 +1,15 @@
 package evola.composeapp.feature.materials.vm
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.composeapp.core.database.testAppDatabase
+import evola.database.AppDatabase
+import evola.database.entity.GoalEntity
+import evola.database.entity.LessonEntity
+import evola.database.entity.MaterialEntity
 import evola.shared.core.network.AnthropicClient
 import evola.shared.feature.materials.domain.GrammarExtractor
 import evola.shared.feature.materials.domain.ImageTranscriber
 import evola.shared.feature.materials.domain.SegmentationExtractor
 import evola.shared.feature.materials.domain.VocabularyExtractor
-import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.FileTextExtractor
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.feature.materials.data.LocalMaterialsRepository
@@ -18,30 +21,32 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.runTest
+import org.junit.runner.RunWith
 import org.orbitmvi.orbit.test.testWithInternalState
+import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /** Same convention as [evola.composeapp.feature.home.vm.HomeViewModelTest]: a real [LocalMaterialsRepository]
- * backed by an in-memory SQLite [EvolaDatabase], driven through [MaterialDetailViewModel] via the
+ * backed by an in-memory Room database, driven through [MaterialDetailViewModel] via the
  * official `org.orbit-mvi:orbit-test` DSL. Every seeded material starts in a terminal status
  * (READY/FAILED), so the poll loop resolves after exactly one tick, same convention as
  * [evola.composeapp.feature.learning.vm.LessonDetailViewModelTest] - except the [retry] test, which
  * deliberately moves the material into the non-terminal PROCESSING status and so must end its
  * `validate` block with `cancelAndIgnoreRemainingItems()` (see the plan's gotcha notes on
- * infinite `onCreate`/poll loops). */
+ * infinite `onCreate`/poll loops). Robolectric only because Room's Android database builder needs
+ * a real `Context`. */
+@RunWith(RobolectricTestRunner::class)
 class MaterialDetailViewModelTest {
 
-    private fun setup(materialId: String = "m1", status: String = "READY", lessonCount: Int = 0): Pair<MaterialsRepository, EvolaDatabase> {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        EvolaDatabase.Schema.create(driver)
-        val db = EvolaDatabase(driver)
-        db.goalsQueries.insert("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L)
-        db.materialsQueries.insert(materialId, LOCAL_USER, "g1", "f.pdf", "h", status, "application/pdf", 1L, null, "auto", null, null, "txt", 0L)
+    private suspend fun setup(materialId: String = "m1", status: String = "READY", lessonCount: Int = 0): Pair<MaterialsRepository, AppDatabase> {
+        val db = testAppDatabase()
+        db.goalDao().insert(GoalEntity("g1", LOCAL_USER, "Learn German", "t", "en", 1L, 0L, 0L))
+        db.materialDao().insert(MaterialEntity(materialId, LOCAL_USER, "g1", "f.pdf", "h", status, "application/pdf", 1L, null, "auto", null, null, "txt", 0L, 0L, 0L))
         repeat(lessonCount) { i ->
-            db.lessonsQueries.insert("l$i", materialId, "g1", (i + 1).toLong(), "Lesson ${i + 1}", "ready", null, 0L)
+            db.lessonDao().insert(LessonEntity("l$i", materialId, "g1", (i + 1).toLong(), "Lesson ${i + 1}", "ready", "curriculum", null, null, 0L))
         }
         val client = AnthropicClient(MockEngine { respond("{\"content\":[]}", HttpStatusCode.OK) }) { "sk-test" }
         val fileTextExtractor = object : FileTextExtractor {
@@ -59,7 +64,7 @@ class MaterialDetailViewModelTest {
         return repository to db
     }
 
-    private fun repository(materialId: String = "m1", status: String = "READY", lessonCount: Int = 0): MaterialsRepository =
+    private suspend fun repository(materialId: String = "m1", status: String = "READY", lessonCount: Int = 0): MaterialsRepository =
         setup(materialId, status, lessonCount).first
 
     @Test

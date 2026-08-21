@@ -1,6 +1,6 @@
 package evola.shared.feature.vocabulary.domain
 
-import evola.shared.db.EvolaDatabase
+import evola.database.AppDatabase
 
 /** One row from the local `german_nouns` table (populated once by [GermanNounImporter] from the
  * bundled gambolputty/german-nouns dataset, CC-BY-SA-4.0 - attribution in Profile's Credits
@@ -20,11 +20,11 @@ data class GermanNounEntry(
  * whole dataset for the handful of terms a lesson's vocabulary extraction actually looks up.
  * Nouns only - the dataset has no verb/adjective coverage; callers fall back to the AI for those.
  * Returns null (not an error) before [GermanNounImporter] has finished its one-time import. */
-class GermanNounLexicon(private val db: EvolaDatabase) {
-    fun lookup(term: String): GermanNounEntry? {
+class GermanNounLexicon(private val db: AppDatabase) {
+    suspend fun lookup(term: String): GermanNounEntry? {
         val key = term.trim()
         if (key.isEmpty()) return null
-        val row = db.germanNounsQueries.lookupNoun(key).executeAsOneOrNull()
+        val row = db.germanNounDao().lookup(key)
             // ß and "ss" are the same sound/word (e.g. source text spelling "Fussball" vs. the
             // dataset's canonical "Fußball") - a plain exact match misses this, so retry with
             // the other spelling before giving up. Only fires when the first lookup misses, and
@@ -35,9 +35,9 @@ class GermanNounLexicon(private val db: EvolaDatabase) {
                     key.contains("ss") -> key.replace("ss", "ß")
                     else -> return null
                 }
-                db.germanNounsQueries.lookupNoun(altKey).executeAsOneOrNull()
+                db.germanNounDao().lookup(altKey)
             }
             ?: return null
-        return GermanNounEntry(row.lemma, row.part_of_speech, row.genus, row.nominativ_plural, row.raw_row)
+        return GermanNounEntry(row.lemma, row.partOfSpeech, row.genus, row.nominativPlural, row.rawRow)
     }
 }

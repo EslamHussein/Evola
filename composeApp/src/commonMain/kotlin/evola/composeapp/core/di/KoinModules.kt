@@ -2,14 +2,12 @@ package evola.composeapp.core.di
 
 import evola.composeapp.KEY_ANTHROPIC_API_KEY
 import evola.composeapp.SecureStore
-import evola.composeapp.core.database.DatabaseDriverFactory
 import evola.composeapp.core.network.platformHttpEngine
 import evola.composeapp.generated.resources.Res
 import evola.database.AppDatabase
 import evola.database.DatabaseFactory
 import evola.database.create
 import evola.shared.core.network.AnthropicClient
-import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.FileTextExtractor
 import evola.composeapp.feature.home.vm.homeModule
 import evola.composeapp.feature.learning.vm.learningModule
@@ -35,7 +33,7 @@ import org.koin.dsl.module
  * A dedicated class (rather than inline module logic) so its `init` block - which must run exactly
  * once, eagerly, not on first lookup - has somewhere to live; registered `createdAtStart = true`.
  */
-class GermanNounImportCoordinator(database: EvolaDatabase, extractionScope: CoroutineScope) {
+class GermanNounImportCoordinator(database: AppDatabase, extractionScope: CoroutineScope) {
     private val _state = MutableStateFlow<GermanNounImportState>(GermanNounImportState.NotStarted)
     val state: StateFlow<GermanNounImportState> = _state.asStateFlow()
 
@@ -51,23 +49,18 @@ class GermanNounImportCoordinator(database: EvolaDatabase, extractionScope: Coro
 
 /**
  * Replaces the old [AppModule]-class composition root with a Koin module: same singletons (the
- * on-device SQLDelight database, one [AnthropicClient] pointed at the user's own locally-stored
- * key, the three extraction pipelines, and the seven Local*Repository implementations), just
+ * on-device Room database, one [AnthropicClient] pointed at the user's own locally-stored
+ * key, the three extraction pipelines, and the eight Local*Repository implementations), just
  * resolved via `get()` instead of threaded as composable params through every screen. The only
  * network dependency left is Anthropic itself (Claude can't run on-device).
  */
 fun evolaModule(
-    driverFactory: DatabaseDriverFactory,
     roomDatabaseFactory: DatabaseFactory,
     secureStore: SecureStore,
     fileTextExtractor: FileTextExtractor,
 ): Module = module {
     includes(vocabularyModule, learningModule, materialsModule(fileTextExtractor), onboardingModule, homeModule, profileModule)
 
-    single { EvolaDatabase(driverFactory.create()) }
-    // Room is being migrated in alongside SQLDelight one repository at a time - both databases
-    // are live until every Local*Repository has moved off EvolaDatabase, at which point
-    // EvolaDatabase and this whole SQLDelight setup is deleted outright.
     single<AppDatabase> { roomDatabaseFactory.create() }
     single { platformHttpEngine() }
     single { AnthropicClient(get()) { secureStore.get(KEY_ANTHROPIC_API_KEY) } }

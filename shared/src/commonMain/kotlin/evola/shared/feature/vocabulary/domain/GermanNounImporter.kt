@@ -1,7 +1,8 @@
 package evola.shared.feature.vocabulary.domain
 
+import evola.database.AppDatabase
+import evola.database.entity.GermanNounEntity
 import evola.shared.core.common.SqlLoggingGate
-import evola.shared.db.EvolaDatabase
 
 sealed interface GermanNounImportState {
     data object NotStarted : GermanNounImportState
@@ -13,10 +14,10 @@ sealed interface GermanNounImportState {
  * runs once per install (or after a future dataset update that clears the table), then every
  * later app launch queries the already-populated table directly instead of re-parsing a 20MB file
  * every time. [importIfNeeded] is a no-op if the table already has rows. */
-class GermanNounImporter(private val db: EvolaDatabase) {
+class GermanNounImporter(private val db: AppDatabase) {
 
     suspend fun importIfNeeded(csvText: String, onProgress: (imported: Int, total: Int) -> Unit) {
-        if (db.germanNounsQueries.countNouns().executeAsOne() > 0) return
+        if (db.germanNounDao().count() > 0) return
 
         val lines = csvText.lineSequence().iterator()
         if (!lines.hasNext()) return
@@ -26,11 +27,9 @@ class GermanNounImporter(private val db: EvolaDatabase) {
         var imported = 0
         val batch = ArrayList<PendingRow>(BATCH_SIZE)
 
-        fun flush() {
+        suspend fun flush() {
             if (batch.isEmpty()) return
-            db.germanNounsQueries.transaction {
-                batch.forEach { row -> db.germanNounsQueries.insertNoun(row.lemma, row.pos, row.genus, row.plural, row.raw) }
-            }
+            db.germanNounDao().insertAll(batch.map { row -> GermanNounEntity(lemma = row.lemma, partOfSpeech = row.pos, genus = row.genus, nominativPlural = row.plural, rawRow = row.raw) })
             batch.clear()
         }
 

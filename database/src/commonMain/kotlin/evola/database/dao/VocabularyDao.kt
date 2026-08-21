@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import evola.database.entity.LessonVocabularyItemEntity
 import evola.database.entity.VocabularyItemEntity
 import evola.database.entity.VocabularyProgressEntity
@@ -20,6 +21,16 @@ interface VocabularyDao {
 
     @Insert
     suspend fun insertItem(item: VocabularyItemEntity)
+
+    /** Atomic multi-row insert for a bulk import (CSV import / starter lesson) - mirrors the
+     * repository's old `db.transaction { rows.forEach { insertBareWord(...) } }` wrapping. */
+    @Transaction
+    suspend fun insertItemsWithProgress(rows: List<Pair<VocabularyItemEntity, VocabularyProgressEntity>>) {
+        rows.forEach { (item, progress) ->
+            insertItem(item)
+            insertProgress(progress)
+        }
+    }
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun linkItemToLesson(link: LessonVocabularyItemEntity)
