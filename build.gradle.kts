@@ -11,7 +11,7 @@ plugins {
 // :shared and :composeApp declare kotlin("multiplatform") themselves (mutually exclusive with
 // kotlin("jvm")); :androidApp declares the Android application + kotlin("android") plugins.
 // Every other module is a plain JVM module and gets the common JVM setup below.
-val nonJvmModules = setOf(":shared", ":composeApp", ":androidApp")
+val nonJvmModules = setOf(":shared", ":composeApp", ":androidApp", ":database")
 
 subprojects {
     repositories {
