@@ -82,6 +82,7 @@ import evola.composeapp.core.common.RtlText
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
 import evola.shared.feature.vocabulary.domain.VocabularyItem
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -160,7 +161,10 @@ internal fun VocabularyWordDetailScreen(
             title = { Text(stringResource(Res.string.lessons_remove_word_title)) },
             text = { Text(stringResource(Res.string.lessons_remove_word_text, item.term)) },
             confirmButton = {
-                TextButton(onClick = { showDeleteConfirm = false; onDelete() }) { Text(stringResource(Res.string.lessons_action_remove)) }
+                EvolaDestructiveGhostButton(
+                    text = stringResource(Res.string.lessons_action_remove),
+                    onClick = { showDeleteConfirm = false; onDelete() },
+                )
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(Res.string.lessons_action_cancel)) }

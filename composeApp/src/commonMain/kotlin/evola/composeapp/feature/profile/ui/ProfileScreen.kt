@@ -62,6 +62,7 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
 import evola.composeapp.core.designsystem.components.IconTile
 import evola.composeapp.core.designsystem.components.RootTopBarTitle
 import evola.composeapp.core.designsystem.components.SelectableChip
@@ -186,10 +187,13 @@ private fun ProfileContent(
             title = { Text(stringResource(Res.string.main_profile_reset_all_dialog_title)) },
             text = { Text(stringResource(Res.string.main_profile_reset_all_dialog_body)) },
             confirmButton = {
-                TextButton(onClick = {
-                    onShowResetAllConfirmChange(false)
-                    onResetAllProgress()
-                }) { Text(stringResource(Res.string.main_profile_reset_all_confirm)) }
+                EvolaDestructiveGhostButton(
+                    text = stringResource(Res.string.main_profile_reset_all_confirm),
+                    onClick = {
+                        onShowResetAllConfirmChange(false)
+                        onResetAllProgress()
+                    },
+                )
             },
             dismissButton = { TextButton(onClick = { onShowResetAllConfirmChange(false) }) { Text(stringResource(Res.string.main_profile_cancel)) } },
         )

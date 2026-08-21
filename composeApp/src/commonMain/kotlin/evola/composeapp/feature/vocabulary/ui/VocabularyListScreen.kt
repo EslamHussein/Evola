@@ -70,6 +70,7 @@ import evola.composeapp.core.utils.rememberSpeechService
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
 import evola.composeapp.feature.vocabulary.ui.rememberCsvFilePicker
 import evola.shared.feature.vocabulary.domain.VocabularyItem
 import evola.shared.feature.vocabulary.domain.parseWordCsv
@@ -255,7 +256,10 @@ private fun VocabularyListContent(
             title = { Text(stringResource(Res.string.lessons_reset_progress_title)) },
             text = { Text(stringResource(Res.string.lessons_reset_progress_text)) },
             confirmButton = {
-                TextButton(onClick = { showResetConfirm = false; onResetProgress() }) { Text(stringResource(Res.string.lessons_reset_progress_confirm)) }
+                EvolaDestructiveGhostButton(
+                    text = stringResource(Res.string.lessons_reset_progress_confirm),
+                    onClick = { showResetConfirm = false; onResetProgress() },
+                )
             },
             dismissButton = {
                 TextButton(onClick = { showResetConfirm = false }) { Text(stringResource(Res.string.lessons_action_cancel)) }

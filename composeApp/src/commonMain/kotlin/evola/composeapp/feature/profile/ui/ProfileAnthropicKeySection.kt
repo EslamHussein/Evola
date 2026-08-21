@@ -57,6 +57,7 @@ import evola.composeapp.generated.resources.main_profile_version_footer
 import evola.composeapp.rememberSecureStore
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
 import evola.composeapp.core.designsystem.components.IconTile
 import evola.composeapp.core.designsystem.components.StatusTag
 import evola.composeapp.core.designsystem.components.StatusTagStyle
@@ -90,13 +91,16 @@ internal fun AnthropicKeySection(
             text = { Text(stringResource(Res.string.main_profile_remove_key_dialog_body)) },
             confirmButton = {
                 val keyRemovedMessage = stringResource(Res.string.main_profile_key_removed_snackbar)
-                TextButton(onClick = {
-                    secureStore.remove(KEY_ANTHROPIC_API_KEY)
-                    savedKey = null
-                    draft = ""
-                    showClearConfirm = false
-                    coroutineScope.launch { snackbarHostState.showSnackbar(keyRemovedMessage) }
-                }) { Text(stringResource(Res.string.main_profile_remove_key_confirm)) }
+                EvolaDestructiveGhostButton(
+                    text = stringResource(Res.string.main_profile_remove_key_confirm),
+                    onClick = {
+                        secureStore.remove(KEY_ANTHROPIC_API_KEY)
+                        savedKey = null
+                        draft = ""
+                        showClearConfirm = false
+                        coroutineScope.launch { snackbarHostState.showSnackbar(keyRemovedMessage) }
+                    },
+                )
             },
             dismissButton = { TextButton(onClick = { showClearConfirm = false }) { Text(stringResource(Res.string.main_profile_cancel)) } },
         )

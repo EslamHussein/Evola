@@ -67,6 +67,25 @@ data class EvolaColorPalette(
     val GenderMasculine: Color,
     val GenderFeminine: Color,
     val GenderNeuter: Color,
+    /** Container-safe variant of [Accent] for filled buttons - [Accent] itself can't pair with any
+     * legible content color in both themes (verified via WCAG relative-luminance contrast: white
+     * text on light-mode [Accent] is 4.21:1, dark-mode is 2.98:1, both fail the 4.5:1 AA minimum).
+     * [Accent] itself is unchanged and keeps being used for icons/badges/borders, which don't carry
+     * this requirement. */
+    val AccentButton: Color,
+    val OnAccentButton: Color,
+    /** Same fix as [AccentButton], for the Positive/confirm button role (Gold = correct/positive
+     * per this app's existing semantic convention, kept as its own role rather than reusing Accent). */
+    val GoldButton: Color,
+    val OnGoldButton: Color,
+    /** Content color for a filled [Rust] button - [Rust] itself is fine as a container in both
+     * themes, but white text on dark-mode [Rust] is 3.33:1 (fails 4.5:1); [Paper] passes at 5.47:1. */
+    val OnDestructiveButton: Color,
+    /** Interactive-boundary border (outlined buttons, focus rings) - [Border] is only ~1.3-1.5:1
+     * against [Surface]/[Paper] in both themes, far under the 3:1 WCAG non-text minimum, because it
+     * was designed for decorative dividers. [BorderStrong] clears 3:1 with margin in both themes;
+     * [Border] is unchanged and keeps its current decorative use. */
+    val BorderStrong: Color,
 )
 
 /** Reword-inspired light palette - see [EvolaColorPalette]'s field docs at each call site for what
@@ -94,6 +113,12 @@ val LightEvolaColors = EvolaColorPalette(
     GenderMasculine = Color(0xFF3B6FE0), // der - blue
     GenderFeminine = Color(0xFFD64550),  // die - red
     GenderNeuter = Color(0xFF1C7A52),    // das - green
+    AccentButton = Color(0xFF5668E8),    // Accent darkened ~5% so white content clears 4.5:1
+    OnAccentButton = Color(0xFFFFFFFF),
+    GoldButton = Color(0xFFAB630A),      // Gold darkened ~5% so white content clears 4.5:1
+    OnGoldButton = Color(0xFFFFFFFF),
+    OnDestructiveButton = Color(0xFFFFFFFF),
+    BorderStrong = Color(0xFF767B96),
 )
 
 /** Dark counterpart - same semantic roles, tuned for a dark canvas rather than a naive inversion
@@ -121,6 +146,12 @@ val DarkEvolaColors = EvolaColorPalette(
     GenderMasculine = Color(0xFF7DA0FF),
     GenderFeminine = Color(0xFFE87F86),
     GenderNeuter = Color(0xFF4CC38A),
+    AccentButton = Color(0xFF7C8CFF),    // = Accent - dark-mode's issue is the content color, not this
+    OnAccentButton = Color(0xFF14151C),  // = Paper - white on Accent is 2.98:1, Paper is 6.11:1
+    GoldButton = Color(0xFFE0A040),      // = Gold - same reasoning as AccentButton
+    OnGoldButton = Color(0xFF14151C),
+    OnDestructiveButton = Color(0xFF14151C), // white on dark-mode Rust is 3.33:1, Paper is 5.47:1
+    BorderStrong = Color(0xFF6A6E96),
 )
 
 val LocalEvolaColors = staticCompositionLocalOf { LightEvolaColors }
@@ -151,8 +182,8 @@ internal fun arabicFamily(): FontFamily = FontFamily(
 
 private fun evolaColorScheme(colors: EvolaColorPalette, dark: Boolean): ColorScheme = if (dark) {
     darkColorScheme(
-        primary = colors.Accent,
-        onPrimary = Color(0xFFFFFFFF),
+        primary = colors.AccentButton,
+        onPrimary = colors.OnAccentButton,
         secondary = colors.Accent,
         onSecondary = Color(0xFFFFFFFF),
         tertiary = colors.Accent,
@@ -171,7 +202,7 @@ private fun evolaColorScheme(colors: EvolaColorPalette, dark: Boolean): ColorSch
         surfaceContainerHigh = colors.Surface,
         surfaceContainerHighest = colors.Surface,
         error = colors.Rust,
-        onError = Color(0xFFFFFFFF),
+        onError = colors.OnDestructiveButton,
         errorContainer = colors.RustSoft,
         onErrorContainer = colors.Rust,
         outline = colors.Border,
@@ -179,8 +210,8 @@ private fun evolaColorScheme(colors: EvolaColorPalette, dark: Boolean): ColorSch
     )
 } else {
     lightColorScheme(
-        primary = colors.Accent,
-        onPrimary = Color(0xFFFFFFFF),
+        primary = colors.AccentButton,
+        onPrimary = colors.OnAccentButton,
         secondary = colors.Accent,
         onSecondary = Color(0xFFFFFFFF),
         // Accent labels/links (e.g. section headers, "Continue") pick up Reword's indigo.
@@ -208,7 +239,7 @@ private fun evolaColorScheme(colors: EvolaColorPalette, dark: Boolean): ColorSch
         surfaceContainerHigh = colors.Surface,
         surfaceContainerHighest = colors.Surface,
         error = colors.Rust,
-        onError = Color(0xFFFFFFFF),
+        onError = colors.OnDestructiveButton,
         errorContainer = colors.RustSoft,
         onErrorContainer = colors.Rust,
         outline = colors.Border,
