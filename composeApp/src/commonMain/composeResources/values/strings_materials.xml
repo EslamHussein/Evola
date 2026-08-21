@@ -35,7 +35,6 @@
     <string name="materials_detail_tokens_used">%1$s tokens used</string>
     <string name="materials_detail_ready_of_total">%1$d of %2$d lessons ready</string>
     <string name="materials_detail_partial_success">We generated %1$s from \"%2$s\", but some of it couldn\'t be processed.</string>
-    <string name="materials_detail_retry_rest">Retry the rest</string>
     <string name="materials_detail_status_done">Done</string>
     <string name="materials_detail_status_in_progress">In progress</string>
     <string name="materials_detail_status_not_started">Not started</string>
