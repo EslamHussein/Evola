@@ -17,7 +17,10 @@ kotlin {
 
     jvm()
     androidTarget()
-    iosX64()
+
+    // iosX64 (Intel Mac simulator) intentionally excluded - :database can't target it
+    // (androidx.sqlite:sqlite-bundled doesn't publish for it), mirroring composeApp's existing
+    // iosX64 exclusion for navigation3-ui. Confirmed unused: no Xcode scheme builds it.
     iosArm64()
     iosSimulatorArm64()
 
@@ -34,6 +37,7 @@ kotlin {
             api(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines.extensions)
             api(libs.kermit)
+            api(project(":database"))
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)

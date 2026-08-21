@@ -14,6 +14,7 @@ import evola.shared.feature.profile.domain.AppTheme
 import evola.shared.feature.profile.domain.SettingsRepository
 import evola.composeapp.core.di.evolaModule
 import evola.composeapp.core.database.rememberDatabaseDriverFactory
+import evola.composeapp.core.database.rememberRoomDatabaseFactory
 import evola.composeapp.core.navigation.AppNavContext
 import evola.composeapp.core.navigation.AppRoute
 import evola.composeapp.core.navigation.appNavigationModule
@@ -49,13 +50,14 @@ fun App() {
     remember { EvolaLog.attachFileWriter(logFileWriterFactory.create()) }
 
     val driverFactory = rememberDatabaseDriverFactory()
+    val roomDatabaseFactory = rememberRoomDatabaseFactory()
     val secureStore = rememberSecureStore()
     val fileTextExtractor = rememberFileTextExtractor()
 
     KoinApplication(
         configuration = koinConfiguration {
             modules(
-                evolaModule(driverFactory, secureStore, fileTextExtractor),
+                evolaModule(driverFactory, roomDatabaseFactory, secureStore, fileTextExtractor),
                 appNavigationModule,
                 materialsNavigationModule,
                 vocabularyNavigationModule,

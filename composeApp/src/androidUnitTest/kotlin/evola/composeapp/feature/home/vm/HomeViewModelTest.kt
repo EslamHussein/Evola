@@ -1,6 +1,7 @@
 package evola.composeapp.feature.home.vm
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.composeapp.core.database.testAppDatabase
 import evola.shared.db.EvolaDatabase
 import evola.shared.feature.onboarding.domain.CreateGoalResult
 import evola.shared.language.NativeLanguage
@@ -8,7 +9,9 @@ import evola.shared.feature.profile.data.LocalAchievementsRepository
 import evola.shared.feature.onboarding.data.LocalGoalsRepository
 import evola.shared.feature.profile.data.LocalSettingsRepository
 import kotlinx.coroutines.test.runTest
+import org.junit.runner.RunWith
 import org.orbitmvi.orbit.test.testWithInternalState
+import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -16,14 +19,18 @@ import kotlin.test.assertIs
 /** Proves out the Orbit MVI ViewModel test pattern this app uses everywhere else: a real
  * [LocalGoalsRepository] backed by an in-memory SQLite [EvolaDatabase] (same convention as
  * :shared's own repository tests), driven through [HomeViewModel] via the official
- * `org.orbit-mvi:orbit-test` DSL - never a mocked repository. */
+ * `org.orbit-mvi:orbit-test` DSL - never a mocked repository. Robolectric only because
+ * [LocalAchievementsRepository]'s Room database needs a real `Context` on Android; still runs on
+ * the host JVM. */
+@RunWith(RobolectricTestRunner::class)
 class HomeViewModelTest {
 
     private fun goalsRepository(): LocalGoalsRepository {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         EvolaDatabase.Schema.create(driver)
         val db = EvolaDatabase(driver)
-        return LocalGoalsRepository(db, LocalSettingsRepository(db), LocalAchievementsRepository(db))
+        val achievements = LocalAchievementsRepository(testAppDatabase())
+        return LocalGoalsRepository(db, LocalSettingsRepository(db), achievements)
     }
 
     @Test

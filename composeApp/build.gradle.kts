@@ -75,17 +75,25 @@ kotlin {
             implementation(libs.sqldelight.native.driver)
             implementation(libs.kermit.io)
         }
-        // JVM-backed unit tests for the Orbit ViewModels - no Android framework/emulator needed
-        // since ViewModels are plain Kotlin depending only on :shared. Mirrors :shared's own
-        // jvmTest setup (JdbcSqliteDriver backing a real EvolaDatabase + real Local*Repository
-        // implementations, not mocks) so a ViewModel test exercises the same code path production
-        // does.
+        // JVM-backed unit tests for the Orbit ViewModels - no emulator needed since ViewModels are
+        // plain Kotlin depending only on :shared. Mirrors :shared's own jvmTest setup (a real
+        // EvolaDatabase + real Local*Repository implementations, not mocks) so a ViewModel test
+        // exercises the same code path production does. Robolectric is the one Android-framework
+        // dependency here, needed only because Room's Android database builder requires a real
+        // Context (unlike SQLDelight's JDBC-driver path, which didn't) - it still runs on the host
+        // JVM, no emulator.
         androidUnitTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.sqldelight.sqlite.driver)
             implementation(libs.orbit.test)
             implementation(libs.ktor.client.mock)
+            implementation(libs.robolectric)
+            // BundledSQLiteDriver's native library doesn't load under Robolectric's host-JVM
+            // sandbox (production code never sees this - Robolectric only runs these tests) - the
+            // classic SQLiteOpenHelper-based framework driver is what Robolectric's own SQLite
+            // shadow layer is built around, so tests use that instead.
+            implementation(libs.androidx.sqlite.framework)
         }
     }
 }
@@ -96,6 +104,15 @@ android {
     defaultConfig {
         minSdk = 24
     }
+}
+
+// Robolectric (added for the Room-on-Android tests - see androidUnitTest.dependencies above)
+// sandboxes each @RunWith(RobolectricTestRunner) test class in its own ClassLoader, which
+// corrupts java.sql.DriverManager's driver registry for other, plain-JDBC tests (like
+// ProcessingStatusViewModelTest's SQLDelight-backed ones) if they share the same forked test JVM.
+// Fresh JVM per test class avoids that cross-contamination.
+tasks.withType<Test>().configureEach {
+    forkEvery = 1
 }
 
 // The Kotlin Gradle plugin computes this task's `enabled` flag by matching Xcode's env vars

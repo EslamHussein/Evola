@@ -1,13 +1,16 @@
 package evola.composeapp.feature.onboarding.vm
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.composeapp.core.database.testAppDatabase
 import evola.shared.db.EvolaDatabase
 import evola.shared.language.NativeLanguage
 import evola.shared.feature.profile.data.LocalAchievementsRepository
 import evola.shared.feature.onboarding.data.LocalGoalsRepository
 import evola.shared.feature.profile.data.LocalSettingsRepository
 import kotlinx.coroutines.test.runTest
+import org.junit.runner.RunWith
 import org.orbitmvi.orbit.test.testWithInternalState
+import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -16,14 +19,17 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Same real-repository-over-in-memory-SQLite convention as [evola.composeapp.feature.home.vm.HomeViewModelTest],
- * driven through the real [GoalSetupViewModel] via `org.orbit-mvi:orbit-test`. */
+ * driven through the real [GoalSetupViewModel] via `org.orbit-mvi:orbit-test`. Robolectric only
+ * because [LocalAchievementsRepository]'s Room database needs a real `Context` on Android. */
+@RunWith(RobolectricTestRunner::class)
 class GoalSetupViewModelTest {
 
     private fun goalsRepository(): LocalGoalsRepository {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         EvolaDatabase.Schema.create(driver)
         val db = EvolaDatabase(driver)
-        return LocalGoalsRepository(db, LocalSettingsRepository(db), LocalAchievementsRepository(db))
+        val achievements = LocalAchievementsRepository(testAppDatabase())
+        return LocalGoalsRepository(db, LocalSettingsRepository(db), achievements)
     }
 
     @Test

@@ -1,6 +1,7 @@
 package evola.composeapp.feature.profile.vm
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.composeapp.core.database.testAppDatabase
 import evola.shared.core.network.AnthropicClient
 import evola.shared.db.EvolaDatabase
 import evola.shared.feature.onboarding.domain.CreateGoalResult
@@ -11,7 +12,9 @@ import evola.shared.feature.profile.data.LocalSettingsRepository
 import evola.shared.feature.vocabulary.data.LocalVocabularyRepository
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.test.runTest
+import org.junit.runner.RunWith
 import org.orbitmvi.orbit.test.testWithInternalState
+import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -24,7 +27,10 @@ import kotlin.test.assertTrue
  * fetched straight from the composable (see the ViewModel's own doc comment) - these tests cover
  * both that `onCreate` load and the two intents, driven through the real [ProfileViewModel] via
  * the `org.orbit-mvi:orbit-test` DSL (same pattern as [evola.composeapp.feature.home.vm.HomeViewModelTest]), backed by real
- * Local*Repository implementations sharing one in-memory SQLite [EvolaDatabase] - never mocks. */
+ * Local*Repository implementations sharing one in-memory SQLite [EvolaDatabase] - never mocks.
+ * Robolectric only because [LocalAchievementsRepository]'s Room database needs a real `Context`
+ * on Android. */
+@RunWith(RobolectricTestRunner::class)
 class ProfileViewModelTest {
 
     private class Repos(
@@ -39,7 +45,7 @@ class ProfileViewModelTest {
         EvolaDatabase.Schema.create(driver)
         val db = EvolaDatabase(driver)
         val settings = LocalSettingsRepository(db)
-        val achievements = LocalAchievementsRepository(db)
+        val achievements = LocalAchievementsRepository(testAppDatabase())
         val goals = LocalGoalsRepository(db, settings, achievements)
         // resetAllProgress/the vocabulary reads ProfileViewModel touches never call the AI client -
         // a MockEngine that errors on any request makes that an enforced assumption, not a guess.

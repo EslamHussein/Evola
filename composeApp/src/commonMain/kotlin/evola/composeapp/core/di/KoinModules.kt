@@ -5,6 +5,9 @@ import evola.composeapp.SecureStore
 import evola.composeapp.core.database.DatabaseDriverFactory
 import evola.composeapp.core.network.platformHttpEngine
 import evola.composeapp.generated.resources.Res
+import evola.database.AppDatabase
+import evola.database.DatabaseFactory
+import evola.database.create
 import evola.shared.core.network.AnthropicClient
 import evola.shared.db.EvolaDatabase
 import evola.shared.core.common.FileTextExtractor
@@ -55,12 +58,17 @@ class GermanNounImportCoordinator(database: EvolaDatabase, extractionScope: Coro
  */
 fun evolaModule(
     driverFactory: DatabaseDriverFactory,
+    roomDatabaseFactory: DatabaseFactory,
     secureStore: SecureStore,
     fileTextExtractor: FileTextExtractor,
 ): Module = module {
     includes(vocabularyModule, learningModule, materialsModule(fileTextExtractor), onboardingModule, homeModule, profileModule)
 
     single { EvolaDatabase(driverFactory.create()) }
+    // Room is being migrated in alongside SQLDelight one repository at a time - both databases
+    // are live until every Local*Repository has moved off EvolaDatabase, at which point
+    // EvolaDatabase and this whole SQLDelight setup is deleted outright.
+    single<AppDatabase> { roomDatabaseFactory.create() }
     single { platformHttpEngine() }
     single { AnthropicClient(get()) { secureStore.get(KEY_ANTHROPIC_API_KEY) } }
 

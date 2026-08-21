@@ -23,8 +23,10 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.androidx.room.runtime)
-            implementation(libs.androidx.sqlite.bundled)
+            // api, not implementation - :shared references AppDatabase (extends RoomDatabase)
+            // directly, so RoomDatabase's own type metadata must be on its compile classpath too.
+            api(libs.androidx.room.runtime)
+            api(libs.androidx.sqlite.bundled)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

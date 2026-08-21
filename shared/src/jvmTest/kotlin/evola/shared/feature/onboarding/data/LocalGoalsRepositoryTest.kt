@@ -1,6 +1,8 @@
 package evola.shared.feature.onboarding.data
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import evola.database.DatabaseFactory
+import evola.database.create
 import evola.shared.core.common.ApiResult
 import evola.shared.core.common.LOCAL_USER
 import evola.shared.db.EvolaDatabase
@@ -20,7 +22,8 @@ class LocalGoalsRepositoryTest {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         EvolaDatabase.Schema.create(driver)
         val db = EvolaDatabase(driver)
-        return LocalGoalsRepository(db, LocalSettingsRepository(db), LocalAchievementsRepository(db)) to db
+        val roomDb = DatabaseFactory().create()
+        return LocalGoalsRepository(db, LocalSettingsRepository(db), LocalAchievementsRepository(roomDb)) to db
     }
 
     @Test
