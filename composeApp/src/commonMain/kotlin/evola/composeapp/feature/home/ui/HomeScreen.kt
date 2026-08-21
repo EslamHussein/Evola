@@ -30,7 +30,6 @@ import androidx.compose.ui.Modifier
 import org.orbitmvi.orbit.compose.collectAsState
 import evola.composeapp.feature.home.vm.HomeState
 import evola.composeapp.feature.home.vm.HomeViewModel
-import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaCard
@@ -50,7 +49,6 @@ import evola.composeapp.generated.resources.main_home_empty_body
 import evola.composeapp.generated.resources.main_home_empty_cta
 import evola.composeapp.generated.resources.main_home_empty_title
 import evola.composeapp.generated.resources.main_home_title
-import evola.composeapp.generated.resources.main_home_your_goal_label
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -60,10 +58,10 @@ import androidx.compose.ui.tooling.preview.Preview
  * every lesson is done.
  *
  * The dashboard's own sections live in sibling files in this package - [HomeModesSection.kt] (spaced
- * repetition + extra modes), [HomeStatsSection.kt] (streak/activity strip), [HomeReadinessSection.kt]
- * (readiness ring + activity chart), [HomeWordBreakdownSection.kt] (mastery cards + nudge) - this
- * file is just the screen shell that composes them, kept separate so no single file mixes every
- * dashboard concern at once. */
+ * repetition + extra modes), [HomeStatsSection.kt] (streak/activity strip), [GoalReadinessCard.kt]
+ * (the goal + readiness card at the top), [HomeWordBreakdownSection.kt] (mastery cards + nudge) -
+ * this file is just the screen shell that composes them, kept separate so no single file mixes
+ * every dashboard concern at once. */
 @Composable
 fun HomeScreen(
     goal: Goal,
@@ -129,9 +127,12 @@ private fun HomeContent(
     ) { padding ->
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.lg)) {
-                Text(stringResource(Res.string.main_home_your_goal_label), style = MaterialTheme.typography.labelLarge, color = EvolaColors.Accent)
-                Spacer(Modifier.height(EvolaSpacing.xs))
-                Text(goal.goalText, style = MaterialTheme.typography.headlineMedium)
+                // GoalReadinessCard replaces the old separate "Your goal" text block + standalone
+                // exam-readiness ring with one merged card - shown unconditionally like the text
+                // block it replaces, with 0% before there's any real progress to report yet
+                // (Loading/Error/no-lessons-yet), matching the same fallback the ring itself used.
+                val readinessPercent = (state as? HomeState.Loaded)?.progress?.let { (it.overallPct * 100).roundToInt() } ?: 0
+                GoalReadinessCard(goalText = goal.goalText, percent = readinessPercent, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(EvolaSpacing.xl))
 
                 when (state) {
@@ -215,8 +216,6 @@ private fun DashboardBody(
             Spacer(Modifier.height(EvolaSpacing.lg))
         }
         StatsSection(progress)
-        Spacer(Modifier.height(EvolaSpacing.lg))
-        TopTilesRow(percent = (progress.overallPct * 100).roundToInt(), vocabulary = progress.vocabulary)
         Spacer(Modifier.height(EvolaSpacing.lg))
         WordBreakdownSection(progress.vocabulary, onStartCategorySession)
     }
