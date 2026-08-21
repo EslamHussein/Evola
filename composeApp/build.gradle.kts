@@ -48,7 +48,6 @@ kotlin {
             implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
-            implementation(libs.haze)
             implementation(libs.orbit.core)
             implementation(libs.orbit.viewmodel)
             implementation(libs.orbit.compose)

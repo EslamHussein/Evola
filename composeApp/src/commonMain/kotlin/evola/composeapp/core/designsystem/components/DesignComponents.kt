@@ -7,39 +7,29 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
@@ -215,45 +205,6 @@ fun LockedRow(
     }
 }
 
-/** A floating, frosted-glass-style bottom navigation bar - approximates iOS 26's "Liquid Glass"
- * material using [Haze](https://github.com/chrisbanes/haze) for genuine real-time backdrop blur
- * of whatever scrolls behind it (the same technique Slack/Instagram-style blurred bars use),
- * rather than flat translucency. True Liquid Glass is still a native UIKit/SwiftUI-only API and
- * isn't reachable from shared Compose UI without a much bigger native rewrite, but real backdrop
- * blur gets far closer than a translucent color ever could. [hazeState] must be the same instance
- * passed to [Modifier.hazeSource] on the scrollable content behind this bar. */
-@Composable
-fun GlassNavigationBar(hazeState: HazeState, modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
-    val shape = RoundedCornerShape(28.dp)
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = EvolaSpacing.lg, vertical = EvolaSpacing.sm)
-            .shadow(elevation = 20.dp, shape = shape, ambientColor = Color.Black.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.35f))
-            .clip(shape)
-            .hazeEffect(
-                state = hazeState,
-                style = HazeStyle(
-                    backgroundColor = EvolaColors.Surface,
-                    tint = HazeTint(EvolaColors.Surface.copy(alpha = 0.45f)),
-                    blurRadius = 24.dp,
-                    noiseFactor = 0.08f,
-                ),
-            )
-            // A pure-white hairline (right against the old dark glass bar) is nearly invisible on
-            // Reword's light, white-tinted blur - the ink token at low alpha reads on both.
-            .border(BorderStroke(1.dp, EvolaColors.Text.copy(alpha = 0.10f)), shape),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = EvolaSpacing.xs),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically,
-            content = content,
-        )
-    }
-}
-
 @Preview
 @Composable
 private fun SelectableChipPreview() {
@@ -320,18 +271,5 @@ private fun ComingSoonChipPreview() {
 private fun LockedRowPreview() {
     EvolaTheme {
         LockedRow(label = "Grammar drills", subtitle = "Coming soon", icon = Icons.AutoMirrored.Filled.MenuBook, lockIcon = Icons.Filled.Lock)
-    }
-}
-
-@Preview
-@Composable
-private fun GlassNavigationBarPreview() {
-    EvolaTheme {
-        val hazeState = remember { HazeState() }
-        GlassNavigationBar(hazeState = hazeState) {
-            Icon(Icons.Filled.Home, contentDescription = null, tint = EvolaColors.Accent)
-            Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, tint = EvolaColors.Text3)
-            Icon(Icons.Filled.Person, contentDescription = null, tint = EvolaColors.Text3)
-        }
     }
 }

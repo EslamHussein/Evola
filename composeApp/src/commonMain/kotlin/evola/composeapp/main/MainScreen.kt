@@ -15,8 +15,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import evola.composeapp.core.navigation.MaterialsNavContext
 import evola.composeapp.core.navigation.ProfileNavContext
 import evola.composeapp.core.common.LocalNativeLanguage
@@ -78,21 +76,17 @@ fun MainScreen(
     val showTabBar = (selectedTab != MainTab.MATERIALS || materialsBackStack.size == 1) &&
         (selectedTab != MainTab.PROFILE || profileBackStack.size == 1)
 
-    val hazeState = rememberHazeState()
-
     CompositionLocalProvider(LocalNativeLanguage provides goal.nativeLanguage) {
     Scaffold(
         // Both insets are deliberately excluded here: each tab screen owns its own top inset via
-        // its own Scaffold+TopAppBar (WindowInsets.statusBars), and GlassNavigationBar below owns
-        // its own bottom inset via navigationBarsPadding() so it floats above the gesture area.
-        // Leaving Scaffold's default contentWindowInsets (safeDrawing, both sides) doubled the gap
-        // on both edges.
+        // its own Scaffold+TopAppBar (WindowInsets.statusBars), and MainTabBar below owns its own
+        // bottom inset. Leaving Scaffold's default contentWindowInsets (safeDrawing, both sides)
+        // doubled the gap on both edges.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showTabBar) {
                 MainTabBar(
                     selectedTab = selectedTab,
-                    hazeState = hazeState,
                     onSelectTab = { tab ->
                         selectedTab = tab
                         when (tab) {
@@ -111,7 +105,7 @@ fun MainScreen(
             }
         },
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).hazeSource(state = hazeState)) {
+        Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
                 MainTab.HOME -> {
                     val homeViewModel = koinViewModel<HomeViewModel>(key = goal.id) { parametersOf(goal.id) }

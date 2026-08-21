@@ -15,7 +15,6 @@ robolectric = "4.16.1"
 androidxSqlite = "2.7.0"
 ksp = "2.3.11"
 pdfboxAndroid = "2.0.27.0"
-haze = "1.7.2"
 kermit = "2.1.0"
 androidxWork = "2.11.2"
 koinBom = "4.2.2"
@@ -52,8 +51,6 @@ androidx-splashscreen = { module = "androidx.core:core-splashscreen", version.re
 androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidxSecurityCrypto" }
-
-haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 kermit-io = { module = "co.touchlab:kermit-io", version.ref = "kermit" }
