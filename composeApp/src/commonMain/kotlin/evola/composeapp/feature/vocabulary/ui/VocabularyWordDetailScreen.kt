@@ -82,7 +82,9 @@ import evola.composeapp.core.common.RtlText
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaButtonSize
 import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
+import evola.composeapp.core.designsystem.components.EvolaPrimaryButton
 import evola.shared.feature.vocabulary.domain.VocabularyItem
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -181,7 +183,14 @@ internal fun VocabularyWordDetailScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.lessons_nav_back))
                     }
                 },
-                actions = { TextButton(onClick = onEdit) { Text(stringResource(Res.string.lessons_action_edit)) } },
+                actions = {
+                    EvolaPrimaryButton(
+                        text = stringResource(Res.string.lessons_action_edit),
+                        onClick = onEdit,
+                        size = EvolaButtonSize.Small,
+                        modifier = Modifier.padding(end = EvolaSpacing.sm),
+                    )
+                },
             )
         },
     ) { padding ->

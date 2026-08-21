@@ -20,7 +20,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +33,8 @@ import androidx.compose.ui.text.input.ImeAction
 import evola.composeapp.core.common.LocalNativeLanguage
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaButtonSize
+import evola.composeapp.core.designsystem.components.EvolaPrimaryButton
 import evola.composeapp.core.navigation.BackHandler
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_cancel
@@ -74,10 +75,13 @@ internal fun EditVocabularyScreen(
                     }
                 },
                 actions = {
-                    TextButton(
+                    EvolaPrimaryButton(
+                        text = stringResource(Res.string.lessons_action_save),
                         onClick = { onSave(term.trim(), meaning.trim(), nativeMeaning.trim().ifBlank { null }) },
                         enabled = canSave,
-                    ) { Text(stringResource(Res.string.lessons_action_save)) }
+                        size = EvolaButtonSize.Small,
+                        modifier = Modifier.padding(end = EvolaSpacing.sm),
+                    )
                 },
             )
         },

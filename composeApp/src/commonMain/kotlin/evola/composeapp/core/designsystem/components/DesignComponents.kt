@@ -57,6 +57,7 @@ fun SelectableChip(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     enabled: Boolean = true,
+    subtitle: String? = null,
 ) {
     val borderColor = if (selected) EvolaColors.Gold else EvolaColors.Border
     val bgColor = if (selected) EvolaColors.GoldSoft else EvolaColors.Surface
@@ -79,6 +80,9 @@ fun SelectableChip(
         ) {
             if (icon != null) Icon(icon, contentDescription = null, tint = contentColor)
             Text(label, color = contentColor, style = MaterialTheme.typography.titleSmall)
+            if (subtitle != null) {
+                Text(subtitle, color = EvolaColors.Text3, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }

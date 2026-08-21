@@ -10,7 +10,6 @@ import evola.composeapp.feature.materials.vm.WizardState
 import evola.composeapp.feature.materials.vm.WizardStep
 import evola.composeapp.feature.materials.vm.WizardSubmitState
 import evola.composeapp.feature.materials.vm.STEP_ORDER
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -33,9 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.Rule
 import androidx.compose.material.icons.automirrored.filled.SpeakerNotes
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Quiz
@@ -65,7 +61,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import evola.composeapp.core.navigation.BackHandler
 import evola.composeapp.generated.resources.Res
-import evola.composeapp.generated.resources.wizard_add_lesson_range
 import evola.composeapp.generated.resources.wizard_back
 import evola.composeapp.generated.resources.wizard_cancel
 import evola.composeapp.generated.resources.wizard_coming_soon
@@ -86,7 +81,6 @@ import evola.composeapp.generated.resources.wizard_resource_info_prompt
 import evola.composeapp.generated.resources.wizard_start_analysis
 import evola.composeapp.generated.resources.wizard_starting
 import evola.composeapp.generated.resources.wizard_view_existing_material
-import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.ComingSoonChip
@@ -296,37 +290,14 @@ private fun OrganizationCard(
     enabled: Boolean,
     onSelect: (OrganizationMode) -> Unit,
 ) {
-    val isSelected = selected == mode
-    Surface(
-        onClick = { if (enabled) onSelect(mode) },
-        enabled = enabled,
+    SelectableChip(
+        label = mode.label,
+        selected = selected == mode,
+        onClick = { onSelect(mode) },
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = if (isSelected) EvolaColors.GoldSoft else EvolaColors.Surface,
-        border = BorderStroke(1.dp, if (isSelected) EvolaColors.Gold else EvolaColors.Border),
-    ) {
-        Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-                if (isSelected) {
-                    Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = EvolaColors.Gold, modifier = Modifier.size(20.dp))
-                }
-                Text(
-                    mode.label,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = if (enabled) EvolaColors.Text else EvolaColors.Text3,
-                )
-            }
-            if (mode == OrganizationMode.MANUAL) {
-                Spacer(Modifier.height(EvolaSpacing.sm))
-                Text(stringResource(Res.string.wizard_coming_soon), style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
-                Spacer(Modifier.height(EvolaSpacing.sm))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.xs)) {
-                    Icon(Icons.Filled.Add, contentDescription = null, tint = EvolaColors.Text3, modifier = Modifier.size(16.dp))
-                    Text(stringResource(Res.string.wizard_add_lesson_range), style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
-                }
-            }
-        }
-    }
+        enabled = enabled,
+        subtitle = if (mode == OrganizationMode.MANUAL) stringResource(Res.string.wizard_coming_soon) else null,
+    )
 }
 
 @Composable

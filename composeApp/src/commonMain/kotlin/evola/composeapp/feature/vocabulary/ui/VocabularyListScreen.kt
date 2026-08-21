@@ -68,8 +68,10 @@ import evola.composeapp.core.utils.rememberSpeechService
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaButtonSize
 import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
 import evola.composeapp.core.designsystem.components.EvolaIconButton
+import evola.composeapp.core.designsystem.components.EvolaPrimaryButton
 import evola.composeapp.feature.vocabulary.ui.rememberCsvFilePicker
 import evola.shared.feature.vocabulary.domain.VocabularyItem
 import evola.shared.feature.vocabulary.domain.parseWordCsv
@@ -297,7 +299,12 @@ private fun VocabularyListContent(
                             }
                         }
                     }
-                    TextButton(onClick = onImportCsv) { Text(stringResource(Res.string.lessons_import_button)) }
+                    EvolaPrimaryButton(
+                        text = stringResource(Res.string.lessons_import_button),
+                        onClick = onImportCsv,
+                        size = EvolaButtonSize.Small,
+                        modifier = Modifier.padding(horizontal = EvolaSpacing.xs),
+                    )
                     Box {
                         IconButton(onClick = { overflowMenuExpanded = true }) {
                             Icon(Icons.Filled.MoreVert, contentDescription = stringResource(Res.string.lessons_content_desc_more))

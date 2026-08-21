@@ -1,7 +1,6 @@
 package evola.composeapp.feature.onboarding.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,18 +16,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,10 +39,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.onboarding_category_add_and_continue
-import evola.composeapp.generated.resources.onboarding_category_all_selected
 import evola.composeapp.generated.resources.onboarding_category_collapse
 import evola.composeapp.generated.resources.onboarding_category_continue
 import evola.composeapp.generated.resources.onboarding_category_description
@@ -51,7 +50,6 @@ import evola.composeapp.generated.resources.onboarding_category_expand
 import evola.composeapp.generated.resources.onboarding_category_lessons_selected
 import evola.composeapp.generated.resources.onboarding_category_prompt
 import evola.composeapp.generated.resources.onboarding_category_skip
-import evola.composeapp.generated.resources.onboarding_category_some_selected
 import evola.composeapp.generated.resources.onboarding_category_subtitle_words
 import evola.composeapp.generated.resources.onboarding_category_words_count
 import evola.composeapp.generated.resources.onboarding_level_lesson_title
@@ -233,7 +231,18 @@ private fun LevelCard(
                 modifier = Modifier.fillMaxWidth().clickable(enabled = isMultiLesson) { onToggleExpanded() },
             ) {
                 if (isMultiLesson) {
-                    TriStateSquare(selectedCount = selectedCount, total = level.lessons.size, onClick = { onToggleLevel(allSelected) })
+                    TriStateCheckbox(
+                        state = when {
+                            selectedCount == level.lessons.size -> ToggleableState.On
+                            selectedCount > 0 -> ToggleableState.Indeterminate
+                            else -> ToggleableState.Off
+                        },
+                        onClick = { onToggleLevel(allSelected) },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = EvolaColors.Accent,
+                            uncheckedColor = EvolaColors.Text3,
+                        ),
+                    )
                 } else {
                     Checkbox(checked = selectedCount > 0, onCheckedChange = { onToggleLevel(allSelected) })
                 }
@@ -290,45 +299,6 @@ private fun LevelCard(
                     }
                 }
             }
-        }
-    }
-}
-
-/** Tri-state select-all indicator for a level's header - a filled square (like the reference
- * design this replaced a plain [androidx.compose.material3.TriStateCheckbox] with) rather than a
- * checkbox, so it reads as a tree control distinct from the individually checkable lesson rows
- * below it. */
-@Composable
-private fun TriStateSquare(selectedCount: Int, total: Int, onClick: () -> Unit) {
-    val isOn = selectedCount == total
-    val isIndeterminate = selectedCount in 1 until total
-    val isFilled = isOn || isIndeterminate
-    Box(
-        modifier = Modifier.size(28.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .then(
-                if (isFilled) {
-                    Modifier.background(EvolaColors.Accent)
-                } else {
-                    Modifier.border(1.5.dp, EvolaColors.Text3, RoundedCornerShape(8.dp))
-                },
-            )
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        when {
-            isOn -> Icon(
-                Icons.Filled.Check,
-                contentDescription = stringResource(Res.string.onboarding_category_all_selected),
-                tint = Color.White,
-                modifier = Modifier.size(16.dp),
-            )
-            isIndeterminate -> Icon(
-                Icons.Filled.Remove,
-                contentDescription = stringResource(Res.string.onboarding_category_some_selected),
-                tint = Color.White,
-                modifier = Modifier.size(16.dp),
-            )
         }
     }
 }
