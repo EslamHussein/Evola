@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -22,7 +21,6 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -53,6 +51,7 @@ import evola.composeapp.core.common.RtlText
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaIconButton
 import evola.shared.feature.vocabulary.domain.VocabularyCard
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -146,9 +145,13 @@ internal fun NewCard(
 
             // Pronunciation - a real circular button (filled-tonal, not a bare icon) so it reads as
             // its own tappable control rather than decoration next to the transcription.
-            FilledTonalIconButton(onClick = onPlayPronunciation, shape = CircleShape) {
-                Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = stringResource(Res.string.lessons_action_play_pronunciation), tint = EvolaColors.Accent)
-            }
+            EvolaIconButton(
+                icon = Icons.AutoMirrored.Filled.VolumeUp,
+                contentDescription = stringResource(Res.string.lessons_action_play_pronunciation),
+                onClick = onPlayPronunciation,
+                tonal = true,
+                contentColor = EvolaColors.Accent,
+            )
             if (showTranscription) {
                 card.ipaPronunciation?.let {
                     Spacer(Modifier.height(EvolaSpacing.xs))

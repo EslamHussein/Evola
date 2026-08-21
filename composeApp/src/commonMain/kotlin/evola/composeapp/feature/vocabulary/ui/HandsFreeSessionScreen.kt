@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +39,9 @@ import evola.composeapp.core.utils.rememberSpeechService
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaButtonSize
+import evola.composeapp.core.designsystem.components.EvolaDestructiveButton
+import evola.composeapp.core.designsystem.components.EvolaPositiveButton
 import evola.shared.feature.profile.domain.AppSettings
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_action_already_know
@@ -210,17 +211,19 @@ private fun HandsFreeCard(
                 }
             }
         }
-        Button(
+        EvolaDestructiveButton(
+            text = leftLabel,
             onClick = onLeft,
-            modifier = Modifier.fillMaxWidth().height(72.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = EvolaColors.Rust),
-        ) { Text(leftLabel, style = MaterialTheme.typography.titleMedium) }
+            modifier = Modifier.fillMaxWidth(),
+            size = EvolaButtonSize.Large,
+        )
         Spacer(Modifier.height(EvolaSpacing.md))
-        Button(
+        EvolaPositiveButton(
+            text = rightLabel,
             onClick = onRight,
-            modifier = Modifier.fillMaxWidth().height(72.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = EvolaColors.Gold),
-        ) { Text(rightLabel, style = MaterialTheme.typography.titleMedium) }
+            modifier = Modifier.fillMaxWidth(),
+            size = EvolaButtonSize.Large,
+        )
     }
 }
 

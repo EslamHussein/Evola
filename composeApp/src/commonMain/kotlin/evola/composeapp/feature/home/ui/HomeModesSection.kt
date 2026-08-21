@@ -93,7 +93,7 @@ internal fun SessionModesSection(progress: GoalProgress, onStartModeSession: (Se
 private fun ModeRow(icon: ImageVector, badgeColor: Color, title: String, subtitle: String, onClick: (() -> Unit)?) {
     Row(
         modifier = Modifier.fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .clickable(enabled = onClick != null, onClick = onClick ?: {})
             .padding(EvolaSpacing.lg),
         verticalAlignment = Alignment.CenterVertically,
     ) {

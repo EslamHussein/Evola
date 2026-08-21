@@ -7,9 +7,7 @@ import evola.composeapp.feature.vocabulary.vm.VocabularyListContent
 import evola.composeapp.feature.vocabulary.vm.VocabularyListState
 import evola.composeapp.feature.vocabulary.vm.VocabularyListSideEffect
 import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,6 +69,7 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
+import evola.composeapp.core.designsystem.components.EvolaIconButton
 import evola.composeapp.feature.vocabulary.ui.rememberCsvFilePicker
 import evola.shared.feature.vocabulary.domain.VocabularyItem
 import evola.shared.feature.vocabulary.domain.parseWordCsv
@@ -436,17 +435,14 @@ private fun VocabularyRow(item: VocabularyItem, onClick: () -> Unit, onPlay: () 
             val meaningLine = listOfNotNull(item.meaning, item.nativeMeaning?.takeIf { it != item.meaning }).joinToString(", ")
             RtlText(meaningLine, style = MaterialTheme.typography.bodyMedium, color = EvolaColors.Text2)
         }
-        Surface(
+        EvolaIconButton(
+            icon = Icons.Filled.PlayArrow,
+            contentDescription = stringResource(Res.string.lessons_action_play_pronunciation),
             onClick = onPlay,
-            shape = CircleShape,
-            color = Color.Transparent,
-            border = BorderStroke(1.5.dp, EvolaColors.Accent),
-            modifier = Modifier.padding(end = EvolaSpacing.md).size(36.dp),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(Res.string.lessons_action_play_pronunciation), tint = EvolaColors.Accent, modifier = Modifier.size(18.dp))
-            }
-        }
+            modifier = Modifier.padding(end = EvolaSpacing.md),
+            tonal = true,
+            contentColor = EvolaColors.Accent,
+        )
     }
 }
 
