@@ -10,8 +10,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_profile_credits_body
 import evola.composeapp.generated.resources.main_profile_credits_title
@@ -21,6 +19,7 @@ import evola.composeapp.generated.resources.main_profile_reset_all_row_title
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaSectionHeader
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -28,7 +27,10 @@ import androidx.compose.ui.tooling.preview.Preview
  * so it doesn't sit next to routine actions like Settings/backup. */
 @Composable
 internal fun DangerZoneSection(onResetAllProgress: () -> Unit) {
-    Text(stringResource(Res.string.main_profile_danger_zone_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.semantics { heading() })
+    // Card left as plain M3 Card (not EvolaCard) - [AppRow] applies its own EvolaSpacing.lg
+    // padding (shared with AppSection's rows), so EvolaCard's fixed internal padding would
+    // double-pad this row rather than being a like-for-like migration.
+    EvolaSectionHeader(text = stringResource(Res.string.main_profile_danger_zone_title))
     Spacer(Modifier.height(EvolaSpacing.sm))
     Card(modifier = Modifier.fillMaxWidth()) {
         AppRow(
@@ -46,7 +48,7 @@ internal fun DangerZoneSection(onResetAllProgress: () -> Unit) {
  * inside the app binary once bundled as a resource. */
 @Composable
 internal fun CreditsSection() {
-    Text(stringResource(Res.string.main_profile_credits_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.semantics { heading() })
+    EvolaSectionHeader(text = stringResource(Res.string.main_profile_credits_title))
     Spacer(Modifier.height(EvolaSpacing.sm))
     Text(
         stringResource(Res.string.main_profile_credits_body),

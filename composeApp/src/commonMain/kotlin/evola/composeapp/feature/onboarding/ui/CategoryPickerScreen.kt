@@ -18,7 +18,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -56,6 +55,8 @@ import evola.composeapp.generated.resources.onboarding_level_lesson_title
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaCard
+import evola.composeapp.core.designsystem.components.EvolaDivider
 import evola.shared.feature.vocabulary.domain.StarterLesson
 import evola.shared.feature.vocabulary.domain.StarterLevel
 import evola.shared.feature.vocabulary.domain.StarterWord
@@ -224,78 +225,76 @@ private fun LevelCard(
     val allSelected = selectedCount == level.lessons.size
     val isMultiLesson = level.lessons.size > 1
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().clickable(enabled = isMultiLesson) { onToggleExpanded() },
-            ) {
-                if (isMultiLesson) {
-                    TriStateCheckbox(
-                        state = when {
-                            selectedCount == level.lessons.size -> ToggleableState.On
-                            selectedCount > 0 -> ToggleableState.Indeterminate
-                            else -> ToggleableState.Off
-                        },
-                        onClick = { onToggleLevel(allSelected) },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = EvolaColors.Accent,
-                            uncheckedColor = EvolaColors.Text3,
-                        ),
-                    )
-                } else {
-                    Checkbox(checked = selectedCount > 0, onCheckedChange = { onToggleLevel(allSelected) })
-                }
-                Spacer(Modifier.width(EvolaSpacing.sm))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(level.title, style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        if (isMultiLesson) {
-                            stringResource(Res.string.onboarding_category_lessons_selected, level.subtitle, selectedCount, level.lessons.size)
-                        } else {
-                            stringResource(Res.string.onboarding_category_subtitle_words, level.subtitle, level.lessons.first().words.size)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (selectedCount > 0) EvolaColors.Accent else EvolaColors.Text3,
-                    )
-                }
-                if (isMultiLesson) {
-                    Icon(
-                        Icons.Filled.ExpandMore,
-                        contentDescription = if (expanded) {
-                            stringResource(Res.string.onboarding_category_collapse)
-                        } else {
-                            stringResource(Res.string.onboarding_category_expand)
-                        },
-                        tint = EvolaColors.Text3,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
+    EvolaCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().clickable(enabled = isMultiLesson) { onToggleExpanded() },
+        ) {
+            if (isMultiLesson) {
+                TriStateCheckbox(
+                    state = when {
+                        selectedCount == level.lessons.size -> ToggleableState.On
+                        selectedCount > 0 -> ToggleableState.Indeterminate
+                        else -> ToggleableState.Off
+                    },
+                    onClick = { onToggleLevel(allSelected) },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = EvolaColors.Accent,
+                        uncheckedColor = EvolaColors.Text3,
+                    ),
+                )
+            } else {
+                Checkbox(checked = selectedCount > 0, onCheckedChange = { onToggleLevel(allSelected) })
             }
-            if (isMultiLesson && expanded) {
-                Spacer(Modifier.height(EvolaSpacing.sm))
-                Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
-                Spacer(Modifier.height(EvolaSpacing.sm))
-                level.lessons.forEach { lesson ->
-                    val checked = lesson.id in selected
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (checked) EvolaColors.AccentSoft else Color.Transparent)
-                            .clickable { onToggleLesson(lesson.id) }
-                            .padding(horizontal = EvolaSpacing.sm, vertical = EvolaSpacing.sm),
-                    ) {
-                        Checkbox(checked = checked, onCheckedChange = { onToggleLesson(lesson.id) })
-                        Spacer(Modifier.width(EvolaSpacing.sm))
-                        Column {
-                            Text(lesson.title, style = MaterialTheme.typography.bodyMedium)
-                            Text(
-                                stringResource(Res.string.onboarding_category_words_count, lesson.words.size),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = EvolaColors.Text3,
-                            )
-                        }
+            Spacer(Modifier.width(EvolaSpacing.sm))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(level.title, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    if (isMultiLesson) {
+                        stringResource(Res.string.onboarding_category_lessons_selected, level.subtitle, selectedCount, level.lessons.size)
+                    } else {
+                        stringResource(Res.string.onboarding_category_subtitle_words, level.subtitle, level.lessons.first().words.size)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (selectedCount > 0) EvolaColors.Accent else EvolaColors.Text3,
+                )
+            }
+            if (isMultiLesson) {
+                Icon(
+                    Icons.Filled.ExpandMore,
+                    contentDescription = if (expanded) {
+                        stringResource(Res.string.onboarding_category_collapse)
+                    } else {
+                        stringResource(Res.string.onboarding_category_expand)
+                    },
+                    tint = EvolaColors.Text3,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+        if (isMultiLesson && expanded) {
+            Spacer(Modifier.height(EvolaSpacing.sm))
+            EvolaDivider()
+            Spacer(Modifier.height(EvolaSpacing.sm))
+            level.lessons.forEach { lesson ->
+                val checked = lesson.id in selected
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (checked) EvolaColors.AccentSoft else Color.Transparent)
+                        .clickable { onToggleLesson(lesson.id) }
+                        .padding(horizontal = EvolaSpacing.sm, vertical = EvolaSpacing.sm),
+                ) {
+                    Checkbox(checked = checked, onCheckedChange = { onToggleLesson(lesson.id) })
+                    Spacer(Modifier.width(EvolaSpacing.sm))
+                    Column {
+                        Text(lesson.title, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            stringResource(Res.string.onboarding_category_words_count, lesson.words.size),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = EvolaColors.Text3,
+                        )
                     }
                 }
             }

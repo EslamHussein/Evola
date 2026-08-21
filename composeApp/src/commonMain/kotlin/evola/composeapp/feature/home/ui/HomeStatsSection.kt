@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -42,6 +41,8 @@ import evola.composeapp.generated.resources.main_home_streak_freeze_available_si
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaCard
+import evola.composeapp.core.designsystem.components.EvolaDivider
 import evola.shared.feature.onboarding.domain.DayActivity
 import evola.shared.feature.onboarding.domain.GoalProgress
 import evola.shared.feature.onboarding.domain.VocabularyBreakdown
@@ -66,48 +67,46 @@ internal fun StatsSection(progress: GoalProgress) {
     } else {
         stringResource(Res.string.main_home_streak_freeze_available_plural, progress.streakFreezesAvailable)
     }
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg)) {
-            if (progress.weeklyActivity.isNotEmpty()) {
-                WeeklyStreakStrip(progress.weeklyActivity)
-                Spacer(Modifier.height(EvolaSpacing.lg))
+    EvolaCard(modifier = Modifier.fillMaxWidth()) {
+        if (progress.weeklyActivity.isNotEmpty()) {
+            WeeklyStreakStrip(progress.weeklyActivity)
+            Spacer(Modifier.height(EvolaSpacing.lg))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
+            StreakTile(stringResource(Res.string.main_home_current_streak), progress.streakDays, modifier = Modifier.weight(1f))
+            StreakTile(stringResource(Res.string.main_home_best_streak), progress.bestStreakDays, modifier = Modifier.weight(1f))
+        }
+        if (progress.streakFreezesAvailable > 0) {
+            Spacer(Modifier.height(EvolaSpacing.sm))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.AcUnit, contentDescription = null, tint = EvolaColors.Text3, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(EvolaSpacing.xs))
+                Text(
+                    streakFreezeText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = EvolaColors.Text3,
+                )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(EvolaSpacing.sm)) {
-                StreakTile(stringResource(Res.string.main_home_current_streak), progress.streakDays, modifier = Modifier.weight(1f))
-                StreakTile(stringResource(Res.string.main_home_best_streak), progress.bestStreakDays, modifier = Modifier.weight(1f))
-            }
-            if (progress.streakFreezesAvailable > 0) {
-                Spacer(Modifier.height(EvolaSpacing.sm))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.AcUnit, contentDescription = null, tint = EvolaColors.Text3, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(EvolaSpacing.xs))
-                    Text(
-                        streakFreezeText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = EvolaColors.Text3,
+        }
+        Spacer(Modifier.height(EvolaSpacing.md))
+        EvolaDivider()
+        Row(
+            modifier = Modifier.fillMaxWidth()
+                .clickable {
+                    shareText(
+                        if (progress.streakDays > 0) {
+                            streakShareMessage
+                        } else {
+                            noStreakShareMessage
+                        },
                     )
                 }
-            }
-            Spacer(Modifier.height(EvolaSpacing.md))
-            Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .clickable {
-                        shareText(
-                            if (progress.streakDays > 0) {
-                                streakShareMessage
-                            } else {
-                                noStreakShareMessage
-                            },
-                        )
-                    }
-                    .padding(top = EvolaSpacing.md),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.Share, contentDescription = null, tint = EvolaColors.Text2)
-                Spacer(Modifier.width(EvolaSpacing.md))
-                Text(stringResource(Res.string.main_home_share), style = MaterialTheme.typography.titleSmall)
-            }
+                .padding(top = EvolaSpacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Share, contentDescription = null, tint = EvolaColors.Text2)
+            Spacer(Modifier.width(EvolaSpacing.md))
+            Text(stringResource(Res.string.main_home_share), style = MaterialTheme.typography.titleSmall)
         }
     }
 }

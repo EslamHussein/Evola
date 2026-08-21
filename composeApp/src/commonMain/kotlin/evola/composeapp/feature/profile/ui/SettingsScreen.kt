@@ -37,14 +37,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import evola.composeapp.core.utils.SpeechService
 import evola.composeapp.core.utils.rememberSpeechService
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaDivider
+import evola.composeapp.core.designsystem.components.EvolaSectionHeader
 import evola.composeapp.core.designsystem.components.SelectableChip
 import evola.composeapp.feature.profile.vm.SettingsViewModel
 import evola.shared.feature.profile.domain.AppSettings
@@ -181,6 +181,10 @@ private fun SettingsContent(
             Column(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(EvolaSpacing.xl),
             ) {
+                // The 4 Cards in this screen are left as plain M3 Card (not EvolaCard) - each is a
+                // full-bleed-divider row list ([ToggleRow]/[StepperRow]/etc. apply their own
+                // EvolaSpacing.lg padding), so EvolaCard's fixed internal padding would double-pad
+                // every row and inset [DividerRow] off the card's edges.
                 SectionLabel(stringResource(Res.string.main_settings_section_appearance))
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
@@ -335,17 +339,12 @@ private fun SettingsContent(
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.tertiary,
-        modifier = Modifier.semantics { heading() }.padding(bottom = EvolaSpacing.sm),
-    )
+    EvolaSectionHeader(text = text, modifier = Modifier.padding(bottom = EvolaSpacing.sm))
 }
 
 @Composable
 private fun DividerRow() {
-    Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
+    EvolaDivider()
 }
 
 @Composable

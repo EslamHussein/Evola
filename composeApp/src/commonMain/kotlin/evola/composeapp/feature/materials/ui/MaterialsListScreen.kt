@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import evola.composeapp.core.common.ChaseLoadingIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -47,6 +46,7 @@ import evola.composeapp.generated.resources.materials_list_processing_with_count
 import evola.composeapp.generated.resources.materials_list_retry
 import evola.composeapp.generated.resources.materials_list_title
 import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.components.EvolaCard
 import evola.composeapp.core.designsystem.components.RootTopBarTitle
 import evola.composeapp.core.designsystem.components.SwipeToRevealDelete
 import evola.shared.feature.materials.domain.Material
@@ -163,15 +163,13 @@ private fun MaterialRow(material: Material, onClick: () -> Unit, onDelete: () ->
         onDelete = onDelete,
         deleteContentDescription = stringResource(Res.string.materials_list_delete_desc),
     ) {
-        Card(
+        EvolaCard(
             modifier = Modifier.fillMaxWidth(),
             onClick = onClick,
         ) {
-            Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
-                Text(material.filename, style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(EvolaSpacing.xs))
-                Text(materialStatusLabel(material), style = MaterialTheme.typography.bodyMedium)
-            }
+            Text(material.filename, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(EvolaSpacing.xs))
+            Text(materialStatusLabel(material), style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

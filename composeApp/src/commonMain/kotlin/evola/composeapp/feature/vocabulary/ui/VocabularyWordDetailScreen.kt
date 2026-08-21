@@ -46,8 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import evola.composeapp.core.navigation.BackHandler
 import evola.composeapp.generated.resources.Res
@@ -85,6 +83,7 @@ import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.EvolaButtonSize
 import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
 import evola.composeapp.core.designsystem.components.EvolaPrimaryButton
+import evola.composeapp.core.designsystem.components.EvolaSectionHeader
 import evola.shared.feature.vocabulary.domain.VocabularyItem
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -288,12 +287,7 @@ private fun WordActionRow(
 @Composable
 private fun DetailSection(title: String, content: @Composable () -> Unit) {
     Column {
-        Text(
-            title,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.tertiary,
-            modifier = Modifier.semantics { heading() },
-        )
+        EvolaSectionHeader(text = title)
         Spacer(Modifier.height(EvolaSpacing.xs))
         content()
     }

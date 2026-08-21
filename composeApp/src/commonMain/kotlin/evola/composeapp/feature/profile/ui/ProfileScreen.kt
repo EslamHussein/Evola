@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,8 +49,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -62,7 +59,9 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaCard
 import evola.composeapp.core.designsystem.components.EvolaDestructiveGhostButton
+import evola.composeapp.core.designsystem.components.EvolaSectionHeader
 import evola.composeapp.core.designsystem.components.IconTile
 import evola.composeapp.core.designsystem.components.RootTopBarTitle
 import evola.composeapp.core.designsystem.components.SelectableChip
@@ -214,16 +213,10 @@ private fun ProfileContent(
             Column(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding().padding(EvolaSpacing.xl),
             ) {
-                Text(
-                    stringResource(Res.string.main_profile_your_goal_label),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.semantics { heading() },
-                )
+                EvolaSectionHeader(text = stringResource(Res.string.main_profile_your_goal_label))
                 Spacer(Modifier.height(EvolaSpacing.sm))
 
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
+                EvolaCard(modifier = Modifier.fillMaxWidth()) {
                         if (isEditingGoal) {
                             OutlinedTextField(
                                 value = goalText,
@@ -292,7 +285,6 @@ private fun ProfileContent(
                             Spacer(Modifier.height(EvolaSpacing.md))
                             LanguageBadge(goal.nativeLanguage)
                         }
-                    }
                 }
 
                 Spacer(Modifier.height(EvolaSpacing.xxl))

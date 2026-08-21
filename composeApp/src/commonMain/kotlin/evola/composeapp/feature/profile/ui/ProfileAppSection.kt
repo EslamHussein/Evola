@@ -18,7 +18,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -26,8 +25,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import evola.composeapp.feature.profile.ui.rememberBackupFileLoader
 import evola.composeapp.feature.profile.ui.rememberBackupFileSaver
@@ -52,6 +49,8 @@ import evola.composeapp.generated.resources.main_profile_share_text_with_progres
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaDivider
+import evola.composeapp.core.designsystem.components.EvolaSectionHeader
 import evola.composeapp.core.designsystem.components.IconTile
 import evola.shared.core.common.ApiResult
 import evola.shared.feature.onboarding.domain.Goal
@@ -106,21 +105,25 @@ internal fun AppSection(
         stringResource(Res.string.main_profile_share_text_with_progress, latestProgress.vocabulary.mastered, streakPart, goal.goalText)
     }
 
-    Text(stringResource(Res.string.main_profile_app_section_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.semantics { heading() })
+    // Card left as plain M3 Card (not EvolaCard) - this list has full-bleed dividers between rows
+    // that are each individually padded ([AppRow] applies its own EvolaSpacing.lg), so EvolaCard's
+    // fixed internal padding would both double-pad every row and inset the dividers off the card's
+    // edges, a real visual regression rather than a like-for-like migration.
+    EvolaSectionHeader(text = stringResource(Res.string.main_profile_app_section_title))
     Spacer(Modifier.height(EvolaSpacing.sm))
     Card(modifier = Modifier.fillMaxWidth()) {
         Column {
             AppRow(Icons.Filled.Settings, stringResource(Res.string.main_profile_settings_row_title), stringResource(Res.string.main_profile_settings_row_subtitle), onClick = onOpenSettings)
-            Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
+            EvolaDivider()
             AppRow(
                 Icons.AutoMirrored.Filled.TrendingUp,
                 stringResource(Res.string.main_profile_share_progress_title),
                 stringResource(Res.string.main_profile_share_progress_subtitle),
                 onClick = { shareText(progressShareText) },
             )
-            Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
+            EvolaDivider()
             AppRow(Icons.Filled.CloudUpload, stringResource(Res.string.main_profile_create_backup_title), stringResource(Res.string.main_profile_create_backup_subtitle), onClick = saveBackup)
-            Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
+            EvolaDivider()
             AppRow(Icons.Filled.CloudDownload, stringResource(Res.string.main_profile_restore_backup_title), stringResource(Res.string.main_profile_restore_backup_subtitle), onClick = loadBackup)
         }
     }

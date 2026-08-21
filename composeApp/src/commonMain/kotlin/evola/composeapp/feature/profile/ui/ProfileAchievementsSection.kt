@@ -5,27 +5,25 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.main_profile_achievements_title
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaCard
+import evola.composeapp.core.designsystem.components.EvolaSectionHeader
 import evola.shared.feature.profile.domain.ALL_BADGES
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,32 +33,30 @@ import androidx.compose.ui.tooling.preview.Preview
  * far - seeing what's still ahead is part of the point. */
 @Composable
 internal fun AchievementsSection(unlockedBadgeIds: Set<String>) {
-    Text(stringResource(Res.string.main_profile_achievements_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.semantics { heading() })
+    EvolaSectionHeader(text = stringResource(Res.string.main_profile_achievements_title))
     Spacer(Modifier.height(EvolaSpacing.sm))
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
-            ALL_BADGES.forEachIndexed { index, badge ->
-                if (index > 0) {
-                    Spacer(Modifier.height(EvolaSpacing.sm))
-                }
-                val unlocked = badge.id in unlockedBadgeIds
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        if (unlocked) Icons.Filled.EmojiEvents else Icons.Filled.Lock,
-                        contentDescription = null,
-                        tint = if (unlocked) EvolaColors.Gold else EvolaColors.Text3,
-                        modifier = Modifier.size(24.dp),
+    EvolaCard(modifier = Modifier.fillMaxWidth()) {
+        ALL_BADGES.forEachIndexed { index, badge ->
+            if (index > 0) {
+                Spacer(Modifier.height(EvolaSpacing.sm))
+            }
+            val unlocked = badge.id in unlockedBadgeIds
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    if (unlocked) Icons.Filled.EmojiEvents else Icons.Filled.Lock,
+                    contentDescription = null,
+                    tint = if (unlocked) EvolaColors.Gold else EvolaColors.Text3,
+                    modifier = Modifier.size(24.dp),
+                )
+                Spacer(Modifier.width(EvolaSpacing.md))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        badge.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (unlocked) EvolaColors.Text else EvolaColors.Text3,
                     )
-                    Spacer(Modifier.width(EvolaSpacing.md))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            badge.title,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = if (unlocked) EvolaColors.Text else EvolaColors.Text3,
-                        )
-                        Spacer(Modifier.height(1.dp))
-                        Text(badge.description, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
-                    }
+                    Spacer(Modifier.height(1.dp))
+                    Text(badge.description, style = MaterialTheme.typography.bodySmall, color = EvolaColors.Text3)
                 }
             }
         }
