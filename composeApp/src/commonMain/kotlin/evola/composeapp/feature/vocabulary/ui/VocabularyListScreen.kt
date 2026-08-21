@@ -325,8 +325,8 @@ private fun VocabularyListContent(
                 onClick = onAddWord,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(Res.string.lessons_fab_word)) },
-                containerColor = EvolaColors.Accent,
-                contentColor = Color.White,
+                containerColor = EvolaColors.AccentButton,
+                contentColor = EvolaColors.OnAccentButton,
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },

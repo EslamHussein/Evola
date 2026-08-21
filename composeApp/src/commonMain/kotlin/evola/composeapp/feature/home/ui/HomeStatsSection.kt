@@ -149,14 +149,14 @@ private fun WeeklyStreakStrip(days: List<DayActivity>) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     modifier = Modifier.size(28.dp).clip(CircleShape)
-                        .background(if (day.hadActivity || isToday) EvolaColors.Accent else EvolaColors.Surface)
+                        .background(if (day.hadActivity || isToday) EvolaColors.AccentButton else EvolaColors.Surface)
                         .border(1.dp, if (day.hadActivity || isToday) Color.Transparent else EvolaColors.Border, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         label,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (day.hadActivity || isToday) Color.White else EvolaColors.Text3,
+                        color = if (day.hadActivity || isToday) EvolaColors.OnAccentButton else EvolaColors.Text3,
                     )
                 }
                 Spacer(Modifier.height(4.dp))

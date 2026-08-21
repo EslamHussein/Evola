@@ -23,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.style.TextAlign
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
@@ -83,7 +84,18 @@ internal fun SwipeGradeCard(
             }
             Box(modifier = Modifier.fillMaxSize().background(color), contentAlignment = Alignment.Center) {
                 if (label.isNotEmpty()) {
-                    Text(label, style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.padding(horizontal = EvolaSpacing.lg))
+                    // A fixed white/near-black pair sized to whichever semantic color is active,
+                    // not the app theme - [leftSwipeColor]/[rightSwipeColor] are callable with any
+                    // Color (see NewCard's Ink2 override), and white text on some of them (Gold in
+                    // light mode, Rust in dark mode, Ink2 in both) fails 4.5:1 AA. The two named
+                    // colors reuse their already-verified-correct button content tokens; anything
+                    // else falls back to a luminance check.
+                    val onColor = when (color) {
+                        EvolaColors.Rust -> EvolaColors.OnDestructiveButton
+                        EvolaColors.Gold -> EvolaColors.OnGoldButton
+                        else -> if (color.luminance() > 0.25f) Color(0xFF14151C) else Color.White
+                    }
+                    Text(label, style = MaterialTheme.typography.titleMedium, color = onColor, modifier = Modifier.padding(horizontal = EvolaSpacing.lg))
                 }
             }
         },
