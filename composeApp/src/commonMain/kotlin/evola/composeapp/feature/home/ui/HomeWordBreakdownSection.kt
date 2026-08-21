@@ -18,8 +18,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.TrackChanges
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -47,6 +45,7 @@ import evola.composeapp.generated.resources.main_home_words_total
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaCard
 import evola.shared.feature.onboarding.domain.NudgeWord
 import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import evola.shared.feature.vocabulary.domain.WordCategory
@@ -124,13 +123,12 @@ private fun MasteryCard(
 ) {
     val fraction = if (total > 0) count / total.toFloat() else 0f
     val percent = if (total > 0) (count * 100f / total).roundToInt() else 0
-    Card(
-        onClick = onClick ?: {},
+    EvolaCard(
         modifier = Modifier.fillMaxWidth(),
-        enabled = onClick != null,
-        colors = CardDefaults.cardColors(containerColor = EvolaColors.SurfaceAlt),
+        containerColor = EvolaColors.SurfaceAlt,
+        onClick = onClick,
     ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier.size(52.dp).clip(MaterialTheme.shapes.medium).background(softColor),
                 contentAlignment = Alignment.Center,
@@ -169,9 +167,9 @@ private fun MasteryCard(
  * same destination as the main CTA, since the session engine doesn't target a single word. */
 @Composable
 internal fun NudgeCard(nudge: NudgeWord, onClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
+    EvolaCard(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(

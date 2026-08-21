@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -80,6 +79,7 @@ import evola.composeapp.generated.resources.materials_add_type_text
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaCard
 import evola.composeapp.core.designsystem.components.SelectableChip
 import evola.shared.feature.materials.domain.MIN_EXTRACTABLE_TEXT_LENGTH
 import org.jetbrains.compose.resources.stringResource
@@ -221,15 +221,17 @@ private fun AddMaterialContent(
                     ResourceType.PDF -> {
                         val current = pickedFile
                         if (current == null) {
-                            Surface(
+                            // EvolaCard's internal padding is fixed at EvolaSpacing.lg (not this
+                            // placeholder's original xxl "big dropzone" padding) - a small,
+                            // deliberate visual shrink accepted for real component reuse here.
+                            EvolaCard(
                                 onClick = onLaunchFilePicker,
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = MaterialTheme.shapes.medium,
-                                color = EvolaColors.SurfaceAlt,
-                                border = BorderStroke(1.dp, EvolaColors.Border),
+                                containerColor = EvolaColors.SurfaceAlt,
+                                bordered = true,
                             ) {
                                 Column(
-                                    modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.xxl),
+                                    modifier = Modifier.fillMaxWidth(),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
                                     Text(stringResource(Res.string.materials_add_tap_to_choose_file), style = MaterialTheme.typography.titleSmall)
@@ -242,13 +244,11 @@ private fun AddMaterialContent(
                                 }
                             }
                         } else {
-                            Card(modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
-                                    Text(current.fileName, style = MaterialTheme.typography.titleMedium)
-                                    Spacer(Modifier.height(EvolaSpacing.sm))
-                                    TextButton(onClick = onLaunchFilePicker) {
-                                        Text(stringResource(Res.string.materials_add_choose_different_file))
-                                    }
+                            EvolaCard(modifier = Modifier.fillMaxWidth()) {
+                                Text(current.fileName, style = MaterialTheme.typography.titleMedium)
+                                Spacer(Modifier.height(EvolaSpacing.sm))
+                                TextButton(onClick = onLaunchFilePicker) {
+                                    Text(stringResource(Res.string.materials_add_choose_different_file))
                                 }
                             }
                         }

@@ -20,7 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import evola.composeapp.core.common.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +44,7 @@ import evola.composeapp.feature.home.vm.HomeViewModel
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaCard
 import evola.composeapp.core.designsystem.components.RootTopBarTitle
 import evola.shared.feature.onboarding.domain.Goal
 import evola.shared.feature.onboarding.domain.GoalProgress
@@ -175,18 +175,16 @@ private fun CenteredBox(content: @Composable () -> Unit) {
 
 @Composable
 private fun EmptyState(onGoToMaterials: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(EvolaSpacing.lg)) {
-            Text(stringResource(Res.string.main_home_empty_title), style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(EvolaSpacing.sm))
-            Text(
-                stringResource(Res.string.main_home_empty_body),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Spacer(Modifier.height(EvolaSpacing.md))
-            Button(onClick = onGoToMaterials, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(Res.string.main_home_empty_cta))
-            }
+    EvolaCard(modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(Res.string.main_home_empty_title), style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(EvolaSpacing.sm))
+        Text(
+            stringResource(Res.string.main_home_empty_body),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(Modifier.height(EvolaSpacing.md))
+        Button(onClick = onGoToMaterials, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(Res.string.main_home_empty_cta))
         }
     }
 }

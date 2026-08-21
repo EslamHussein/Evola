@@ -28,6 +28,7 @@ import evola.composeapp.generated.resources.misc_vocab_import_percent
 import evola.composeapp.generated.resources.misc_vocab_import_progress
 import evola.composeapp.generated.resources.misc_vocab_import_subtitle
 import evola.composeapp.generated.resources.misc_vocab_import_title
+import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.shared.feature.vocabulary.domain.GermanNounImportState
@@ -49,9 +50,17 @@ fun VocabDataImportScreen(state: GermanNounImportState) {
 
     Box(modifier = Modifier.fillMaxSize().padding(EvolaSpacing.xl), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // Left as a plain Surface (not EvolaCard) - a fixed 64dp icon badge with the icon
+            // centered directly against its edges, no internal padding; EvolaCard's fixed
+            // EvolaSpacing.lg content padding isn't exposed as a param to opt out of, and would
+            // shrink this tile's visible icon area by 32dp inside its own 64dp box. The token bug
+            // this call site did have - reading the raw M3 role MaterialTheme.colorScheme.
+            // surfaceContainer instead of this app's own EvolaColors - is still fixed below:
+            // surfaceContainer resolves to EvolaColors.Surface in both palettes (see
+            // evolaColorScheme() in EvolaTheme.kt), so this repoints to that token directly.
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceContainer,
+                color = EvolaColors.Surface,
                 modifier = Modifier.size(64.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {

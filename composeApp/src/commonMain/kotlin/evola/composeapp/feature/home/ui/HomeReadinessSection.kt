@@ -11,10 +11,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +31,7 @@ import evola.composeapp.generated.resources.main_home_no_activity
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaCard
 import evola.shared.feature.onboarding.domain.DayActivity
 import evola.shared.feature.onboarding.domain.GoalProgress
 import evola.shared.feature.onboarding.domain.VocabularyBreakdown
@@ -51,9 +50,9 @@ private val NotStartedColor: Color @Composable get() = EvolaColors.Text3
  * Reword's structure. */
 @Composable
 internal fun TopTilesRow(percent: Int, vocabulary: VocabularyBreakdown) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    EvolaCard(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ReadinessRing(percent = percent, vocabulary = vocabulary)
@@ -108,12 +107,10 @@ private fun ReadinessRing(percent: Int, vocabulary: VocabularyBreakdown, modifie
 @Composable
 internal fun ActivityChartCard(progress: GoalProgress) {
     if (progress.weeklyActivity.isEmpty()) return
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg)) {
-            Text(stringResource(Res.string.main_home_activity_title), style = MaterialTheme.typography.titleSmall, color = EvolaColors.Text2)
-            Spacer(Modifier.height(EvolaSpacing.md))
-            ActivityChart(progress.weeklyActivity)
-        }
+    EvolaCard(modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(Res.string.main_home_activity_title), style = MaterialTheme.typography.titleSmall, color = EvolaColors.Text2)
+        Spacer(Modifier.height(EvolaSpacing.md))
+        ActivityChart(progress.weeklyActivity)
     }
 }
 

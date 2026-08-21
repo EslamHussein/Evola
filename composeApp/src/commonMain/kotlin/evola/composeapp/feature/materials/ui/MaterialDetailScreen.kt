@@ -26,7 +26,6 @@ import androidx.compose.material.icons.automirrored.filled.Rule
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import evola.composeapp.core.common.ChaseLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -76,6 +75,7 @@ import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
 import evola.composeapp.core.designsystem.components.CircularProgressRing
+import evola.composeapp.core.designsystem.components.EvolaCard
 import evola.composeapp.core.designsystem.components.StatusTag
 import evola.composeapp.core.designsystem.components.StatusTagStyle
 import evola.composeapp.core.designsystem.components.SwipeToRevealDelete
@@ -342,14 +342,17 @@ private fun LessonRow(lesson: Lesson, onClick: () -> Unit, onDelete: () -> Unit)
         ) {
             // Flat Card, matching MaterialRow's card style in MaterialsListScreen.kt - keeps the
             // two rows in the Materials flow visually consistent instead of this one standing out
-            // with its own drop shadow.
-            Card(
-                onClick = onClick,
-                enabled = lesson.status == "ready",
+            // with its own drop shadow. EvolaCard has no `enabled` param (unlike M3's Card), so the
+            // ready-gating is expressed by only passing onClick when ready - null routes to the
+            // non-clickable overload, preserving the "not tappable until ready" behavior (the
+            // automatic disabled-content dimming M3's Card gave for free is lost; nothing else here
+            // reads on-not-ready as a visual cue).
+            EvolaCard(
+                onClick = onClick.takeIf { lesson.status == "ready" },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(EvolaSpacing.lg),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {

@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -46,6 +45,7 @@ import evola.composeapp.generated.resources.main_home_words_to_review
 import evola.composeapp.core.designsystem.EvolaColors
 import evola.composeapp.core.designsystem.EvolaSpacing
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.EvolaDivider
 import evola.shared.feature.onboarding.domain.GoalProgress
 import evola.shared.feature.onboarding.domain.VocabularyBreakdown
 import evola.shared.feature.vocabulary.domain.SessionMode
@@ -62,6 +62,9 @@ internal fun SessionModesSection(progress: GoalProgress, onStartModeSession: (Se
     val newRemaining = (progress.dailyGoal - progress.todayNewWordsLearned).coerceAtLeast(0)
     Text(stringResource(Res.string.main_home_study_section_title), style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(EvolaSpacing.md))
+    // Card left as plain M3 Card (not EvolaCard) - full-bleed-divider row list, same rationale as
+    // ProfileAppSection/SettingsScreen: EvolaCard's fixed internal padding would double-pad every
+    // row ([ModeRow] applies its own EvolaSpacing.lg) and inset the dividers off the card's edges.
     Card(modifier = Modifier.fillMaxWidth()) {
         Column {
             ModeRow(
@@ -69,13 +72,13 @@ internal fun SessionModesSection(progress: GoalProgress, onStartModeSession: (Se
                 stringResource(Res.string.main_home_learned_today, progress.todayNewWordsLearned, progress.dailyGoal),
                 onClick = { onStartModeSession(SessionMode.NEW_ONLY) }.takeIf { newRemaining > 0 },
             )
-            Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
+            EvolaDivider()
             ModeRow(
                 Icons.Filled.History, EvolaColors.Amber, stringResource(Res.string.main_home_review_words),
                 stringResource(Res.string.main_home_words_to_review, progress.wordsToReviewCount),
                 onClick = { onStartModeSession(SessionMode.REVIEW_ONLY) }.takeIf { progress.wordsToReviewCount > 0 },
             )
-            Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
+            EvolaDivider()
             ModeRow(
                 Icons.Filled.Lightbulb, EvolaColors.Accent, stringResource(Res.string.main_home_mixed_mode),
                 stringResource(Res.string.main_home_mixed_mode_subtitle),
@@ -132,7 +135,7 @@ internal fun ExtraModesSection(onBrowseFlashcards: () -> Unit, onStartHandsFree:
                 Spacer(Modifier.width(EvolaSpacing.md))
                 Text(stringResource(Res.string.main_home_browse_flashcards), style = MaterialTheme.typography.titleSmall)
             }
-            Surface(color = EvolaColors.Border, modifier = Modifier.fillMaxWidth().height(1.dp)) {}
+            EvolaDivider()
             Row(
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onStartHandsFree).padding(EvolaSpacing.lg),
                 verticalAlignment = Alignment.CenterVertically,
