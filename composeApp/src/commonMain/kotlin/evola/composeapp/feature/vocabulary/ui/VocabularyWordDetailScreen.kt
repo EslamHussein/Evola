@@ -159,6 +159,7 @@ internal fun VocabularyWordDetailScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
+            shape = MaterialTheme.shapes.large,
             title = { Text(stringResource(Res.string.lessons_remove_word_title)) },
             text = { Text(stringResource(Res.string.lessons_remove_word_text, item.term)) },
             confirmButton = {

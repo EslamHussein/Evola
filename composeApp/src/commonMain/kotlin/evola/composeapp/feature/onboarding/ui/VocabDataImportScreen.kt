@@ -81,7 +81,7 @@ fun VocabDataImportScreen(state: GermanNounImportState) {
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(EvolaSpacing.xxl))
-            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth(), color = EvolaColors.Accent)
             Spacer(Modifier.height(EvolaSpacing.sm))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(

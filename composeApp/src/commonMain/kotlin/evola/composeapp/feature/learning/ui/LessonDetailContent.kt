@@ -2,7 +2,6 @@
 
 package evola.composeapp.feature.learning.ui
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -16,12 +15,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
-import evola.composeapp.core.designsystem.EvolaSpacing
+import evola.composeapp.core.designsystem.CenteredMessage
 import evola.composeapp.core.designsystem.EvolaTheme
+import evola.composeapp.core.designsystem.components.ProgressMessage
 import evola.composeapp.feature.learning.vm.LessonDetailState
 import evola.composeapp.generated.resources.Res
 import evola.composeapp.generated.resources.lessons_detail_loading
@@ -59,7 +58,9 @@ internal fun LessonDetailContent(
         Surface(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (state) {
                 is LessonDetailState.Loading -> ProgressMessage(stringResource(Res.string.lessons_detail_loading))
-                is LessonDetailState.Error -> CenteredMessage(state.message)
+                is LessonDetailState.Error -> CenteredMessage {
+                    Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                }
                 is LessonDetailState.Loaded -> LessonDetailBody(
                     detail = state.detail,
                     onOpenSection = onOpenSection,
@@ -67,13 +68,6 @@ internal fun LessonDetailContent(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun CenteredMessage(message: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, modifier = Modifier.padding(EvolaSpacing.xl))
     }
 }
 
